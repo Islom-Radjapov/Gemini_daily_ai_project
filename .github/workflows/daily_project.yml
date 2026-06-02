@@ -1,0 +1,61 @@
+name: 🤖 Kundalik AI Loyiha Generatori
+
+on:
+  schedule:
+    # Har kuni 12:00 UTC (17:00 GMT+5) da ishga tushadi
+    # Yakshanba kunidan tashqari (1=Dushanba, 6=Shanba)
+    - cron: '0 12 * * 1-6'
+  
+  # Qo'lda ishga tushirish uchun (test qilish uchun juda qulay)
+  workflow_dispatch:
+
+jobs:
+  generate-project:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      # 1. Reponi klonlash
+      - name: 📥 Reponi klonlash
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Python o'rnatish
+      - name: 🐍 Python 3.11 o'rnatish
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. Kutubxonalarni o'rnatish
+      - name: 📦 Kutubxonalarni o'rnatish
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Loyiha generatsiya qilish
+      - name: 🤖 Gemini orqali loyiha yaratish
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python scripts/generate_project.py
+
+      # 5. O'zgarishlarni commit va push qilish
+      - name: 📤 Commit va Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add -A
+          
+          # Agar o'zgarish bo'lsa, commit qilish
+          if git diff --staged --quiet; then
+            echo "⚠️ Hech qanday o'zgarish yo'q, commit qilinmaydi."
+          else
+            DATE=$(date -u +"%Y-%m-%d")
+            git commit -m "🤖 Yangi AI loyiha: ${DATE}"
+            git push
+            echo "✅ Yangi loyiha muvaffaqiyatli push qilindi!"
+          fi
