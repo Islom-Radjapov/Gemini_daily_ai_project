@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Grades Dashboard</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e0e5ec 100%);
+            color: #333;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* Clear floats or handle potential overflows */
+        }
+
+        /* Header */
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.8em;
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .dashboard-header p {
+            font-size: 1.1em;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+
+        /* Statistics Overview */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background-color: #f9fbfd;
+            border: 1px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 1.1em;
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5em;
+            font-weight: 800;
+            color: #3498db;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .stat-card.total-students .stat-value { color: #2ecc71; }
+        .stat-card.avg-grade .stat-value { color: #f39c12; }
+        .stat-card.high-grade .stat-value { color: #e74c3c; }
+        .stat-card.low-grade .stat-value { color: #9b59b6; }
+
+
+        /* Student Performance Section */
+        .student-performance {
+            background-color: #f9fbfd;
+            border: 1px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .student-performance h2 {
+            font-size: 1.8em;
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            margin-bottom: 25px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-bar input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .search-bar input[type="text"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto; /* Ensures table is scrollable on small screens */
+            -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+        }
+
+        .student-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            margin-top: 15px;
+        }
+
+        .student-table th,
+        .student-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .student-table th {
+            background-color: #f2f4f7;
+            color: #555;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+
+        .student-table tr:nth-child(even) {
+            background-color: #fcfcfc;
+        }
+
+        .student-table tr:hover {
+            background-color: #f5f5f5;
+            cursor: pointer;
+        }
+
+        .student-table td {
+            font-size: 0.95em;
+            color: #444;
+        }
+
+        .status-pass {
+            color: #27ae60; /* Green for pass */
+            font-weight: 600;
+        }
+
+        .status-fail {
+            color: #e74c3c; /* Red for fail */
+            font-weight: 600;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                margin: 20px;
+                padding: 15px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 2em;
+            }
+
+            .dashboard-header p {
+                font-size: 0.9em;
+            }
+
+            .stats-overview {
+                grid-template-columns: 1fr; /* Stack cards vertically */
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-card .stat-value {
+                font-size: 2em;
+            }
+
+            .student-performance {
+                padding: 20px;
+            }
+
+            .student-performance h2 {
+                font-size: 1.5em;
+            }
+
+            .search-bar {
+                flex-direction: column; /* Stack search input and button if any */
+            }
+
+            .search-bar input[type="text"] {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .student-table th,
+            .student-table td {
+                padding: 10px;
+                font-size: 0.85em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container {
+                margin: 15px;
+                padding: 10px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 1.8em;
+            }
+            .stat-card .stat-value {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Student Performance Dashboard</h1>
+            <p>Overview of academic grades and attendance for the current semester.</p>
+        </header>
+
+        <section class="stats-overview">
+            <div class="stat-card total-students">
+                <h3>Total Students</h3>
+                <p id="totalStudents" class="stat-value">0</p>
+            </div>
+            <div class="stat-card avg-grade">
+                <h3>Overall Average Grade</h3>
+                <p id="overallAverageGrade" class="stat-value">N/A</p>
+            </div>
+            <div class="stat-card high-grade">
+                <h3>Highest Average Grade</h3>
+                <p id="highestAverageGrade" class="stat-value">N/A</p>
+            </div>
+            <div class="stat-card low-grade">
+                <h3>Lowest Average Grade</h3>
+                <p id="lowestAverageGrade" class="stat-value">N/A</p>
+            </div>
+        </section>
+
+        <section class="student-performance">
+            <h2>Student Details</h2>
+            <div class="search-bar">
+                <input type="text" id="studentSearch" placeholder="Search by name or major..." onkeyup="filterStudents()">
+            </div>
+            <div class="table-container">
+                <table class="student-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Major</th>
+                            <th>Average Grade</th>
+                            <th>Status</th>
+                            <th>Attendance (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody">
+                        <!-- Student data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Fake data for students
+        const studentsData = [
+            {
+                id: 'S001',
+                name: 'Alice Smith',
+                major: 'Computer Science',
+                grades: { Math: 92, Physics: 88, Programming: 95, English: 85 },
+                attendance: 95
+            },
+            {
+                id: 'S002',
+                name: 'Bob Johnson',
+                major: 'Mechanical Engineering',
+                grades: { Math: 78, Physics: 82, Design: 75, English: 70 },
+                attendance: 88
+            },
+            {
+                id: 'S003',
+                name: 'Charlie Brown',
+                major: 'Business Administration',
+                grades: { Economics: 90, Marketing: 85, Accounting: 92, Ethics: 88 },
+                attendance: 98
+            },
+            {
+                id: 'S004',
+                name: 'Diana Prince',
+                major: 'Data Science',
+                grades: { Statistics: 94, Python: 90, MachineLearning: 93, Database: 89 },
+                attendance: 96
+            },
+            {
+                id: 'S005',
+                name: 'Ethan Hunt',
+                major: 'Architecture',
+                grades: { Drawing: 85, History: 79, Structures: 82, CAD: 91 },
+                attendance: 90
+            },
+            {
+                id: 'S006',
+                name: 'Fiona Gallagher',
+                major: 'Psychology',
+                grades: { ResearchMethods: 88, ClinicalPsych: 91, SocialPsych: 87, Statistics: 80 },
+                attendance: 92
+            },
+            {
+                id: 'S007',
+                name: 'George Weasley',
+                major: 'Computer Science',
+                grades: { Math: 70, Physics: 75, Programming: 80, English: 65 },
+                attendance: 80
+            },
+            {
+                id: 'S008',
+                name: 'Hannah Montana',
+                major: 'Business Administration',
+                grades: { Economics: 82, Marketing: 78, Accounting: 85, Ethics: 80 },
+                attendance: 91
+            },
+            {
+                id: 'S009',
+                name: 'Ivan Petrov',
+                major: 'Electrical Engineering',
+                grades: { Circuits: 89, ControlSystems: 85, DigitalLogic: 91, Thermodynamics: 78 },
+                attendance: 93
+            },
+            {
+                id: 'S010',
+                name: 'Jessica Alba',
+                major: 'Fine Arts',
+                grades: { Painting: 95, Sculpture: 90, ArtHistory: 88, Photography: 92 },
+                attendance: 97
+            }
+        ];
+
+        /**
+         * Calculates the average grade for a given student's grades object.
+         * @param {object} grades - An object where keys are subject names and values are scores.
+         * @returns {number} The average grade, rounded to two decimal places.
+         */
+        function calculateAverage(grades) {
+            const gradeValues = Object.values(grades);
+            if (gradeValues.length === 0) {
+                return 0;
+            }
+            const sum = gradeValues.reduce((acc, grade) => acc + grade, 0);
+            return parseFloat((sum / gradeValues.length).toFixed(2));
+        }
+
+        /**
+         * Determines the academic status (Pass/Fail) based on the average grade.
+         * A passing grade is considered 75 or above.
+         * @param {number} averageGrade - The student's average grade.
+         * @returns {string} 'Pass' or 'Fail'.
+         */
+        function getGradeStatus(averageGrade) {
+            return averageGrade >= 75 ? 'Pass' : 'Fail';
+        }
+
+        /**
+         * Renders the overall statistics section of the dashboard.
+         * @param {Array<object>} data - The array of student data.
+         */
+        function renderStats(data) {
+            document.getElementById('totalStudents').textContent = data.length;
+
+            if (data.length === 0) {
+                document.getElementById('overallAverageGrade').textContent = 'N/A';
+                document.getElementById('highestAverageGrade').textContent = 'N/A';
+                document.getElementById('lowestAverageGrade').textContent = 'N/A';
+                return;
+            }
+
+            const allAverages = data.map(student => calculateAverage(student.grades));
+            
+            const overallAvg = parseFloat((allAverages.reduce((sum, avg) => sum + avg, 0) / allAverages.length).toFixed(2));
+            document.getElementById('overallAverageGrade').textContent = overallAvg + '%';
+
+            const highestAvg = Math.max(...allAverages);
+            document.getElementById('highestAverageGrade').textContent = highestAvg + '%';
+
+            const lowestAvg = Math.min(...allAverages);
+            document.getElementById('lowestAverageGrade').textContent = lowestAvg + '%';
+        }
+
+        /**
+         * Renders the student details table with the given student data.
+         * @param {Array<object>} data - The array of student data to display in the table.
+         */
+        function renderStudentsTable(data) {
+            const tableBody = document.getElementById('studentTableBody');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            if (data.length === 0) {
+                const noDataRow = document.createElement('tr');
+                noDataRow.innerHTML = `<td colspan="6" style="text-align: center; padding: 20px;">No students found matching your search.</td>`;
+                tableBody.appendChild(noDataRow);
+                return;
+            }
+
+            data.forEach(student => {
+                const averageGrade = calculateAverage(student.grades);
+                const status = getGradeStatus(averageGrade);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.id}</td>
+                    <td>${student.name}</td>
+                    <td>${student.major}</td>
+                    <td>${averageGrade}%</td>
+                    <td class="${status === 'Pass' ? 'status-pass' : 'status-fail'}">${status}</td>
+                    <td>${student.attendance}%</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Filters the student data based on the search input value
+         * and re-renders the student table.
+         */
+        function filterStudents() {
+            const searchTerm = document.getElementById('studentSearch').value.toLowerCase();
+            const filteredData = studentsData.filter(student =>
+                student.name.toLowerCase().includes(searchTerm) ||
+                student.major.toLowerCase().includes(searchTerm)
+            );
+            renderStudentsTable(filteredData);
+        }
+
+        /**
+         * Initializes the dashboard by rendering all sections with the initial data.
+         */
+        function initDashboard() {
+            renderStats(studentsData);
+            renderStudentsTable(studentsData);
+        }
+
+        // Run the initialization function when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>
