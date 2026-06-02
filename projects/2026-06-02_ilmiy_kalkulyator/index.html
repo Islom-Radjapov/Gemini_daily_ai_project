@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ilmiy Kalkulyator</title>
+    <style>
+        /* General styling for the body */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a3a, #2a3a4a); /* Dark gradient background */
+            margin: 0;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        /* Calculator container */
+        .calculator-container {
+            background-color: #282c34; /* Darker background for the calculator */
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Deep shadow */
+            padding: 25px;
+            max-width: 380px; /* Fixed width for better control */
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Display area */
+        .calculator-display {
+            margin-bottom: 20px;
+            background-color: #1c1f24; /* Even darker for display */
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #display {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-size: 2.8em; /* Larger font for readability */
+            text-align: right;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none;
+            caret-color: transparent; /* Hide caret */
+            white-space: nowrap;
+            overflow-x: auto; /* Enable horizontal scrolling for long expressions */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Hide scrollbar for display */
+        #display::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Buttons grid */
+        .calculator-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 5 columns for scientific layout */
+            gap: 12px;
+        }
+
+        .button {
+            width: 100%;
+            height: 60px; /* Uniform button height */
+            border: none;
+            border-radius: 10px;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #3a404b; /* Default button color */
+            color: #e0e0e0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Number buttons */
+        .button.number {
+            background-color: #4a515c;
+        }
+        .button.number:hover {
+            background-color: #5a626e;
+        }
+
+        /* Operator buttons */
+        .button.operator {
+            background-color: #f7931b; /* Orange color for operators */
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .button.operator:hover {
+            background-color: #ffaa33;
+        }
+
+        /* Special function buttons (e.g., sin, cos, tan) */
+        .button.function {
+            background-color: #5b6272;
+            font-size: 1.1em;
+        }
+        .button.function:hover {
+            background-color: #6c7585;
+        }
+
+        /* Clear and delete buttons */
+        .button.clear {
+            background-color: #d63031; /* Red for clear */
+        }
+        .button.clear:hover {
+            background-color: #e55039;
+        }
+        .button.delete {
+            background-color: #a29bfe; /* Purple for delete */
+        }
+        .button.delete:hover {
+            background-color: #c0b9fa;
+        }
+
+        /* Equals button */
+        .button.equals {
+            background-color: #2ecc71; /* Green for equals */
+            grid-column: span 2; /* Make equals button span 2 columns */
+            font-size: 1.8em;
+        }
+        .button.equals:hover {
+            background-color: #34d383;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="calculator-display">
+            <input type="text" id="display" value="" readonly>
+        </div>
+        <div class="calculator-buttons">
+            <button class="button function" data-value="sin">sin</button>
+            <button class="button function" data-value="cos">cos</button>
+            <button class="button function" data-value="tan">tan</button>
+            <button class="button function" data-value="log">log</button>
+            <button class="button function" data-value="ln">ln</button>
+
+            <button class="button clear" data-value="AC">AC</button>
+            <button class="button delete" data-value="DEL">DEL</button>
+            <button class="button operator" data-value="%">%</button>
+            <button class="button operator" data-value="^">x<sup>y</sup></button>
+            <button class="button function" data-value="sqrt">√</button>
+            
+            <button class="button number" data-value="7">7</button>
+            <button class="button number" data-value="8">8</button>
+            <button class="button number" data-value="9">9</button>
+            <button class="button operator" data-value="x">x</button>
+            <button class="button function" data-value="pi">π</button>
+
+            <button class="button number" data-value="4">4</button>
+            <button class="button number" data-value="5">5</button>
+            <button class="button number" data-value="6">6</button>
+            <button class="button operator" data-value="-">-</button>
+            <button class="button function" data-value="e">e</button>
+
+            <button class="button number" data-value="1">1</button>
+            <button class="button number" data-value="2">2</button>
+            <button class="button number" data-value="3">3</button>
+            <button class="button operator" data-value="+">+</button>
+            <button class="button function" data-value="e^">e^x</button>
+            
+            <button class="button operator" data-value="(">(</button>
+            <button class="button number" data-value="0">0</button>
+            <button class="button operator" data-value=")">)</button>
+            <button class="button operator" data-value=".">.</button>
+            <button class="button function" data-value="!">n!</button>
+
+            <button class="button special" data-value="+/-">+/-</button>
+            <button class="button operator" data-value="÷">÷</button>
+            <button class="button equals" data-value="=">=</button>
+        </div>
+    </div>
+
+    <script>
+        // Get the display input element
+        const display = document.getElementById('display');
+        // Store the current expression being built by the user
+        let currentExpression = '';
+        // Flag to indicate if the last operation was an equals sign,
+        // so the next number input clears the display
+        let shouldClearOnNextInput = false;
+
+        /**
+         * Custom factorial function, as Math object does not have it.
+         * @param {number} n - The number to calculate factorial for.
+         * @returns {number} The factorial of n.
+         */
+        function factorial(n) {
+            // Factorial is not defined for negative numbers
+            if (n < 0) {
+                return NaN;
+            }
+            // Base cases for factorial
+            if (n === 0 || n === 1) {
+                return 1;
+            }
+            // Max value for standard JS numbers before becoming Infinity
+            if (n > 170) {
+                return Infinity;
+            }
+            let res = 1;
+            for (let i = 2; i <= n; i++) {
+                res *= i;
+            }
+            return res;
+        }
+
+        /**
+         * Appends a character or number to the current expression.
+         * Handles clearing the display if a number is entered after '='.
+         * @param {string} char - The character/number to append.
+         */
+        function appendChar(char) {
+            if (shouldClearOnNextInput && isNumberOrDecimal(char)) {
+                currentExpression = '';
+                shouldClearOnNextInput = false;
+            } else if (shouldClearOnNextInput && isOperator(char)) {
+                // If an operator is pressed after '=', continue with the result
+                shouldClearOnNextInput = false;
+            } else if (shouldClearOnNextInput && isFunction(char)) {
+                 currentExpression = String(eval(currentExpression)) || '0'; // Use the result as the base for the function
+                 shouldClearOnNextInput = false;
+            }
+
+            // Prevent multiple leading zeros unless it's "0."
+            if (currentExpression === '0' && char !== '.' && isNumber(char)) {
+                currentExpression = char;
+            } else {
+                currentExpression += char;
+            }
+            display.value = currentExpression;
+        }
+
+        /**
+         * Checks if a character is a number (0-9).
+         * @param {string} char - The character to check.
+         * @returns {boolean} True if it's a number, false otherwise.
+         */
+        function isNumber(char) {
+            return /[0-9]/.test(char);
+        }
+
+        /**
+         * Checks if a character is a number or a decimal point.
+         * @param {string} char - The character to check.
+         * @returns {boolean} True if it's a number or decimal, false otherwise.
+         */
+        function isNumberOrDecimal(char) {
+            return isNumber(char) || char === '.';
+        }
+
+        /**
+         * Checks if a character is an operator (+, -, x, ÷, %, ^).
+         * @param {string} char - The character to check.
+         * @returns {boolean} True if it's an operator, false otherwise.
+         */
+        function isOperator(char) {
+            return ['+', '-', 'x', '÷', '%', '^'].includes(char);
+        }
+
+         /**
+         * Checks if a string represents a scientific function name.
+         * @param {string} char - The string to check.
+         * @returns {boolean} True if it's a function name, false otherwise.
+         */
+        function isFunction(char) {
+            return ['sin', 'cos', 'tan', 'log', 'ln', 'sqrt', 'e^', '!', 'pi', 'e'].includes(char);
+        }
+
+        /**
+         * Clears the entire display and resets the expression.
+         */
+        function clearDisplay() {
+            currentExpression = '';
+            display.value = '';
+            shouldClearOnNextInput = false;
+        }
+
+        /**
+         * Deletes the last character from the current expression.
+         * Handles special cases for function names like 'sin(', 'log(', etc.
+         */
+        function deleteLast() {
+            if (currentExpression.endsWith('sin(') || currentExpression.endsWith('cos(') ||
+                currentExpression.endsWith('tan(') || currentExpression.endsWith('log(') ||
+                currentExpression.endsWith('ln(') || currentExpression.endsWith('sqrt(') ||
+                currentExpression.endsWith('e^(')) {
+                currentExpression = currentExpression.slice(0, -4); // Remove 'func('
+            } else if (currentExpression.endsWith('pi')) {
+                 currentExpression = currentExpression.slice(0, -2); // Remove 'pi'
+            } else if (currentExpression.endsWith('e')) {
+                 currentExpression = currentExpression.slice(0, -1); // Remove 'e'
+            } else if (currentExpression.endsWith('!')) {
+                // Find the number before '!'
+                const match = currentExpression.match(/(\d+\.?\d*|\.\d+)!\s*$/);
+                if (match) {
+                    currentExpression = currentExpression.slice(0, -match[0].length);
+                } else {
+                     currentExpression = currentExpression.slice(0, -1);
+                }
+            } else {
+                currentExpression = currentExpression.slice(0, -1);
+            }
+            display.value = currentExpression;
+            shouldClearOnNextInput = false;
+        }
+
+        /**
+         * Toggles the sign of the last number in the expression.
+         */
+        function toggleSign() {
+            // Regex to find the last number (integer, float, or scientific notation)
+            // It also handles cases where a number is inside parentheses for a function like Math.sin(-5)
+            const match = currentExpression.match(/(?:^|\D)(?<number>-?\d+\.?\d*(?:e[+\-]?\d+)?)\s*$/);
+
+            if (match && match.groups.number) {
+                const lastNumber = parseFloat(match.groups.number);
+                const newNumber = -lastNumber;
+                // Replace the last number in the expression with its negated version
+                currentExpression = currentExpression.slice(0, -match.groups.number.length) + newNumber;
+            } else if (currentExpression === '' || isOperator(currentExpression.slice(-1))) {
+                // If expression is empty or ends with operator, allow starting with '-'
+                currentExpression += '-';
+            } else if (currentExpression.match(/-?\d+\.?\d*(?:e[+\-]?\d+)?/)) {
+                 // If the entire expression is a number, toggle its sign
+                const num = parseFloat(currentExpression);
+                currentExpression = String(-num);
+            }
+            display.value = currentExpression;
+            shouldClearOnNextInput = false;
+        }
+
+        /**
+         * Applies a scientific function to the expression.
+         * For functions requiring an argument, it adds func( to the display.
+         * For constants, it adds the constant value.
+         * @param {string} funcName - Name of the function (e.g., 'sin', 'log', 'pi').
+         */
+        function applyFunction(funcName) {
+            if (shouldClearOnNextInput) {
+                // If a function is applied after '=', the result becomes the operand
+                currentExpression = String(display.value);
+                shouldClearOnNextInput = false;
+            }
+
+            if (funcName === 'pi') {
+                currentExpression += 'π';
+            } else if (funcName === 'e') {
+                currentExpression += 'e';
+            } else if (funcName === '!') {
+                // Append '!' to the last number in the expression
+                const lastNumMatch = currentExpression.match(/(\d+\.?\d*|\.\d+)$/);
+                if (lastNumMatch) {
+                    currentExpression += '!';
+                } else {
+                    // If no number to apply factorial to, might be an error or ignore
+                    // For simplicity, if display is empty, just show '0!' for now
+                    if (currentExpression === '') {
+                        currentExpression = '0!';
+                    }
+                }
+            } else if (funcName === 'e^') {
+                // Special handling for e^x, will transform to Math.exp()
+                currentExpression += 'e^(';
+            }
+            else {
+                currentExpression += funcName + '(';
+            }
+            display.value = currentExpression;
+        }
+
+        /**
+         * Evaluates the current mathematical expression.
+         * Handles various conversions for Math functions, constants, and operators.
+         */
+        function calculate() {
+            if (currentExpression === '') {
+                display.value = '';
+                return;
+            }
+
+            let mathExpression = currentExpression;
+
+            // Step 1: Handle constants and special function display names
+            mathExpression = mathExpression.replace(/π/g, 'Math.PI');
+            mathExpression = mathExpression.replace(/e(?![\d\.])/g, 'Math.E'); // 'e' not followed by digit/dot for actual constant 'e'
+
+            // Step 2: Handle factorial (must be before other replacements like `^` to `**`)
+            mathExpression = mathExpression.replace(/(\d+\.?\d*|\.\d+)!/g, (match, num) => {
+                // Make sure factorial function is accessible
+                return `factorial(${num})`;
+            });
+
+            // Step 3: Replace user-friendly operators with JavaScript equivalents
+            mathExpression = mathExpression.replace(/x/g, '*');
+            mathExpression = mathExpression.replace(/÷/g, '/');
+            mathExpression = mathExpression.replace(/\^/g, '**'); // Power operator
+
+            // Step 4: Replace scientific functions with Math object methods
+            mathExpression = mathExpression.replace(/sin\(/g, 'Math.sin(');
+            mathExpression = mathExpression.replace(/cos\(/g, 'Math.cos(');
+            mathExpression = mathExpression.replace(/tan\(/g, 'Math.tan(');
+            mathExpression = mathExpression.replace(/log\(/g, 'Math.log10('); // Base 10 logarithm
+            mathExpression = mathExpression.replace(/ln\(/g, 'Math.log(');    // Natural logarithm
+            mathExpression = mathExpression.replace(/sqrt\(/g, 'Math.sqrt(');
+            mathExpression = mathExpression.replace(/e\^\(/g, 'Math.exp('); // e^x function
+
+            // Basic validation for common issues to prevent eval errors
+            // Add '*' before '(' if not an operator or function, e.g., '2(3+1)' -> '2*(3+1)'
+            mathExpression = mathExpression.replace(/(\d+(\.\d+)?|\))([A-Za-z]|π|e|\()/g, (match, p1, p2, p3) => {
+                if (p3 === '(' && !p1.match(/sin|cos|tan|log|ln|sqrt|exp$/)) { // Don't add * for func(
+                    return p1 + '*' + p3;
+                }
+                return match;
+            });
+             // Add '*' between numbers and constants, e.g., '2π' -> '2*Math.PI'
+            mathExpression = mathExpression.replace(/(\d+\.?\d*|\))([πe])/g, (match, p1, p2) => {
+                return p1 + '*' + (p2 === 'π' ? 'Math.PI' : 'Math.E');
+            });
+
+
+            try {
+                // Ensure all factorial calls are properly evaluated
+                // Using a regex to find all factorial calls in the string before final eval
+                mathExpression = mathExpression.replace(/factorial\((\d+\.?\d*|\.\d+)\)/g, (match, num) => {
+                    const val = parseFloat(num);
+                    if (isNaN(val)) throw new Error('Invalid number for factorial');
+                    return factorial(val);
+                });
+
+                let result = eval(mathExpression);
+                if (isNaN(result) || !isFinite(result)) {
+                    throw new Error('Invalid calculation');
+                }
+
+                display.value = result;
+                currentExpression = String(result); // Set result as new expression for chaining
+                shouldClearOnNextInput = true; // Clear if new number is typed
+            } catch (error) {
+                display.value = 'Error';
+                currentExpression = ''; // Reset expression on error
+                shouldClearOnNextInput = false;
+                console.error('Calculation error:', error);
+            }
+        }
+
+        // Add event listeners to all calculator buttons
+        document.querySelectorAll('.button').forEach(button => {
+            button.addEventListener('click', () => {
+                const value = button.dataset.value;
+
+                switch (value) {
+                    case 'AC':
+                        clearDisplay();
+                        break;
+                    case 'DEL':
+                        deleteLast();
+                        break;
+                    case '=':
+                        calculate();
+                        break;
+                    case '+/-':
+                        toggleSign();
+                        break;
+                    case 'sin':
+                    case 'cos':
+                    case 'tan':
+                    case 'log':
+                    case 'ln':
+                    case 'sqrt':
+                    case 'pi':
+                    case 'e':
+                    case 'e^':
+                    case '!':
+                        applyFunction(value);
+                        break;
+                    default:
+                        // For numbers, operators, and parentheses
+                        appendChar(value);
+                        break;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
