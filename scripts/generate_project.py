@@ -4,7 +4,6 @@
 Gemini API orqali har kuni kichik to'liq loyiha yaratadi.
 Har safar tasodifiy turdagi loyiha tanlanadi.
 """
-
 import os
 import re
 import json
@@ -12,16 +11,14 @@ import random
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-
 from google import genai
-
 # ============================================================
 # Sozlamalar
 # ============================================================
-
 MODEL_NAME = "gemini-2.5-flash"
-
 # Loyiha turlari ro'yxati
+# Tarix faylining joylashuvi
+HISTORY_FILE = Path(__file__).parent.parent / "projects" / "history.json"
 PROJECT_TYPES = [
     {
         "type": "web_page",
@@ -33,6 +30,9 @@ PROJECT_TYPES = [
             "Blog sahifa", "Restoran menyusi", "Ob-havo ko'rsatish sahifasi",
             "Countdown timer sahifa", "Parallax scroll sahifa",
             "Fotosuratlar galereyasi", "Interaktiv xarita sahifasi",
+            "Muzika pleyer interfeysi", "Ijtimoiy tarmoq profil sahifasi",
+            "Onlayn rezume/CV sahifa", "Kitob do'koni sahifasi",
+            "Film afisha sahifasi",
         ]
     },
     {
@@ -45,6 +45,9 @@ PROJECT_TYPES = [
             "Matn statistikasi", "Valyuta konvertori", "Tasodifiy iqtibos generatori",
             "Katalog daraxtini chizuvchi", "Oddiy shifrlash dasturi",
             "Markdown dan HTML ga konvertor", "Kontakt daftarchasi",
+            "Hangman o'yini (terminal)", "Sudoku yechuvchi",
+            "Pomodoro taymer", "Matn shablonlar generatori",
+            "Oddiy chat bot (terminal)",
         ]
     },
     {
@@ -56,7 +59,9 @@ PROJECT_TYPES = [
             "Snake o'yini", "Pong o'yini", "Flappy Bird kloni",
             "Asteroid o'yini", "Breakout o'yini", "Memory card o'yini",
             "Tetris kloni", "Space shooter", "Maze o'yini",
-            "Whack-a-mole o'yini",
+            "Whack-a-mole o'yini", "2048 o'yini", "Tic-tac-toe o'yini",
+            "Platformer o'yini", "Color match o'yini",
+            "Typing speed o'yini",
         ]
     },
     {
@@ -69,6 +74,9 @@ PROJECT_TYPES = [
             "Foiz kalkulyatori", "Valyuta konvertori", "Uzunlik konvertori",
             "Vaqt zonasi konvertori", "Rang konvertori (HEX/RGB/HSL)",
             "Kredit kalkulyatori", "Ip subnet kalkulyatori",
+            "Temperatura konvertori", "Tezlik konvertori",
+            "Masofa kalkulyatori", "Kaloriya kalkulyatori",
+            "Chegirma kalkulyatori",
         ]
     },
     {
@@ -81,7 +89,9 @@ PROJECT_TYPES = [
             "Bubble chart", "Dunyoning aholisi statistikasi",
             "Soat vizualizatsiyasi", "Audio vizualizer",
             "Sorting algoritm vizualizatsiyasi", "Fraktal generatori",
-            "Daraxt vizualizatsiyasi",
+            "Daraxt vizualizatsiyasi", "Radar chart",
+            "Heatmap vizualizatsiya", "Sankey diagramma",
+            "Gauge chart", "Treemap vizualizatsiya",
         ]
     },
     {
@@ -95,6 +105,9 @@ PROJECT_TYPES = [
             "Yulduzli osmon animatsiyasi", "Yomg'ir animatsiyasi",
             "Neon matn effekti", "Animatsiyali tugmalar kolleksiyasi",
             "CSS particle effekti", "Animatsiyali soat",
+            "Hover effektlar kolleksiyasi", "CSS wave animatsiya",
+            "Glitch text effekti", "Morphing shakllar",
+            "Animatsiyali progress bar",
         ]
     },
     {
@@ -108,6 +121,9 @@ PROJECT_TYPES = [
             "Fan va texnologiya testi", "Til bilish testi",
             "Mantiqiy savolar", "Bayroqlarni top o'yini",
             "Poytaxtlarni top", "Umumiy bilim testi",
+            "Emoji viktorinasi", "Musiqa viktorinasi",
+            "Kosmik viktorina", "Sport viktorinasi",
+            "Hayvonlar viktorinasi",
         ]
     },
     {
@@ -121,6 +137,9 @@ PROJECT_TYPES = [
             "Fayl dublikatlarini topuvchi", "QR kod generatori (ASCII)",
             "Cron ifodalarini tushuntiruvchi", "Git log statistikasi",
             "Regex tester", "Oddiy unit test framework",
+            "YAML parser", "INI config boshqaruvchi",
+            "Port scanner", "URL qisqartiruvchi",
+            "Matn diff vositasi",
         ]
     },
     {
@@ -133,7 +152,9 @@ PROJECT_TYPES = [
             "Sichqoncha izlovchi particles", "Rangli to'lqinlar",
             "Kaleidoskop", "Fireworks simulyatsiyasi",
             "Lava lampa effekti", "Suyuqlik simulyatsiyasi",
-            "Rangli dumaloqlar fizikasi",
+            "Rangli dumaloqlar fizikasi", "Perlin noise landshaft",
+            "Spirograph chizuvchi", "Raindrop ripple effekti",
+            "Neon chizish doskasi", "Galaxy simulyatsiyasi",
         ]
     },
     {
@@ -147,14 +168,75 @@ PROJECT_TYPES = [
             "Loyiha boshqaruv paneli", "Server monitoring panel",
             "Ijtimoiy tarmoq statistikasi", "Savdo dashboard",
             "Energiya iste'moli paneli", "Talabalar baholash paneli",
+            "Kripto valyuta tracker", "COVID statistika paneli",
+            "HR dashboard", "IoT qurilmalar paneli",
+            "Marketing analitika paneli",
         ]
     },
 ]
-
+# ============================================================
+# Tarix (History) tizimi — takroriy loyihalarni oldini olish
+# ============================================================
+def load_history():
+    """Avval yaratilgan loyihalar tarixini yuklash."""
+    if HISTORY_FILE.exists():
+        try:
+            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"generated": []}
+    return {"generated": []}
+def save_history(history):
+    """Tarixni faylga saqlash."""
+    HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+def get_all_examples():
+    """Barcha loyiha misollarining to'liq ro'yxatini olish."""
+    all_examples = []
+    for pt in PROJECT_TYPES:
+        for ex in pt["examples"]:
+            all_examples.append(f"{pt['type']}::{ex}")
+    return all_examples
+def choose_unique_project(history):
+    """Avval yaratilmagan loyihani tanlash.
+    
+    Agar barcha misollar tugab qolsa, tarixni tozalab boshidan boshlaydi.
+    """
+    generated_set = set(history.get("generated", []))
+    all_examples = get_all_examples()
+    
+    # Hali yaratilmagan misollarni topish
+    remaining = [ex for ex in all_examples if ex not in generated_set]
+    
+    if not remaining:
+        # Barcha misollar yaratilgan — tarixni tozalash va boshidan boshlash
+        print("\n🔄 Barcha loyiha misollar yaratilgan! Tarix tozalanmoqda...")
+        print(f"   Jami yaratilgan: {len(generated_set)} ta loyiha")
+        history["generated"] = []
+        save_history(history)
+        remaining = all_examples
+    
+    # Qolgan misollardan tasodifiy tanlash
+    chosen = random.choice(remaining)
+    type_key, example_name = chosen.split("::", 1)
+    
+    # Tanlangan turni topish
+    project_type = None
+    for pt in PROJECT_TYPES:
+        if pt["type"] == type_key:
+            project_type = pt
+            break
+    
+    print(f"\n📊 Tarix statistikasi:")
+    print(f"   Yaratilgan: {len(generated_set)} ta")
+    print(f"   Qolgan:     {len(remaining)} ta")
+    print(f"   Jami:       {len(all_examples)} ta")
+    
+    return project_type, example_name, chosen
 # ============================================================
 # Gemini bilan ishlash
 # ============================================================
-
 def get_gemini_client():
     """Gemini API klientini yaratish."""
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -164,47 +246,34 @@ def get_gemini_client():
         sys.exit(1)
     
     return genai.Client(api_key=api_key)
-
-
-def generate_project_with_gemini(client, project_type_info):
+def generate_project_with_gemini(client, project_type_info, example):
     """Gemini orqali loyiha kodini generatsiya qilish."""
     
-    # Tasodifiy misol tanlash
-    example = random.choice(project_type_info["examples"])
-    
     prompt = f"""Sen tajribali dasturchi yordamchisan. Menga kichik lekin TO'LIQ ishlaydigan loyiha yarat.
-
 ## Loyiha turi: {project_type_info["name"]}
 ## Aniq loyiha: {example}
 ## Tavsif: {project_type_info["description"]}
-
 ## Muhim qoidalar:
 1. Loyiha TO'LIQ ishlaydigan bo'lishi SHART. Hech qanday placeholder yoki TODO qoldirma.
 2. Kod sifatli, chiroyli va professional bo'lsin.
 3. Har bir faylni quyidagi formatda ber:
-
 ```filename:fayl_nomi.ext
 fayl tarkibi shu yerda
 ```
-
 4. Albatta README.md fayl ham ber, unda:
    - Loyiha nomi va tavsifi
    - Qanday ishga tushirish mumkinligi
    - Xususiyatlar ro'yxati
-
 5. Agar HTML loyiha bo'lsa, barcha CSS va JavaScript bitta HTML faylda bo'lsin (inline).
 6. Agar Python loyiha bo'lsa, faqat standart kutubxonalardan foydalan.
 7. Dizayn chiroyli, zamonaviy va professional bo'lsin.
 8. Izohlar (comments) ingliz tilida bo'lsin.
 9. Kodni to'liq yoz, hech narsani qisqartirma.
-
 ## Fayl nomlari qoidalari:
 - Bo'shliqlar o'rniga pastki chiziq (_) ishlat
 - Faqat kichik harflar
 - Loyiha nomi bilan bog'liq bo'lsin
-
 Hozir {example} loyihasini to'liq yarat!"""
-
     print(f"🤖 Gemini dan '{example}' loyihasini so'ramoqdaman...")
     
     try:
@@ -223,12 +292,9 @@ Hozir {example} loyihasini to'liq yarat!"""
     except Exception as e:
         print(f"❌ Gemini xatosi: {e}")
         return None, example
-
-
 # ============================================================
 # Fayllarni ajratib olish
 # ============================================================
-
 def extract_files(response_text):
     """Gemini javobidan fayllarni ajratib olish.
     
@@ -303,12 +369,9 @@ def extract_files(response_text):
             files[filename] = content
     
     return files
-
-
 # ============================================================
 # Loyihani saqlash
 # ============================================================
-
 def create_project_directory(files, project_name, project_type_info, example_name):
     """Loyiha fayllarini saqlash."""
     
@@ -350,15 +413,11 @@ def create_project_directory(files, project_name, project_type_info, example_nam
     readme_exists = any('readme' in f.lower() for f in saved_files)
     if not readme_exists:
         readme_content = f"""# {example_name}
-
 > 🤖 Bu loyiha Gemini AI tomonidan avtomatik yaratilgan
-
 ## Loyiha turi
 {project_type_info["name"]}
-
 ## Yaratilgan sana
 {today}
-
 ## Teglar
 {', '.join(f'`{tag}`' for tag in project_type_info["tags"])}
 """
@@ -369,12 +428,9 @@ def create_project_directory(files, project_name, project_type_info, example_nam
         print(f"  ✅ README.md saqlandi (avtomatik)")
     
     return projects_dir, saved_files
-
-
 # ============================================================
 # Asosiy funksiya
 # ============================================================
-
 def main():
     """Asosiy ishga tushirish funksiyasi."""
     
@@ -391,21 +447,25 @@ def main():
         print("📅 Bugun yakshanba — dam olish kuni. Loyiha yaratilmaydi.")
         return
     
-    # 1. Tasodifiy loyiha turini tanlash
-    project_type = random.choice(PROJECT_TYPES)
-    print(f"\n🎯 Tanlangan tur: {project_type['name']}")
+    # 1. Tarixni yuklash
+    history = load_history()
     
-    # 2. Gemini klientini yaratish
+    # 2. Takrorlanmaydigan loyihani tanlash
+    project_type, example_name, history_key = choose_unique_project(history)
+    print(f"\n🎯 Tanlangan tur: {project_type['name']}")
+    print(f"📝 Loyiha: {example_name}")
+    
+    # 3. Gemini klientini yaratish
     client = get_gemini_client()
     
-    # 3. Loyiha generatsiya qilish
-    response_text, example_name = generate_project_with_gemini(client, project_type)
+    # 4. Loyiha generatsiya qilish
+    response_text, _ = generate_project_with_gemini(client, project_type, example_name)
     
     if not response_text:
         print("❌ Loyiha generatsiya qilib bo'lmadi. Keyingi safar urinib ko'riladi.")
         sys.exit(1)
     
-    # 4. Fayllarni ajratib olish
+    # 5. Fayllarni ajratib olish
     files = extract_files(response_text)
     
     if not files:
@@ -424,17 +484,21 @@ def main():
     for fname in files:
         print(f"   - {fname}")
     
-    # 5. Fayllarni saqlash
+    # 6. Fayllarni saqlash
     project_dir, saved_files = create_project_directory(
         files, example_name, project_type, example_name
     )
+    
+    # 7. Tarixga qo'shish (qayta generatsiya bo'lmasligi uchun)
+    history["generated"].append(history_key)
+    save_history(history)
+    print(f"\n📜 Tarixga yozildi: {history_key}")
     
     print(f"\n{'=' * 60}")
     print(f"✅ Loyiha muvaffaqiyatli yaratildi!")
     print(f"📁 Papka: {project_dir}")
     print(f"📄 Fayllar soni: {len(saved_files)}")
+    print(f"🔢 Jami yaratilgan: {len(history['generated'])} ta")
     print(f"{'=' * 60}")
-
-
 if __name__ == "__main__":
     main()
