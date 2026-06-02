@@ -96,7 +96,7 @@ cd Gemini_daily_ai_project
 
 MIT License — bemalol foydalaning!
 
-## 👤 Muallif
+## 🧔 Muallif
 
 **Islom Radjapov** — [GitHub](https://github.com/Islom-Radjapov)
 
