@@ -4,21 +4,28 @@
 Gemini API orqali har kuni kichik to'liq loyiha yaratadi.
 Har safar tasodifiy turdagi loyiha tanlanadi.
 """
+
 import os
 import re
 import json
 import random
 import sys
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+
 from google import genai
+
 # ============================================================
 # Sozlamalar
 # ============================================================
+
 MODEL_NAME = "gemini-2.5-flash"
+
 # Loyiha turlari ro'yxati
 # Tarix faylining joylashuvi
 HISTORY_FILE = Path(__file__).parent.parent / "projects" / "history.json"
+
 PROJECT_TYPES = [
     {
         "type": "web_page",
@@ -174,9 +181,12 @@ PROJECT_TYPES = [
         ]
     },
 ]
+
+
 # ============================================================
 # Tarix (History) tizimi — takroriy loyihalarni oldini olish
 # ============================================================
+
 def load_history():
     """Avval yaratilgan loyihalar tarixini yuklash."""
     if HISTORY_FILE.exists():
@@ -186,11 +196,15 @@ def load_history():
         except (json.JSONDecodeError, IOError):
             return {"generated": []}
     return {"generated": []}
+
+
 def save_history(history):
     """Tarixni faylga saqlash."""
     HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
+
+
 def get_all_examples():
     """Barcha loyiha misollarining to'liq ro'yxatini olish."""
     all_examples = []
@@ -198,6 +212,8 @@ def get_all_examples():
         for ex in pt["examples"]:
             all_examples.append(f"{pt['type']}::{ex}")
     return all_examples
+
+
 def choose_unique_project(history):
     """Avval yaratilmagan loyihani tanlash.
     
@@ -234,9 +250,11 @@ def choose_unique_project(history):
     print(f"   Jami:       {len(all_examples)} ta")
     
     return project_type, example_name, chosen
+
 # ============================================================
 # Gemini bilan ishlash
 # ============================================================
+
 def get_gemini_client():
     """Gemini API klientini yaratish."""
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -246,55 +264,77 @@ def get_gemini_client():
         sys.exit(1)
     
     return genai.Client(api_key=api_key)
+
+
 def generate_project_with_gemini(client, project_type_info, example):
     """Gemini orqali loyiha kodini generatsiya qilish."""
     
     prompt = f"""Sen tajribali dasturchi yordamchisan. Menga kichik lekin TO'LIQ ishlaydigan loyiha yarat.
+
 ## Loyiha turi: {project_type_info["name"]}
 ## Aniq loyiha: {example}
 ## Tavsif: {project_type_info["description"]}
+
 ## Muhim qoidalar:
 1. Loyiha TO'LIQ ishlaydigan bo'lishi SHART. Hech qanday placeholder yoki TODO qoldirma.
 2. Kod sifatli, chiroyli va professional bo'lsin.
 3. Har bir faylni quyidagi formatda ber:
+
 ```filename:fayl_nomi.ext
 fayl tarkibi shu yerda
 ```
+
 4. Albatta README.md fayl ham ber, unda:
    - Loyiha nomi va tavsifi
    - Qanday ishga tushirish mumkinligi
    - Xususiyatlar ro'yxati
+
 5. Agar HTML loyiha bo'lsa, barcha CSS va JavaScript bitta HTML faylda bo'lsin (inline).
 6. Agar Python loyiha bo'lsa, faqat standart kutubxonalardan foydalan.
 7. Dizayn chiroyli, zamonaviy va professional bo'lsin.
 8. Izohlar (comments) ingliz tilida bo'lsin.
 9. Kodni to'liq yoz, hech narsani qisqartirma.
+
 ## Fayl nomlari qoidalari:
 - Bo'shliqlar o'rniga pastki chiziq (_) ishlat
 - Faqat kichik harflar
 - Loyiha nomi bilan bog'liq bo'lsin
+
 Hozir {example} loyihasini to'liq yarat!"""
-    print(f"🤖 Gemini dan '{example}' loyihasini so'ramoqdaman...")
+
+    max_retries = 4
+    retry_delay = 10  # starting delay in seconds
     
-    try:
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt,
-        )
-        
-        if response.text:
-            print(f"✅ Gemini javob berdi! ({len(response.text)} belgi)")
-            return response.text, example
-        else:
-            print("❌ Gemini bo'sh javob qaytardi.")
-            return None, example
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = client.models.generate_content(
+                model=MODEL_NAME,
+                contents=prompt,
+            )
             
-    except Exception as e:
-        print(f"❌ Gemini xatosi: {e}")
-        return None, example
+            if response.text:
+                print(f"✅ Gemini javob berdi! ({len(response.text)} belgi)")
+                return response.text, example
+            else:
+                print(f"⚠️ Gemini bo'sh javob qaytardi. (Urinish {attempt}/{max_retries})")
+                
+        except Exception as e:
+            print(f"❌ Gemini xatosi (Urinish {attempt}/{max_retries}): {e}")
+            if attempt < max_retries:
+                # 503 yoki rate limit xatolarida kutib qayta urinish
+                print(f"⏳ {retry_delay} soniyadan so'ng qayta urinib ko'riladi...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Kutish vaqtini ko'paytirish (10s, 20s, 40s)
+            else:
+                print("❌ Barcha urinishlar tugadi. Gemini xizmati mavjud emas.")
+                
+    return None, example
+
+
 # ============================================================
 # Fayllarni ajratib olish
 # ============================================================
+
 def extract_files(response_text):
     """Gemini javobidan fayllarni ajratib olish.
     
@@ -369,9 +409,12 @@ def extract_files(response_text):
             files[filename] = content
     
     return files
+
+
 # ============================================================
 # Loyihani saqlash
 # ============================================================
+
 def create_project_directory(files, project_name, project_type_info, example_name):
     """Loyiha fayllarini saqlash."""
     
@@ -413,11 +456,15 @@ def create_project_directory(files, project_name, project_type_info, example_nam
     readme_exists = any('readme' in f.lower() for f in saved_files)
     if not readme_exists:
         readme_content = f"""# {example_name}
+
 > 🤖 Bu loyiha Gemini AI tomonidan avtomatik yaratilgan
+
 ## Loyiha turi
 {project_type_info["name"]}
+
 ## Yaratilgan sana
 {today}
+
 ## Teglar
 {', '.join(f'`{tag}`' for tag in project_type_info["tags"])}
 """
@@ -428,9 +475,12 @@ def create_project_directory(files, project_name, project_type_info, example_nam
         print(f"  ✅ README.md saqlandi (avtomatik)")
     
     return projects_dir, saved_files
+
+
 # ============================================================
 # Asosiy funksiya
 # ============================================================
+
 def main():
     """Asosiy ishga tushirish funksiyasi."""
     
@@ -500,5 +550,7 @@ def main():
     print(f"📄 Fayllar soni: {len(saved_files)}")
     print(f"🔢 Jami yaratilgan: {len(history['generated'])} ta")
     print(f"{'=' * 60}")
+
+
 if __name__ == "__main__":
     main()
