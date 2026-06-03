@@ -1,0 +1,61 @@
+# This is an example YAML file for `my_yaml_parser.py`.
+# It demonstrates various features supported by the parser.
+
+# Project metadata
+project_name: Awesome YAML Project
+version: 1.0.0
+release_date: 2023-10-27
+
+# Basic settings for the application
+settings:
+  debug_mode: true              # Boolean value (true, yes, on are supported)
+  log_level: INFO               # String value
+  max_connections: 100          # Integer value
+  server_port: 8080.5           # Float value
+  empty_setting:                # Key with an empty value (parsed as None)
+  null_value: ~                 # Explicit null value (parsed as None)
+  false_value: no               # Another way to represent False
+  pi_value: 3.14159             # Float value
+  quoted_string: "Hello, YAML!" # Double-quoted string
+  single_quoted: 'Another string' # Single-quoted string
+
+# List of application features (a sequence of mappings)
+features:
+  - name: Fast Parsing
+    description: Optimized for speed with standard libraries.
+    status: stable
+  - name: Flexible Data Types
+    status: beta
+  - Custom Error Handling      # A simple string item in the list
+  -                            # An empty list item (parsed as None)
+  -
+    nested_list_item:
+      key1: value1
+      key2: value2
+    another_property: true
+
+# Multi-line description using a literal block scalar
+description: |
+  This project demonstrates a simple YAML parser
+  implemented entirely with Python's standard library.
+  It supports basic YAML syntax, including nested
+  structures, various data types, and comments.
+
+  Key features:
+    - Mappings (dictionaries)
+    - Sequences (lists)
+    - Scalars (strings, numbers, booleans, null)
+    - Literal block scalars
+
+# Another mapping structure for authors
+authors:
+  - name: Your Name
+    email: your.email@example.com
+    role: Lead Developer
+  - name: AI Assistant
+    email: ai@example.com
+    role: Co-Creator
+    notes: |
+      Assisted in generating the parser logic
+      and project structure.
+      This note is also multi-line.
