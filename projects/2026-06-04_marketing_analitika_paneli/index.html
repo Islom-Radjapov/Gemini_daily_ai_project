@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Analytics Dashboard</title>
+    <!-- Chart.js library for interactive charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        /*
+         * Global Styles and Variables
+         * Defines basic typography, colors, and resets for a clean look.
+         */
+        :root {
+            --primary-color: #4A90E2; /* Blue */
+            --secondary-color: #50E3C2; /* Teal */
+            --accent-color: #F5A623; /* Orange */
+            --text-color: #333;
+            --light-text-color: #666;
+            --background-color: #F8F9FA; /* Light Gray */
+            --card-background: #FFFFFF;
+            --border-color: #E0E0E0;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+
+            --font-family-sans: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --border-radius: 8px;
+            --spacing-unit: 16px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family-sans);
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: var(--spacing-unit);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align dashboard to top */
+        }
+
+        /*
+         * Dashboard Container
+         * Main layout for the entire dashboard.
+         */
+        .dashboard-container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            gap: calc(var(--spacing-unit) * 1.5);
+            grid-template-columns: 1fr; /* Single column on small screens */
+        }
+
+        /*
+         * Dashboard Header
+         * Styling for the main title and description.
+         */
+        .dashboard-header {
+            text-align: center;
+            padding: calc(var(--spacing-unit) * 1.5) 0;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            margin-bottom: var(--spacing-unit); /* Add some space below header */
+        }
+
+        .dashboard-header h1 {
+            color: var(--primary-color);
+            font-size: 2.5em;
+            margin-bottom: 0.2em;
+            font-weight: 700;
+        }
+
+        .dashboard-header p {
+            color: var(--light-text-color);
+            font-size: 1.1em;
+        }
+
+        /*
+         * KPI Cards Section
+         * Layout for key performance indicator cards.
+         */
+        .kpi-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--spacing-unit);
+        }
+
+        .kpi-card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: calc(var(--spacing-unit) * 1.5);
+            box-shadow: 0 2px 8px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .kpi-card h3 {
+            font-size: 1.1em;
+            color: var(--light-text-color);
+            margin-bottom: 0.8em;
+            font-weight: 500;
+        }
+
+        .kpi-card p {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .kpi-card p.positive { color: var(--secondary-color); }
+        .kpi-card p.negative { color: #E74C3C; /* Red */ }
+
+        /*
+         * Charts Grid Section
+         * Layout for various charts and tables.
+         */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-unit);
+        }
+
+        .chart-card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-unit);
+            box-shadow: 0 2px 8px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1; /* Spans all columns in the grid */
+        }
+
+        .chart-card h2 {
+            font-size: 1.4em;
+            color: var(--text-color);
+            margin-bottom: var(--spacing-unit);
+            padding-left: var(--spacing-unit); /* Align with content */
+            font-weight: 600;
+        }
+
+        .chart-card canvas {
+            max-width: 100%;
+            height: auto;
+            flex-grow: 1; /* Allow canvas to take available space */
+        }
+
+        /*
+         * Table Styles (for Recent Campaigns)
+         */
+        .campaigns-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9em;
+        }
+
+        .campaigns-table th,
+        .campaigns-table td {
+            padding: calc(var(--spacing-unit) * 0.75);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .campaigns-table th {
+            background-color: var(--background-color);
+            color: var(--light-text-color);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .campaigns-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .campaigns-table tbody tr:hover {
+            background-color: #F0F4F7;
+        }
+
+        .campaigns-table .status-active {
+            color: #28A745; /* Green */
+            font-weight: 500;
+        }
+        .campaigns-table .status-paused {
+            color: #FFC107; /* Yellow */
+            font-weight: 500;
+        }
+        .campaigns-table .status-completed {
+            color: var(--light-text-color);
+            font-weight: 500;
+        }
+
+        /*
+         * Responsive Design
+         * Adjusts layout for smaller screens.
+         */
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+            .charts-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .dashboard-container {
+                padding: calc(var(--spacing-unit) * 2);
+            }
+            .charts-grid {
+                grid-template-columns: repeat(3, 1fr); /* Three columns on larger screens */
+            }
+            .kpi-cards {
+                grid-template-columns: repeat(5, 1fr); /* 5 KPIs */
+            }
+            .chart-card.full-width {
+                grid-column: span 3; /* Span 3 columns when 3 columns are available */
+            }
+        }
+
+        /* Adjust for screens where 5 KPIs don't fit well but more than 2 charts do */
+        @media (min-width: 1200px) {
+            .kpi-cards {
+                grid-template-columns: repeat(5, 1fr); /* Explicitly 5 columns for KPIs */
+            }
+        }
+        @media (max-width: 500px) {
+            .dashboard-header h1 {
+                font-size: 1.8em;
+            }
+            .dashboard-header p {
+                font-size: 0.9em;
+            }
+            .kpi-card p {
+                font-size: 1.8em;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Marketing Analytics Overview</h1>
+            <p>Your comprehensive insights into marketing performance</p>
+        </header>
+
+        <section class="kpi-cards">
+            <div class="kpi-card">
+                <h3>Total Visitors</h3>
+                <p id="total_visitors">0</p>
+            </div>
+            <div class="kpi-card">
+                <h3>New Leads</h3>
+                <p id="new_leads">0</p>
+            </div>
+            <div class="kpi-card">
+                <h3>Conversion Rate</h3>
+                <p id="conversion_rate">0%</p>
+            </div>
+            <div class="kpi-card">
+                <h3>Avg. Session Duration</h3>
+                <p id="avg_session_duration">00:00</p>
+            </div>
+            <div class="kpi-card">
+                <h3>Revenue</h3>
+                <p id="revenue">$0</p>
+            </div>
+        </section>
+
+        <section class="charts-grid">
+            <div class="chart-card">
+                <h2>Website Traffic (Last 7 Days)</h2>
+                <canvas id="website_traffic_chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Channel Performance</h2>
+                <canvas id="channel_performance_chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Device Usage</h2>
+                <canvas id="device_usage_chart"></canvas>
+            </div>
+            <div class="chart-card full-width">
+                <h2>Recent Campaigns</h2>
+                <table class="campaigns-table">
+                    <thead>
+                        <tr>
+                            <th>Campaign Name</th>
+                            <th>Status</th>
+                            <th>Spend</th>
+                            <th>Conversions</th>
+                            <th>ROI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="campaigns_table_body">
+                        <!-- Campaign data will be injected here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        /**
+         * Marketing Analytics Dashboard JavaScript
+         * This script handles fake data generation, updating KPIs, and rendering charts
+         * using Chart.js.
+         */
+
+        // Utility function to generate a random integer within a range
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Utility function to generate a random float within a range
+        function getRandomFloat(min, max, decimals) {
+            const str = (Math.random() * (max - min) + min).toFixed(decimals);
+            return parseFloat(str);
+        }
+
+        /**
+         * Generates a complete set of fake marketing data.
+         * @returns {Object} An object containing various marketing metrics.
+         */
+        function generateFakeData() {
+            // KPI Data
+            const totalVisitors = getRandomInt(100000, 300000);
+            const newLeads = getRandomInt(1500, 4500);
+            const conversionRate = getRandomFloat(2.5, 6.5, 2); // percentage
+            const avgSessionDurationSeconds = getRandomInt(150, 270); // in seconds
+            const revenue = getRandomInt(500000, 1500000);
+
+            // Website Traffic Data (last 7 days)
+            const trafficData = [];
+            const dates = [];
+            let baseTraffic = getRandomInt(10000, 20000);
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                dates.push(date.toISOString().slice(0, 10)); // YYYY-MM-DD
+                // Simulate daily fluctuations
+                baseTraffic += getRandomInt(-1500, 1500);
+                trafficData.push(Math.max(5000, baseTraffic)); // Ensure traffic doesn't drop too low
+            }
+
+            // Channel Performance Data
+            const channelLabels = ['Organic Search', 'Social Media', 'Paid Ads', 'Direct', 'Referral'];
+            const channelData = channelLabels.map(() => getRandomInt(5000, 30000));
+            
+            // Device Usage Data
+            const deviceLabels = ['Desktop', 'Mobile', 'Tablet'];
+            // Generate proportions that sum up roughly to a total
+            const desktopUsage = getRandomInt(40, 60);
+            const mobileUsage = getRandomInt(30, 50);
+            const tabletUsage = 100 - desktopUsage - mobileUsage; // Ensure sum is 100%
+            const deviceData = [desktopUsage, mobileUsage, Math.max(0, tabletUsage)]; // Ensure tablet isn't negative
+
+            // Recent Campaigns Data
+            const campaigns = [
+                { name: 'Summer Sale 2024', status: 'Active', spend: getRandomInt(5000, 15000), conversions: getRandomInt(200, 600) },
+                { name: 'New Product Launch', status: 'Completed', spend: getRandomInt(8000, 20000), conversions: getRandomInt(300, 800) },
+                { name: 'Spring Collection Promo', status: 'Paused', spend: getRandomInt(3000, 8000), conversions: getRandomInt(100, 300) },
+                { name: 'Winter Clearance', status: 'Completed', spend: getRandomInt(7000, 18000), conversions: getRandomInt(250, 700) },
+                { name: 'Brand Awareness Campaign', status: 'Active', spend: getRandomInt(10000, 25000), conversions: getRandomInt(150, 400) }
+            ];
+
+            return {
+                kpis: {
+                    totalVisitors,
+                    newLeads,
+                    conversionRate,
+                    avgSessionDurationSeconds,
+                    revenue
+                },
+                websiteTraffic: {
+                    labels: dates,
+                    data: trafficData
+                },
+                channelPerformance: {
+                    labels: channelLabels,
+                    data: channelData
+                },
+                deviceUsage: {
+                    labels: deviceLabels,
+                    data: deviceData
+                },
+                campaigns: campaigns.map(campaign => ({
+                    ...campaign,
+                    // Calculate ROI as (conversions * average_value_per_conversion - spend) / spend * 100
+                    // For simplicity, let's assume a fixed average value per conversion for fake data
+                    roi: getRandomFloat(50, 250, 1) // Fake ROI percentage
+                }))
+            };
+        }
+
+        /**
+         * Updates the Key Performance Indicator (KPI) cards in the dashboard.
+         * @param {Object} kpiData - An object containing KPI values.
+         */
+        function updateKPIs(kpiData) {
+            document.getElementById('total_visitors').textContent = kpiData.totalVisitors.toLocaleString();
+            document.getElementById('new_leads').textContent = kpiData.newLeads.toLocaleString();
+            document.getElementById('conversion_rate').textContent = `${kpiData.conversionRate}%`;
+
+            const minutes = Math.floor(kpiData.avgSessionDurationSeconds / 60);
+            const seconds = kpiData.avgSessionDurationSeconds % 60;
+            document.getElementById('avg_session_duration').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('revenue').textContent = `$${kpiData.revenue.toLocaleString()}`;
+        }
+
+        /**
+         * Renders all charts in the dashboard using Chart.js.
+         * @param {Object} chartData - An object containing data for all charts.
+         */
+        function renderCharts(chartData) {
+            // Chart.js global defaults for consistent styling
+            Chart.defaults.font.family = 'var(--font-family-sans)';
+            Chart.defaults.color = 'var(--light-text-color)';
+            Chart.defaults.borderColor = 'var(--border-color)';
+
+            // Website Traffic Chart (Line Chart)
+            const websiteTrafficCtx = document.getElementById('website_traffic_chart').getContext('2d');
+            new Chart(websiteTrafficCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.websiteTraffic.labels,
+                    datasets: [{
+                        label: 'Visitors',
+                        data: chartData.websiteTraffic.data,
+                        borderColor: var('--primary-color'),
+                        backgroundColor: 'rgba(74, 144, 226, 0.2)', // Semi-transparent primary color
+                        fill: true,
+                        tension: 0.4, // Smooth curves
+                        pointRadius: 3,
+                        pointBackgroundColor: var('--primary-color'),
+                        pointBorderColor: var('--card-background')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time', // Use time scale for dates
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'MMM d, yyyy'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            },
+                            grid: {
+                                display: false // Hide vertical grid lines
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Visitors'
+                            },
+                            grid: {
+                                color: 'var(--border-color)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // No legend needed for a single dataset
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: var('--text-color'),
+                            titleColor: var('--card-background'),
+                            bodyColor: var('--card-background'),
+                            boxPadding: 5,
+                            borderRadius: 4
+                        }
+                    }
+                }
+            });
+
+            // Channel Performance Chart (Bar Chart)
+            const channelPerformanceCtx = document.getElementById('channel_performance_chart').getContext('2d');
+            new Chart(channelPerformanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.channelPerformance.labels,
+                    datasets: [{
+                        label: 'Traffic/Conversions',
+                        data: chartData.channelPerformance.data,
+                        backgroundColor: [
+                            var('--primary-color'),
+                            var('--secondary-color'),
+                            var('--accent-color'),
+                            '#8E44AD', // Purple
+                            '#27AE60'  // Green
+                        ],
+                        borderColor: [
+                            var('--primary-color'),
+                            var('--secondary-color'),
+                            var('--accent-color'),
+                            '#8E44AD',
+                            '#27AE60'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            },
+                            grid: {
+                                color: 'var(--border-color)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: var('--text-color'),
+                            titleColor: var('--card-background'),
+                            bodyColor: var('--card-background'),
+                            boxPadding: 5,
+                            borderRadius: 4
+                        }
+                    }
+                }
+            });
+
+            // Device Usage Chart (Pie Chart)
+            const deviceUsageCtx = document.getElementById('device_usage_chart').getContext('2d');
+            new Chart(deviceUsageCtx, {
+                type: 'pie',
+                data: {
+                    labels: chartData.deviceUsage.labels,
+                    datasets: [{
+                        data: chartData.deviceUsage.data,
+                        backgroundColor: [
+                            var('--primary-color'),
+                            var('--secondary-color'),
+                            var('--accent-color')
+                        ],
+                        borderColor: var('--card-background'), // White border for slices
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true, // Use colored circles for legend items
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: var('--text-color'),
+                            titleColor: var('--card-background'),
+                            bodyColor: var('--card-background'),
+                            boxPadding: 5,
+                            borderRadius: 4,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    return `${label}: ${value}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /**
+         * Populates the recent campaigns table with data.
+         * @param {Array<Object>} campaigns - An array of campaign objects.
+         */
+        function populateCampaignTable(campaigns) {
+            const tableBody = document.getElementById('campaigns_table_body');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            campaigns.forEach(campaign => {
+                const row = tableBody.insertRow();
+                const statusClass = `status-${campaign.status.toLowerCase()}`;
+                
+                row.insertCell().textContent = campaign.name;
+                row.insertCell().innerHTML = `<span class="${statusClass}">${campaign.status}</span>`;
+                row.insertCell().textContent = `$${campaign.spend.toLocaleString()}`;
+                row.insertCell().textContent = campaign.conversions.toLocaleString();
+                row.insertCell().textContent = `${campaign.roi.toFixed(1)}%`;
+            });
+        }
+
+        /**
+         * Initializes the dashboard by generating data, updating KPIs,
+         * rendering charts, and populating the campaigns table.
+         */
+        function initializeDashboard() {
+            const data = generateFakeData();
+            updateKPIs(data.kpis);
+            renderCharts(data);
+            populateCampaignTable(data.campaigns);
+        }
+
+        // Run the initialization function when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>
