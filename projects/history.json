@@ -1,6 +1,7 @@
 {
   "generated": [
     "python_api::YAML parser",
-    "dashboard::Marketing analitika paneli"
+    "dashboard::Marketing analitika paneli",
+    "python_api::Cron ifodalarini tushuntiruvchi"
   ]
 }
