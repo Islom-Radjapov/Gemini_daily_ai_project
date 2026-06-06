@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Savdo Dashboard</title>
+    <style>
+        /* Basic Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f7f6; /* Light gray background */
+            color: #333;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            padding: 25px 0;
+            margin-bottom: 30px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.8em;
+            color: #3f51b5; /* Deep blue for header */
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid columns */
+            gap: 25px;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        /* Metric Cards */
+        .metric-card {
+            flex-direction: row;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .metric-card .card-icon {
+            font-size: 2.5em;
+            color: #4CAF50; /* Green for icons */
+            background-color: #e8f5e9;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .metric-card:nth-child(2) .card-icon { color: #2196F3; background-color: #e3f2fd; } /* Blue */
+        .metric-card:nth-child(3) .card-icon { color: #FF9800; background-color: #fff3e0; } /* Orange */
+        .metric-card:nth-child(4) .card-icon { color: #9C27B0; background-color: #f3e5f5; } /* Purple */
+
+        .metric-card .card-content {
+            flex-grow: 1;
+        }
+
+        .metric-card .card-label {
+            display: block;
+            font-size: 0.95em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .metric-card .card-value {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* Chart Card (Sales Trend) */
+        .chart-card {
+            grid-column: span 2; /* Takes 2 columns on larger screens */
+            min-height: 300px;
+        }
+        .chart-card h2 {
+            color: #3f51b5;
+        }
+
+        .chart-container {
+            height: 200px; /* Fixed height for the chart area */
+            display: flex;
+            align-items: flex-end; /* Align bars to the bottom */
+            justify-content: space-around;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-grow: 1;
+            height: 100%;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 8px; /* Gap between bars */
+        }
+
+        .bar {
+            width: 30px; /* Fixed width for each bar */
+            background-color: #4CAF50;
+            border-radius: 5px 5px 0 0;
+            transition: height 0.5s ease-out, background-color 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 30px; /* Space for label */
+        }
+
+        .bar:hover {
+            background-color: #388E3C; /* Darker green on hover */
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: 5px; /* Position label at the bottom of the bar's area */
+            font-size: 0.8em;
+            color: #666;
+            white-space: nowrap;
+        }
+        .bar-value {
+            position: absolute;
+            top: -20px; /* Position value above the bar */
+            font-size: 0.8em;
+            color: #333;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* List Cards (Top Products, Sales by Region) */
+        .list-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .list-card li {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        .list-card li:last-child {
+            border-bottom: none;
+        }
+
+        .list-card li span:first-child {
+            font-weight: 500;
+        }
+
+        .list-card li span:last-child {
+            font-weight: 600;
+            color: #3f51b5; /* Blue for values */
+        }
+
+
+        /* Table Card (Recent Transactions) */
+        .table-card {
+            grid-column: span 2; /* Takes 2 columns on larger screens */
+        }
+        .table-card h2 {
+            color: #3f51b5;
+        }
+
+        .table-card table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+
+        .table-card th, .table-card td {
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table-card th {
+            background-color: #f8f8f8;
+            color: #555;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .table-card tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-card tbody tr:hover {
+            background-color: #fbfbfb;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 992px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+            .chart-card,
+            .table-card {
+                grid-column: span 1; /* Stack them on smaller screens */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header h1 {
+                font-size: 2.2em;
+            }
+            .dashboard-grid {
+                gap: 15px;
+            }
+            .card {
+                padding: 20px;
+            }
+            .metric-card .card-value {
+                font-size: 1.8em;
+            }
+            .metric-card .card-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 2em;
+            }
+            .chart-card,
+            .table-card,
+            .list-card {
+                grid-column: span 1; /* Ensure single column layout */
+            }
+            .bar-chart {
+                gap: 4px; /* Reduce gap on smaller screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container {
+                margin: 10px auto;
+                padding: 0 10px;
+            }
+            .dashboard-header {
+                margin-bottom: 20px;
+                padding: 15px 0;
+            }
+            .dashboard-header h1 {
+                font-size: 1.8em;
+            }
+            .card {
+                padding: 15px;
+            }
+            .card h2 {
+                font-size: 1.3em;
+                margin-bottom: 15px;
+            }
+            .metric-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            .metric-card .card-icon {
+                margin-bottom: 10px;
+            }
+            .metric-card .card-label {
+                margin-bottom: 0;
+            }
+            .metric-card .card-value {
+                font-size: 1.5em;
+            }
+            .table-card th, .table-card td {
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+            .list-card li {
+                font-size: 1em;
+            }
+            .bar {
+                width: 25px;
+            }
+            .bar-label, .bar-value {
+                font-size: 0.75em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Savdo Dashboard</h1>
+        </header>
+        <main class="dashboard-grid">
+            <!-- Key Metrics -->
+            <section class="card metric-card" id="total-sales">
+                <div class="card-icon">💰</div>
+                <div class="card-content">
+                    <span class="card-label">Jami Savdo</span>
+                    <span class="card-value">$<span id="total-sales-value">0</span></span>
+                </div>
+            </section>
+            <section class="card metric-card" id="new-orders">
+                <div class="card-icon">📦</div>
+                <div class="card-content">
+                    <span class="card-label">Yangi Buyurtmalar</span>
+                    <span class="card-value" id="new-orders-value">0</span>
+                </div>
+            </section>
+            <section class="card metric-card" id="avg-order-value">
+                <div class="card-icon">🛒</div>
+                <div class="card-content">
+                    <span class="card-label">O'rtacha Buyurtma Qiymati</span>
+                    <span class="card-value">$<span id="avg-order-value-value">0</span></span>
+                </div>
+            </section>
+            <section class="card metric-card" id="conversion-rate">
+                <div class="card-icon">📈</div>
+                <div class="card-content">
+                    <span class="card-label">Konvertatsiya Darajasi</span>
+                    <span class="card-value"><span id="conversion-rate-value">0</span>%</span>
+                </div>
+            </section>
+
+            <!-- Sales Trend -->
+            <section class="card chart-card full-width" id="sales-trend">
+                <h2>Savdo Trendi (Oxirgi 7 kun)</h2>
+                <div class="chart-container">
+                    <div class="bar-chart" id="sales-trend-chart">
+                        <!-- Bars will be generated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Top Products -->
+            <section class="card list-card" id="top-products">
+                <h2>Eng Ko'p Sotilgan Mahsulotlar</h2>
+                <ul id="top-products-list">
+                    <!-- Products will be generated by JavaScript -->
+                </ul>
+            </section>
+
+            <!-- Recent Transactions -->
+            <section class="card table-card" id="recent-transactions">
+                <h2>So'nggi Tranzaksiyalar</h2>
+                <table id="recent-transactions-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Mahsulot</th>
+                            <th>Miqdor</th>
+                            <th>Sana</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Transactions will be generated by JavaScript -->
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Sales by Region (Simple text list) -->
+            <section class="card list-card" id="sales-by-region">
+                <h2>Hududlar Bo'yicha Savdo</h2>
+                <ul id="sales-by-region-list">
+                    <!-- Regions will be generated by JavaScript -->
+                </ul>
+            </section>
+        </main>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fake data for the dashboard
+            const salesData = {
+                metrics: {
+                    totalSales: 125345.67,
+                    newOrders: 853,
+                    avgOrderValue: 146.95,
+                    conversionRate: 3.8
+                },
+                salesTrend: [
+                    { day: "Dush", value: 12000 },
+                    { day: "Sesh", value: 15000 },
+                    { day: "Chor", value: 13500 },
+                    { day: "Pay", value: 18000 },
+                    { day: "Jum", value: 20000 },
+                    { day: "Shan", value: 16500 },
+                    { day: "Yak", value: 10000 }
+                ],
+                topProducts: [
+                    { name: "Smartfon X", sales: 15200 },
+                    { name: "Noutbuk Pro", sales: 12800 },
+                    { name: "Simsiz quloqchinlar", sales: 8750 },
+                    { name: "Aqlli soat", sales: 7200 },
+                    { name: "USB fleshka 128GB", sales: 4500 }
+                ],
+                recentTransactions: [
+                    { id: "TRX001", product: "Smartfon X", amount: 899.99, date: "2023-10-26" },
+                    { id: "TRX002", product: "Aqlli soat", amount: 249.00, date: "2023-10-26" },
+                    { id: "TRX003", product: "Noutbuk Pro", amount: 1299.00, date: "2023-10-25" },
+                    { id: "TRX004", product: "Simsiz quloqchinlar", amount: 150.00, date: "2023-10-25" },
+                    { id: "TRX005", product: "USB fleshka 128GB", amount: 25.00, date: "2023-10-24" }
+                ],
+                salesByRegion: [
+                    { region: "Toshkent", sales: 55000 },
+                    { region: "Samarqand", sales: 22000 },
+                    { region: "Farg'ona", sales: 18000 },
+                    { region: "Buxoro", sales: 15000 },
+                    { region: "Andijon", sales: 12000 }
+                ]
+            };
+
+            // Function to format currency
+            const formatCurrency = (value) => {
+                return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            };
+
+            // Function to display key metrics
+            const displayMetrics = () => {
+                document.getElementById('total-sales-value').textContent = formatCurrency(salesData.metrics.totalSales);
+                document.getElementById('new-orders-value').textContent = salesData.metrics.newOrders.toLocaleString('en-US');
+                document.getElementById('avg-order-value-value').textContent = formatCurrency(salesData.metrics.avgOrderValue);
+                document.getElementById('conversion-rate-value').textContent = salesData.metrics.conversionRate.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            };
+
+            // Function to display sales trend chart
+            const displaySalesTrend = () => {
+                const chartContainer = document.getElementById('sales-trend-chart');
+                chartContainer.innerHTML = ''; // Clear previous bars
+
+                const maxTrendValue = Math.max(...salesData.salesTrend.map(d => d.value));
+                const chartHeightPx = 150; // Max height for bars in pixels (excluding label/value space)
+
+                salesData.salesTrend.forEach(data => {
+                    const bar = document.createElement('div');
+                    const barHeight = (data.value / maxTrendValue) * chartHeightPx;
+                    bar.className = 'bar';
+                    bar.style.height = `${barHeight}px`;
+                    bar.setAttribute('title', `${data.day}: ${formatCurrency(data.value)}`); // Tooltip
+
+                    const valueSpan = document.createElement('span');
+                    valueSpan.className = 'bar-value';
+                    valueSpan.textContent = formatCurrency(data.value).replace('$', ''); // Display value without $ on top of bar
+                    bar.appendChild(valueSpan);
+
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'bar-label';
+                    labelSpan.textContent = data.day;
+                    bar.appendChild(labelSpan);
+
+                    chartContainer.appendChild(bar);
+                });
+            };
+
+            // Function to display top products
+            const displayTopProducts = () => {
+                const productList = document.getElementById('top-products-list');
+                productList.innerHTML = ''; // Clear previous list items
+
+                salesData.topProducts.forEach(product => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<span>${product.name}</span><span>${formatCurrency(product.sales)}</span>`;
+                    productList.appendChild(listItem);
+                });
+            };
+
+            // Function to display recent transactions
+            const displayRecentTransactions = () => {
+                const tableBody = document.getElementById('recent-transactions-table').querySelector('tbody');
+                tableBody.innerHTML = ''; // Clear previous rows
+
+                salesData.recentTransactions.forEach(transaction => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${transaction.id}</td>
+                        <td>${transaction.product}</td>
+                        <td>${formatCurrency(transaction.amount)}</td>
+                        <td>${transaction.date}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            };
+
+            // Function to display sales by region
+            const displaySalesByRegion = () => {
+                const regionList = document.getElementById('sales-by-region-list');
+                regionList.innerHTML = ''; // Clear previous list items
+
+                salesData.salesByRegion.forEach(region => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<span>${region.region}</span><span>${formatCurrency(region.sales)}</span>`;
+                    regionList.appendChild(listItem);
+                });
+            };
+
+            // Initialize all dashboard components on DOMContentLoaded
+            displayMetrics();
+            displaySalesTrend();
+            displayTopProducts();
+            displayRecentTransactions();
+            displaySalesByRegion();
+        });
+    </script>
+</body>
+</html>
