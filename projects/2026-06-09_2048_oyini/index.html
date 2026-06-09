@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 O'yini</title>
+    <style>
+        body {
+            font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+            text-align: center;
+            background-color: #faf8ef;
+            color: #776e65;
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 80px;
+            font-weight: bold;
+            margin: 0;
+            display: inline-block;
+            vertical-align: top;
+            line-height: 1;
+        }
+
+        .container {
+            width: 500px; /* Adjust based on canvas_size + some padding */
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            max-width: 450px; /* Same as canvas width */
+        }
+
+        .score-container {
+            background-color: #bbada0;
+            color: #f9f6f2;
+            padding: 10px 15px;
+            font-size: 25px;
+            font-weight: bold;
+            border-radius: 6px;
+            min-width: 80px;
+            text-align: center;
+            position: relative;
+            top: 5px; /* Align with h1 */
+        }
+
+        .score-container div {
+            font-size: 15px;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
+        #game_canvas {
+            background-color: #bbada0;
+            border-radius: 6px;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .game-info {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .game-info p {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .game-info button {
+            background-color: #8f7a66;
+            color: #f9f6f2;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .game-info button:hover {
+            background-color: #9f8b76;
+        }
+
+        #game_over_message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(238, 228, 218, 0.73);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            font-weight: bold;
+            color: #776e65;
+            z-index: 10;
+            display: none; /* Hidden by default */
+        }
+
+        #game_over_message button {
+            margin-top: 20px;
+            background-color: #8f7a66;
+            color: #f9f6f2;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 30px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #game_over_message button:hover {
+            background-color: #9f8b76;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>2048</h1>
+            <div class="score-container">
+                <div>SCORE</div>
+                <span id="score_display">0</span>
+            </div>
+        </div>
+        <p>Birlashish uchun strelka tugmalarini bosing.</p>
+
+        <canvas id="game_canvas"></canvas>
+
+        <div class="game-info">
+            <button id="restart_button">O'yinni qayta boshlash</button>
+        </div>
+    </div>
+
+    <div id="game_over_message">
+        <span>O'yin tugadi!</span>
+        <button id="restart_button_game_over">Qayta boshlash</button>
+    </div>
+
+    <script>
+        // Global variables for game state and canvas
+        let canvas;
+        let ctx;
+        let grid;
+        let score;
+        let game_over;
+        const board_size = 4; // 4x4 grid
+        const tile_size = 100; // Each tile's width/height in pixels
+        const tile_margin = 10; // Space between tiles
+        let canvas_size; // Will be calculated based on board_size, tile_size, and tile_margin
+
+        // Define colors for different tile values
+        const TILE_COLORS = {
+            0: "#cdc1b4", // Empty cell background
+            2: "#eee4da",
+            4: "#ede0c8",
+            8: "#f2b179",
+            16: "#f59563",
+            32: "#f67c5f",
+            64: "#f65e3b",
+            128: "#edcf72",
+            256: "#edcc61",
+            512: "#edc850",
+            1024: "#edc53f",
+            2048: "#edc22e",
+            // Colors for values beyond 2048
+            4096: "#60d994",
+            8192: "#57a87e",
+            16384: "#3f9c6c",
+            32768: "#317855",
+            65536: "#23553e"
+        };
+        const TEXT_COLORS = {
+            2: "#776e65",
+            4: "#776e65",
+            8: "#f9f6f2",
+            16: "#f9f6f2",
+            32: "#f9f6f2",
+            64: "#f9f6f2",
+            128: "#f9f6f2",
+            256: "#f9f6f2",
+            512: "#f9f6f2",
+            1024: "#f9f6f2",
+            2048: "#f9f6f2",
+            // Text color for values beyond 2048 (default to white)
+            4096: "#f9f6f2",
+            8192: "#f9f6f2",
+            16384: "#f9f6f2",
+            32768: "#f9f6f2",
+            65536: "#f9f6f2"
+        };
+
+        /**
+         * Initializes the game state, canvas, and event listeners.
+         */
+        function init_game() {
+            canvas = document.getElementById("game_canvas");
+            ctx = canvas.getContext("2d");
+
+            // Calculate canvas size based on tile dimensions and margins
+            canvas_size = board_size * tile_size + (board_size + 1) * tile_margin;
+            canvas.width = canvas_size;
+            canvas.height = canvas_size;
+
+            // Initialize grid with zeros (empty cells)
+            grid = Array.from({ length: board_size }, () => Array(board_size).fill(0));
+            score = 0;
+            game_over = false;
+
+            // Generate two initial random tiles (2 or 4)
+            generate_random_tile();
+            generate_random_tile();
+
+            draw_board(); // Draw the initial board
+            update_score_display(); // Update score display
+            document.getElementById("game_over_message").style.display = "none"; // Hide game over message
+        }
+
+        /**
+         * Draws the entire game board, including the background and all tiles.
+         */
+        function draw_board() {
+            ctx.clearRect(0, 0, canvas_size, canvas_size); // Clear canvas
+            ctx.fillStyle = "#bbada0"; // Board background color
+            ctx.fillRect(0, 0, canvas_size, canvas_size); // Draw board background
+
+            // Draw each tile based on the grid state
+            for (let r = 0; r < board_size; r++) {
+                for (let c = 0; c < board_size; c++) {
+                    draw_tile(r, c, grid[r][c]);
+                }
+            }
+        }
+
+        /**
+         * Draws a single tile at a given row and column with a specific value.
+         * @param {number} row - The row index of the tile.
+         * @param {number} col - The column index of the tile.
+         * @param {number} value - The numerical value of the tile (0 for empty).
+         */
+        function draw_tile(row, col, value) {
+            // Calculate pixel position of the tile
+            const x = col * (tile_size + tile_margin) + tile_margin;
+            const y = row * (tile_size + tile_margin) + tile_margin;
+
+            ctx.beginPath();
+            // Draw a rounded rectangle for the tile background
+            ctx.roundRect(x, y, tile_size, tile_size, 5); // 5px border radius
+            ctx.fillStyle = TILE_COLORS[value] || TILE_COLORS[0]; // Get color, fallback to empty color
+            ctx.fill();
+
+            if (value !== 0) {
+                // Draw tile value if it's not zero
+                ctx.fillStyle = TEXT_COLORS[value] || "#f9f6f2"; // Get text color, fallback to white
+                ctx.font = get_tile_font(value); // Get appropriate font size based on value length
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(value, x + tile_size / 2, y + tile_size / 2); // Center text
+            }
+        }
+
+        /**
+         * Determines the font size for a tile based on its value length.
+         * @param {number} value - The tile's numerical value.
+         * @returns {string} The font string (e.g., "55px Arial, sans-serif").
+         */
+        function get_tile_font(value) {
+            const value_str = value.toString();
+            let font_size;
+            if (value_str.length <= 2) {
+                font_size = 55;
+            } else if (value_str.length === 3) {
+                font_size = 45;
+            } else if (value_str.length === 4) {
+                font_size = 35;
+            } else { // For 5 or more digits
+                font_size = 25;
+            }
+            return `${font_size}px Arial, sans-serif`;
+        }
+
+        /**
+         * Generates a new random tile (2 or 4) in an empty cell.
+         * @returns {boolean} True if a tile was generated, false if no empty cells.
+         */
+        function generate_random_tile() {
+            let empty_cells = [];
+            for (let r = 0; r < board_size; r++) {
+                for (let c = 0; c < board_size; c++) {
+                    if (grid[r][c] === 0) {
+                        empty_cells.push({ row: r, col: c });
+                    }
+                }
+            }
+
+            if (empty_cells.length > 0) {
+                // Pick a random empty cell
+                const random_cell = empty_cells[Math.floor(Math.random() * empty_cells.length)];
+                // 90% chance for 2, 10% for 4
+                const new_value = Math.random() < 0.9 ? 2 : 4;
+                grid[random_cell.row][random_cell.col] = new_value;
+                return true;
+            }
+            return false; // No empty cells available
+        }
+
+        /**
+         * Updates the score display in the HTML.
+         */
+        function update_score_display() {
+            document.getElementById("score_display").textContent = score;
+        }
+
+        /**
+         * Handles keyboard input for tile movement.
+         * @param {KeyboardEvent} event - The keydown event object.
+         */
+        function handle_keydown(event) {
+            if (game_over) return; // Ignore input if game is over
+
+            let board_changed = false;
+            // Create a deep copy of the grid to detect if any actual change occurred after a move attempt.
+            let old_grid_state = JSON.parse(JSON.stringify(grid));
+
+            switch (event.key) {
+                case "ArrowUp":
+                    board_changed = move_up();
+                    break;
+                case "ArrowDown":
+                    board_changed = move_down();
+                    break;
+                case "ArrowLeft":
+                    board_changed = move_left();
+                    break;
+                case "ArrowRight":
+                    board_changed = move_right();
+                    break;
+                default:
+                    return; // Ignore other keys
+            }
+
+            // Prevent default arrow key scrolling behavior
+            event.preventDefault();
+
+            // Check if the board state has truly changed compared to old_grid_state
+            let actual_change = false;
+            if (board_changed) { // Only check if a move function indicated change
+                for (let r = 0; r < board_size; r++) {
+                    for (let c = 0; c < board_size; c++) {
+                        if (old_grid_state[r][c] !== grid[r][c]) {
+                            actual_change = true;
+                            break;
+                        }
+                    }
+                    if (actual_change) break;
+                }
+            }
+
+            if (actual_change) {
+                // If the board changed, generate a new tile, redraw, update score, and check for game over.
+                generate_random_tile();
+                draw_board();
+                update_score_display();
+                check_game_over();
+            }
+        }
+
+        /**
+         * Helper function to process a single 1D line (row or column).
+         * It slides non-zero tiles and merges identical adjacent ones.
+         * Returns an object containing the new line, whether it changed, and score added.
+         * @param {number[]} line - The 1D array representing a row or column.
+         * @returns {{newLine: number[], changed: boolean, score_added: number}}
+         */
+        function process_line(line) {
+            let changed = false;
+            let score_added_in_line = 0;
+            let original_line = [...line]; // Copy for change detection
+
+            // 1. Filter out zeros to slide tiles
+            let filtered_line = line.filter(val => val !== 0);
+
+            // 2. Merge identical adjacent tiles (logic assumes left-to-right merging)
+            for (let i = 0; i < filtered_line.length - 1; i++) {
+                if (filtered_line[i] !== 0 && filtered_line[i] === filtered_line[i + 1]) {
+                    filtered_line[i] *= 2; // Merge (double value)
+                    score_added_in_line += filtered_line[i]; // Add to score
+                    filtered_line.splice(i + 1, 1); // Remove the merged tile
+                    i--; // Decrement i to re-check the current position, as next element shifted
+                }
+            }
+
+            // 3. Pad with zeros to the right to maintain board_size
+            while (filtered_line.length < board_size) {
+                filtered_line.push(0);
+            }
+
+            // Check if the processed line is different from the original line
+            for (let i = 0; i < board_size; i++) {
+                if (original_line[i] !== filtered_line[i]) {
+                    changed = true;
+                    break;
+                }
+            }
+
+            return { newLine: filtered_line, changed: changed, score_added: score_added_in_line };
+        }
+
+        /**
+         * Handles movement logic for "left" direction.
+         * Processes each row independently.
+         * @returns {boolean} True if any tile moved or merged.
+         */
+        function move_left() {
+            let any_changed = false;
+            for (let r = 0; r < board_size; r++) {
+                const { newLine, changed, score_added } = process_line(grid[r]);
+                if (changed) {
+                    grid[r] = newLine;
+                    score += score_added;
+                    any_changed = true;
+                }
+            }
+            return any_changed;
+        }
+
+        /**
+         * Handles movement logic for "right" direction.
+         * Reverses each row, processes it as a "left" move, then reverses it back.
+         * @returns {boolean} True if any tile moved or merged.
+         */
+        function move_right() {
+            let any_changed = false;
+            for (let r = 0; r < board_size; r++) {
+                let row = [...grid[r]]; // Create a shallow copy to reverse without affecting original grid yet
+                row.reverse(); // Reverse row for "right" movement (treat as left on reversed line)
+                const { newLine, changed, score_added } = process_line(row);
+                if (changed) {
+                    newLine.reverse(); // Reverse back to original right orientation
+                    grid[r] = newLine;
+                    score += score_added;
+                    any_changed = true;
+                }
+            }
+            return any_changed;
+        }
+
+        /**
+         * Handles movement logic for "up" direction.
+         * Extracts each column, processes it as a "left" move, then updates the grid.
+         * @returns {boolean} True if any tile moved or merged.
+         */
+        function move_up() {
+            let any_changed = false;
+            for (let c = 0; c < board_size; c++) {
+                let col = grid.map(row => row[c]); // Extract column
+                const { newLine, changed, score_added } = process_line(col);
+                if (changed) {
+                    // Update the grid column
+                    for (let r = 0; r < board_size; r++) {
+                        grid[r][c] = newLine[r];
+                    }
+                    score += score_added;
+                    any_changed = true;
+                }
+            }
+            return any_changed;
+        }
+
+        /**
+         * Handles movement logic for "down" direction.
+         * Extracts each column, reverses it, processes it as a "left" move,
+         * then reverses it back and updates the grid.
+         * @returns {boolean} True if any tile moved or merged.
+         */
+        function move_down() {
+            let any_changed = false;
+            for (let c = 0; c < board_size; c++) {
+                let col = grid.map(row => row[c]); // Extract column
+                col.reverse(); // Reverse column for "down" movement (treat as left on reversed line)
+                const { newLine, changed, score_added } = process_line(col);
+                if (changed) {
+                    newLine.reverse(); // Reverse back to original down orientation
+                    // Update the grid column
+                    for (let r = 0; r < board_size; r++) {
+                        grid[r][c] = newLine[r];
+                    }
+                    score += score_added;
+                    any_changed = true;
+                }
+            }
+            return any_changed;
+        }
+
+        /**
+         * Checks if the game is over. Game is over if no empty cells AND no possible merges.
+         * @returns {boolean} True if the game is over.
+         */
+        function check_game_over() {
+            if (!is_board_full() || can_merge_any_direction()) {
+                // If there are empty cells OR merges are possible, the game is NOT over.
+                game_over = false;
+                return false;
+            }
+
+            // If board is full AND no merges possible, game is over.
+            game_over = true;
+            show_game_over();
+            return true;
+        }
+
+        /**
+         * Checks if there are any empty cells on the board.
+         * @returns {boolean} True if the board is full (no empty cells).
+         */
+        function is_board_full() {
+            for (let r = 0; r < board_size; r++) {
+                for (let c = 0; c < board_size; c++) {
+                    if (grid[r][c] === 0) {
+                        return false; // Found an empty cell
+                    }
+                }
+            }
+            return true; // No empty cells found
+        }
+
+        /**
+         * Checks if any tiles can be merged (horizontally or vertically).
+         * @returns {boolean} True if any merge is possible.
+         */
+        function can_merge_any_direction() {
+            // Check horizontal merges
+            for (let r = 0; r < board_size; r++) {
+                for (let c = 0; c < board_size - 1; c++) {
+                    if (grid[r][c] !== 0 && grid[r][c] === grid[r][c + 1]) {
+                        return true; // Found a horizontal merge
+                    }
+                }
+            }
+
+            // Check vertical merges
+            for (let c = 0; c < board_size; c++) {
+                for (let r = 0; r < board_size - 1; r++) {
+                    if (grid[r][c] !== 0 && grid[r][c] === grid[r + 1][c]) {
+                        return true; // Found a vertical merge
+                    }
+                }
+            }
+            return false; // No merges possible
+        }
+
+        /**
+         * Displays the "Game Over" message.
+         */
+        function show_game_over() {
+            document.getElementById("game_over_message").style.display = "flex";
+        }
+
+        /**
+         * Resets the game to its initial state.
+         */
+        function reset_game() {
+            init_game();
+        }
+
+        // Event Listeners
+        // Initialize the game when the DOM is fully loaded
+        document.addEventListener("DOMContentLoaded", init_game);
+        // Listen for keyboard input to move tiles
+        document.addEventListener("keydown", handle_keydown);
+        // Listen for click on the "Restart Game" button below the canvas
+        document.getElementById("restart_button").addEventListener("click", reset_game);
+        // Listen for click on the "Restart" button in the game over message
+        document.getElementById("restart_button_game_over").addEventListener("click", reset_game);
+    </script>
+</body>
+</html>

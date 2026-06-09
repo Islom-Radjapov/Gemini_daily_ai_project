@@ -3,6 +3,7 @@
     "python_api::YAML parser",
     "dashboard::Marketing analitika paneli",
     "python_api::Cron ifodalarini tushuntiruvchi",
-    "dashboard::Savdo dashboard"
+    "dashboard::Savdo dashboard",
+    "js_game::2048 o'yini"
   ]
 }
