@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Music Player</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Body Styling */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72, #2a5298); /* Gradient background */
+            color: #e0e0e0;
+            overflow: hidden; /* Prevent scrollbar if content is slightly larger */
+        }
+
+        /* Music Player Container */
+        .music-player {
+            background: rgba(255, 255, 255, 0.1); /* Semi-transparent background */
+            backdrop-filter: blur(10px); /* Frosted glass effect */
+            border-radius: 25px;
+            padding: 30px;
+            width: 350px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5); /* Stronger shadow */
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2); /* Light border */
+            animation: fadeIn 1s ease-out;
+            max-width: 90vw; /* Ensure responsiveness on smaller screens */
+        }
+
+        /* Fade-in animation for the player */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Album Art */
+        .album-art {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%; /* Circular album art */
+            object-fit: cover;
+            margin: 0 auto 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            animation: rotateAlbum 20s linear infinite; /* Rotation effect */
+            animation-play-state: paused; /* Pause by default */
+        }
+
+        .album-art.playing {
+            animation-play-state: running; /* Resume rotation when playing */
+        }
+
+        @keyframes rotateAlbum {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Song Info */
+        .song-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #ffffff;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .song-artist {
+            font-size: 1.1em;
+            color: #c0c0c0;
+            margin-bottom: 25px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: #4CAF50; /* Accent color */
+            border-radius: 10px;
+            transition: width 0.1s linear; /* Smooth progress update */
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 2.5em; /* Larger icons */
+            padding: 10px;
+            transition: color 0.3s ease, transform 0.2s ease;
+            outline: none; /* Remove focus outline */
+        }
+
+        .control-btn:hover {
+            color: #4CAF50; /* Accent color on hover */
+            transform: scale(1.1);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Play/Pause specific styling */
+        .play-pause-btn {
+            font-size: 3.5em; /* Even larger for play/pause */
+            margin: 0 10px;
+        }
+        
+        /* Volume Control */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .volume-control svg {
+            color: #ffffff;
+            font-size: 1.2em; /* Smaller volume icons */
+        }
+
+        .volume-slider {
+            -webkit-appearance: none; /* Remove default styling for webkit browsers */
+            width: 120px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .volume-slider:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Slider thumb styling */
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #4CAF50; /* Accent color */
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="music-player">
+        <img src="https://picsum.photos/200?random=1" alt="Album Art" class="album-art" id="album-art">
+        <h2 class="song-title" id="song-title">Song Title</h2>
+        <p class="song-artist" id="song-artist">Artist Name</p>
+
+        <div class="progress-container" id="progress-container">
+            <div class="progress" id="progress"></div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="prev-btn" aria-label="Previous Song">
+                <!-- SVG for Previous Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                </svg>
+            </button>
+            <button class="control-btn play-pause-btn" id="play-pause-btn" aria-label="Play/Pause">
+                <!-- SVG for Play Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" id="play-icon">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <!-- SVG for Pause Icon (initially hidden) -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" id="pause-icon" style="display: none;">
+                    <path d="M6 19h4V5H6zm8-14v14h4V5z"/>
+                </svg>
+            </button>
+            <button class="control-btn" id="next-btn" aria-label="Next Song">
+                <!-- SVG for Next Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 6h-2v12h2zm-9.5 6l-8.5 6V6z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="volume-control">
+            <!-- SVG for Volume Down/Mute Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM12 4L7 9H3v6h4l5 5V4z"/>
+            </svg>
+            <input type="range" min="0" max="1" step="0.01" value="0.7" class="volume-slider" id="volume-slider" aria-label="Volume Slider">
+            <!-- SVG for Volume Up Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.98 7-4.69 7-8.77s-2.99-7.79-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM12 4L7 9H3v6h4l5 5V4z"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- The actual audio element, hidden from view -->
+    <audio id="audio-player"></audio>
+
+    <script>
+        // Get DOM elements
+        const audioPlayer = document.getElementById('audio-player');
+        const albumArt = document.getElementById('album-art');
+        const songTitle = document.getElementById('song-title');
+        const songArtist = document.getElementById('song-artist');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressContainer = document.getElementById('progress-container');
+        const progress = document.getElementById('progress');
+        const volumeSlider = document.getElementById('volume-slider');
+
+        // Music data array
+        const musicList = [
+            {
+                title: 'Summer Haze',
+                artist: 'An Jone',
+                cover: 'https://images.unsplash.com/photo-1517833075253-b91127042a34?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+                src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+            },
+            {
+                title: 'Urban Drive',
+                artist: 'Fesliyan Studios',
+                cover: 'https://images.unsplash.com/photo-1522867808930-a924467c6999?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+                src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+            },
+            {
+                title: 'Morning Light',
+                artist: 'Scott Holmes',
+                cover: 'https://images.unsplash.com/photo-1547841315-7798369062de?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+                src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+            }
+        ];
+
+        // Player state variables
+        let currentSongIndex = 0;
+        let isPlaying = false;
+
+        /**
+         * Loads a song into the audio player and updates the UI elements.
+         * @param {number} index - The index of the song to load from `musicList`.
+         */
+        function loadSong(index) {
+            const song = musicList[index];
+            audioPlayer.src = song.src;
+            albumArt.src = song.cover;
+            songTitle.textContent = song.title;
+            songArtist.textContent = song.artist;
+
+            // Set album art rotation based on play state
+            if (isPlaying) {
+                albumArt.classList.add('playing');
+            } else {
+                albumArt.classList.remove('playing');
+            }
+        }
+
+        /**
+         * Plays the current song. Updates UI to show pause icon and rotating album art.
+         */
+        function playSong() {
+            isPlaying = true;
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'inline-block';
+            albumArt.classList.add('playing');
+            audioPlayer.play();
+        }
+
+        /**
+         * Pauses the current song. Updates UI to show play icon and stops album art rotation.
+         */
+        function pauseSong() {
+            isPlaying = false;
+            playIcon.style.display = 'inline-block';
+            pauseIcon.style.display = 'none';
+            albumArt.classList.remove('playing');
+            audioPlayer.pause();
+        }
+
+        /**
+         * Toggles between play and pause states based on the current `isPlaying` status.
+         */
+        function togglePlayPause() {
+            if (isPlaying) {
+                pauseSong();
+            } else {
+                playSong();
+            }
+        }
+
+        /**
+         * Updates the progress bar width based on the current playback time of the audio.
+         * @param {Event} e - The 'timeupdate' event object from the audio player.
+         */
+        function updateProgress(e) {
+            const { duration, currentTime } = e.srcElement;
+            if (duration) { // Ensure duration is available to prevent NaN
+                const progressPercent = (currentTime / duration) * 100;
+                progress.style.width = `${progressPercent}%`;
+            }
+        }
+
+        /**
+         * Sets the song's current time based on where the user clicks on the progress bar.
+         * @param {Event} e - The 'click' event object on the progress container.
+         */
+        function setProgress(e) {
+            const width = this.clientWidth; // Width of the progress container
+            const clickX = e.offsetX; // X position of the click relative to the container
+            const duration = audioPlayer.duration;
+
+            if (duration) { // Ensure duration is available
+                audioPlayer.currentTime = (clickX / width) * duration;
+            }
+        }
+
+        /**
+         * Plays the next song in the `musicList`. Loops back to the start if at the end.
+         */
+        function nextSong() {
+            currentSongIndex = (currentSongIndex + 1) % musicList.length;
+            loadSong(currentSongIndex);
+            playSong(); // Automatically play the next song
+        }
+
+        /**
+         * Plays the previous song in the `musicList`. Loops to the end if at the start.
+         */
+        function prevSong() {
+            currentSongIndex = (currentSongIndex - 1 + musicList.length) % musicList.length;
+            loadSong(currentSongIndex);
+            playSong(); // Automatically play the previous song
+        }
+
+        /**
+         * Adjusts the volume of the audio player based on the volume slider's value.
+         * @param {Event} e - The 'input' event object from the volume slider.
+         */
+        function setVolume(e) {
+            audioPlayer.volume = e.target.value;
+        }
+
+        // Event Listeners
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        prevBtn.addEventListener('click', prevSong);
+        nextBtn.addEventListener('click', nextSong);
+        audioPlayer.addEventListener('timeupdate', updateProgress);
+        progressContainer.addEventListener('click', setProgress);
+        audioPlayer.addEventListener('ended', nextSong); // Play next song when current one ends
+        volumeSlider.addEventListener('input', setVolume);
+
+        // Initial setup on page load
+        loadSong(currentSongIndex); // Load the first song
+        audioPlayer.volume = parseFloat(volumeSlider.value); // Set initial volume from slider (0.7)
+    </script>
+</body>
+</html>

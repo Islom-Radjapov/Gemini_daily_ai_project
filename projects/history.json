@@ -4,6 +4,7 @@
     "dashboard::Marketing analitika paneli",
     "python_api::Cron ifodalarini tushuntiruvchi",
     "dashboard::Savdo dashboard",
-    "js_game::2048 o'yini"
+    "js_game::2048 o'yini",
+    "web_page::Muzika pleyer interfeysi"
   ]
 }
