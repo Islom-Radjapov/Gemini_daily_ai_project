@@ -5,6 +5,7 @@
     "python_api::Cron ifodalarini tushuntiruvchi",
     "dashboard::Savdo dashboard",
     "js_game::2048 o'yini",
-    "web_page::Muzika pleyer interfeysi"
+    "web_page::Muzika pleyer interfeysi",
+    "calculator::BMI kalkulyatori"
   ]
 }

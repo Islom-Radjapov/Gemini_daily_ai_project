@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI Kalkulyatori</title>
+    <style>
+        /* General body styling for a clean, centered layout */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Container for the whole calculator */
+        .bmi-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* Heading style */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        /* Styling for input groups (label + input) */
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        /* Label styling */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        /* Input field styling */
+        input[type="number"] {
+            width: calc(100% - 24px); /* Full width minus padding */
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Input focus effect */
+        input[type="number"]:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        /* Button styling */
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-top: 20px;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        /* Button hover effect */
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        /* Button active effect */
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Result container styling */
+        .result-container {
+            margin-top: 35px;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: 500;
+            text-align: center;
+            min-height: 80px; /* Ensure consistent height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa; /* Default neutral background */
+            color: #333; /* Default neutral text */
+            transition: all 0.4s ease-in-out; /* Smooth transition for color changes */
+            border: 1px solid #e0e0e0;
+        }
+
+        /* Specific styles for different BMI categories */
+        .result-container.underweight {
+            background-color: #ffe0b2; /* Light orange */
+            color: #e65100; /* Darker orange */
+            border-color: #e65100;
+        }
+
+        .result-container.normal {
+            background-color: #e8f5e9; /* Light green */
+            color: #2e7d32; /* Darker green */
+            border-color: #2e7d32;
+        }
+
+        .result-container.overweight {
+            background-color: #fffde7; /* Light yellow */
+            color: #fbc02d; /* Darker yellow */
+            border-color: #fbc02d;
+        }
+
+        .result-container.obese {
+            background-color: #ffcdd2; /* Light red */
+            color: #d32f2f; /* Darker red */
+            border-color: #d32f2f;
+        }
+
+        .result-container.error {
+            background-color: #ffebee; /* Very light red for error */
+            color: #c62828; /* Dark red for error text */
+            border-color: #c62828;
+        }
+
+        /* Styling for the BMI value and category text */
+        #bmi-value {
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 1.3em;
+        }
+
+        #bmi-category {
+            font-size: 1.1em;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 500px) {
+            .bmi-container {
+                padding: 25px;
+                margin: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 25px;
+            }
+            input[type="number"], button {
+                font-size: 1em;
+                padding: 10px;
+            }
+            .result-container {
+                font-size: 1.1em;
+                padding: 15px;
+            }
+            #bmi-value {
+                font-size: 1.2em;
+            }
+            #bmi-category {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bmi-container">
+        <h1>BMI Kalkulyatori</h1>
+
+        <div class="input-group">
+            <label for="weight">Vazn (kg):</label>
+            <input type="number" id="weight" placeholder="Masalan: 70" min="1" step="0.1" aria-label="Enter your weight in kilograms">
+        </div>
+
+        <div class="input-group">
+            <label for="height">Bo'y (sm):</label>
+            <input type="number" id="height" placeholder="Masalan: 175" min="1" step="0.1" aria-label="Enter your height in centimeters">
+        </div>
+
+        <button id="calculate-btn">Hisoblash</button>
+
+        <div id="result-container" class="result-container">
+            <p id="bmi-value">Ma'lumotlarni kiriting va Hisoblash tugmasini bosing</p>
+            <p id="bmi-category"></p>
+        </div>
+    </div>
+
+    <script>
+        // Get references to HTML elements
+        const weightInput = document.getElementById('weight');
+        const heightInput = document.getElementById('height');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const bmiValueDisplay = document.getElementById('bmi-value');
+        const bmiCategoryDisplay = document.getElementById('bmi-category');
+        const resultContainer = document.getElementById('result-container');
+
+        /**
+         * Clears any existing category classes from the result container.
+         * This ensures only one category style is active at a time.
+         */
+        function clearCategoryClasses() {
+            resultContainer.classList.remove('underweight', 'normal', 'overweight', 'obese', 'error');
+        }
+
+        /**
+         * Handles the BMI calculation when the button is clicked.
+         */
+        calculateBtn.addEventListener('click', () => {
+            clearCategoryClasses(); // Clear previous results and styles
+
+            const weight = parseFloat(weightInput.value);
+            const heightCm = parseFloat(heightInput.value);
+
+            // Input validation
+            if (isNaN(weight) || isNaN(heightCm) || weight <= 0 || heightCm <= 0) {
+                bmiValueDisplay.textContent = "Iltimos, haqiqiy musbat vazn va bo'yni kiriting.";
+                bmiCategoryDisplay.textContent = "";
+                resultContainer.classList.add('error'); // Add error styling
+                return; // Stop execution if inputs are invalid
+            }
+
+            // Convert height from centimeters to meters
+            const heightM = heightCm / 100;
+
+            // Calculate BMI using the formula: weight (kg) / (height (m) * height (m))
+            const bmi = weight / (heightM * heightM);
+
+            // Display the calculated BMI value, rounded to two decimal places
+            bmiValueDisplay.textContent = `Sizning BMI'ngiz: ${bmi.toFixed(2)}`;
+
+            let category = '';
+            let categoryClass = '';
+
+            // Determine BMI category and assign appropriate CSS class
+            if (bmi < 18.5) {
+                category = 'Vazn kam';
+                categoryClass = 'underweight';
+            } else if (bmi >= 18.5 && bmi < 24.9) {
+                category = 'Normal vazn';
+                categoryClass = 'normal';
+            } else if (bmi >= 25 && bmi < 29.9) {
+                category = 'Ortiqcha vazn';
+                categoryClass = 'overweight';
+            } else {
+                category = 'Semirganlik';
+                categoryClass = 'obese';
+            }
+
+            // Display the BMI category
+            bmiCategoryDisplay.textContent = `Kategoriya: ${category}`;
+
+            // Add the category-specific class to the result container for styling
+            resultContainer.classList.add(categoryClass);
+        });
+
+        // Initialize the result container with default text
+        resultContainer.classList.add('default-state'); // Optional: can add a default class for initial styling if needed
+    </script>
+</body>
+</html>
