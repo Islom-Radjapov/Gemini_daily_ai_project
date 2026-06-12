@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morphing Shapes</title>
+    <style>
+        /*
+         * Global reset and base styles
+         * Ensures consistent styling across browsers.
+         */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            margin: 0;             /* Remove default margins */
+            padding: 0;            /* Remove default paddings */
+        }
+
+        /*
+         * Body styling
+         * Sets up a full-screen, centered layout with a dark background.
+         */
+        body {
+            display: flex;                /* Use flexbox for centering content */
+            justify-content: center;      /* Center content horizontally */
+            align-items: center;          /* Center content vertically */
+            min-height: 100vh;            /* Make body take at least full viewport height */
+            background: linear-gradient(135deg, #2c3e50, #0a0e14); /* Dark gradient background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern sans-serif font */
+            overflow: hidden;             /* Hide any overflowing content, especially for potential background effects */
+        }
+
+        /*
+         * Morphing shape container
+         * Defines the core element that will undergo transformation.
+         */
+        .morphing-shape {
+            width: 180px;                  /* Fixed width */
+            height: 180px;                 /* Fixed height */
+            background: linear-gradient(45deg, #6dd5ed, #2193b0); /* Beautiful blue gradient background for the shape */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), /* Soft shadow for depth */
+                        0 0 60px rgba(109, 213, 237, 0.4); /* Subtle glow effect */
+            animation: morph 8s infinite ease-in-out alternate; /* Apply the morph animation */
+            transition: all 0.3s ease;     /* Smooth transition for any hover effects (not used here, but good practice) */
+        }
+
+        /*
+         * Keyframe animation for morphing shapes
+         * Defines the different stages of the shape's transformation.
+         * The animation cycles through various border-radius and transform properties
+         * to create the morphing effect.
+         */
+        @keyframes morph {
+            0% {
+                border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; /* Perfect circle */
+                transform: rotate(0deg) scale(1);                 /* No rotation, original size */
+            }
+            20% {
+                border-radius: 40% 60% 70% 30% / 40% 70% 30% 60%; /* Organic blob 1 */
+                transform: rotate(20deg) scale(1.05);             /* Slight rotation, slightly larger */
+            }
+            40% {
+                border-radius: 30% 70% 20% 80% / 70% 30% 80% 20%; /* Organic blob 2 */
+                transform: rotate(45deg) scale(0.95);             /* More rotation, slightly smaller */
+            }
+            60% {
+                border-radius: 20% 80% 10% 90% / 80% 20% 90% 10%; /* More organic blob 3 */
+                transform: rotate(70deg) scale(1.1);              /* Even more rotation, larger */
+            }
+            80% {
+                border-radius: 10% 90% 5% 95% / 90% 10% 95% 5%; /* Sharp-edged blob */
+                transform: rotate(95deg) scale(0.9);              /* High rotation, smaller */
+            }
+            100% {
+                border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; /* Back to perfect circle */
+                transform: rotate(120deg) scale(1);               /* Further rotation, original size */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- The main element for the morphing shape -->
+    <div class="morphing-shape"></div>
+</body>
+</html>
