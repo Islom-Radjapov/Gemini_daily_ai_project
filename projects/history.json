@@ -8,6 +8,7 @@
     "web_page::Muzika pleyer interfeysi",
     "calculator::BMI kalkulyatori",
     "css_animation::Morphing shakllar",
-    "js_game::Flappy Bird kloni"
+    "js_game::Flappy Bird kloni",
+    "calculator::Temperatura konvertori"
   ]
 }
