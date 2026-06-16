@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Our Simple Python Server</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            text-align: center;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            padding: 40px 50px;
+            max-width: 600px;
+            width: 90%;
+            box-sizing: border-box;
+            border-top: 5px solid #4CAF50; /* Accent color */
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .highlight {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        a {
+            color: #2196F3;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        a:hover {
+            color: #0d47a1;
+            text-decoration: underline;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Your <span class="highlight">Simple Python HTTP Server</span>!</h1>
+        <p>This page is being served directly from your Python-based web server, using only standard libraries.</p>
+        <p>It's designed to be a lightweight and efficient way to serve static files.</p>
+        <p>Explore some sample content:</p>
+        <p><a href="/sample.txt">View a Sample Text File</a></p>
+        <p>Try navigating to a non-existent page to see the custom 404 error page:</p>
+        <p><a href="/this_page_does_not_exist.html">Visit a non-existent page</a></p>
+    </div>
+    <div class="footer">
+        <p>&copy; 2023 Simple Python Server Project</p>
+    </div>
+</body>
+</html>

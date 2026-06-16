@@ -1,0 +1,6 @@
+Hello from your Simple Python HTTP Server!
+
+This is a plain text file (sample.txt) being served by the Python server.
+You can put any kind of static content here, like HTML, CSS, JavaScript, images, etc.
+
+Enjoy building with Python!

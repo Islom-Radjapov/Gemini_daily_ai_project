@@ -9,6 +9,7 @@
     "calculator::BMI kalkulyatori",
     "css_animation::Morphing shakllar",
     "js_game::Flappy Bird kloni",
-    "calculator::Temperatura konvertori"
+    "calculator::Temperatura konvertori",
+    "python_api::Oddiy HTTP server"
   ]
 }
