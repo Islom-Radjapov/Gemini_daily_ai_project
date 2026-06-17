@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator</title>
+    <style>
+        /* Define CSS variables for easier theming and consistency */
+        :root {
+            --calculator-bg: #2d3436; /* Dark gray */
+            --display-bg: #1e272e;    /* Even darker gray */
+            --display-text: #ffffff;  /* White */
+            --button-bg: #4a69bd;     /* Blue */
+            --button-text: #ffffff;  /* White */
+            --operator-bg: #5f27cd;   /* Purple */
+            --equals-bg: #ee5253;     /* Red */
+            --clear-bg: #eb3b5a;      /* Lighter red */
+            --scientific-bg: #1abc9c; /* Greenish teal */
+            --hover-light: rgba(255, 255, 255, 0.1); /* Light hover effect */
+            --hover-dark: rgba(0, 0, 0, 0.2);       /* Dark hover effect */
+            --border-radius: 12px;
+            --box-shadow: 0 10px 20px rgba(0,0,0,0.25), 0 6px 6px rgba(0,0,0,0.22);
+        }
+
+        /* Basic body styling */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to right, #00c6ff, #0072ff); /* Gradient background */
+            color: var(--button-text);
+            overflow: hidden; /* Prevent scrollbars */
+        }
+
+        /* Calculator container styling */
+        .calculator {
+            background: var(--calculator-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            width: 100%;
+            max-width: 420px; /* Max width for larger screens */
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        /* Display area styling */
+        .display {
+            background: var(--display-bg);
+            color: var(--display-text);
+            font-size: 3em;
+            text-align: right;
+            padding: 20px 15px;
+            border-radius: calc(var(--border-radius) / 2);
+            margin-bottom: 20px;
+            overflow: hidden; /* Hide overflow text */
+            white-space: nowrap; /* Prevent text wrapping */
+            text-overflow: ellipsis; /* Add ellipsis for overflow */
+            min-height: 1.5em; /* Ensure consistent height */
+        }
+
+        /* Buttons grid container */
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 5 columns for scientific + basic */
+            gap: 12px;
+        }
+
+        /* Base button styling */
+        .button {
+            background: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            padding: 20px 0;
+            border-radius: var(--border-radius);
+            font-size: 1.5em;
+            cursor: pointer;
+            outline: none;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            user-select: none; /* Prevent text selection on buttons */
+        }
+
+        .button:hover {
+            background-color: var(--hover-light);
+            box-shadow: inset 0 0 15px var(--hover-dark);
+        }
+
+        .button:active {
+            transform: scale(0.98); /* Slightly shrink on click */
+        }
+
+        /* Specific button type styling */
+        .button.op {
+            background-color: var(--operator-bg);
+        }
+
+        .button.equals {
+            background-color: var(--equals-bg);
+            grid-column: span 2; /* Make equals button span two columns */
+        }
+
+        .button.clear {
+            background-color: var(--clear-bg);
+        }
+
+        .button.scientific {
+            background-color: var(--scientific-bg);
+            font-size: 1.3em; /* Slightly smaller font for scientific functions */
+        }
+
+        /* Special styling for the '0' button if it spans */
+        .button.zero {
+            grid-column: span 2;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 500px) {
+            .calculator {
+                max-width: 95%; /* Make it fill more width on small screens */
+                padding: 15px;
+            }
+            .buttons {
+                grid-template-columns: repeat(4, 1fr); /* 4 columns on smaller screens */
+                gap: 10px;
+            }
+            /* Adjust button spans for 4-column layout */
+            .button.equals {
+                grid-column: span 2; /* Still spans 2 columns */
+            }
+            .button.zero {
+                grid-column: span 2; /* Still spans 2 columns */
+            }
+            /* Adjust scientific buttons to fit 4-column layout */
+            .button.scientific {
+                font-size: 1.1em;
+            }
+            /* Hide the last column of scientific buttons on small screens, or adjust their placement */
+            /* For now, let's keep all buttons and adjust grid. We have 5 columns of buttons.
+               A 4-column layout will require some buttons to shift rows or become larger.
+               Let's simplify for mobile: keep 5 columns, but make buttons smaller and text adjusts.
+               Alternatively, we can change grid-template-columns to 4fr and make scientific buttons take 2 rows/columns.*/
+            /* Re-thinking the grid: A 5-column grid is dense. Let's make it 4 columns always
+               and adjust buttons as needed.
+               AC, C, %, /,
+               7, 8, 9, *
+               4, 5, 6, -
+               1, 2, 3, +
+               0, ., =, (equals spans 2 columns)
+               Scientific: sin, cos, tan, log, ln, sqrt, x^y, PI, E, +/- */
+
+            .buttons {
+                 grid-template-columns: repeat(4, 1fr); /* 4 columns on all screen sizes for simplicity and better mobile fit */
+                 gap: 10px;
+            }
+
+            /* Adjust spans for the 4-column layout */
+            .button.zero {
+                grid-column: span 2;
+            }
+            .button.equals {
+                grid-column: span 2;
+            }
+
+            /* Scientific buttons layout for 4 columns */
+            .button.scientific {
+                font-size: 1.1em; /* Smaller font for scientific */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <!-- Scientific functions and special operators -->
+            <button class="button scientific" data-function="pi">&pi;</button>
+            <button class="button scientific" data-function="e">e</button>
+            <button class="button scientific" data-function="sqrt">√</button>
+            <button class="button scientific" data-function="pow">x<sup>y</sup></button>
+            <button class="button op" data-function="percent">%</button>
+
+            <button class="button scientific" data-function="sin">sin</button>
+            <button class="button scientific" data-function="cos">cos</button>
+            <button class="button scientific" data-function="tan">tan</button>
+            <button class="button scientific" data-function="log">log</button>
+            <button class="button scientific" data-function="ln">ln</button>
+
+            <button class="button clear" data-action="all-clear">AC</button>
+            <button class="button clear" data-action="clear-entry">C</button>
+            <button class="button op" data-action="negate">+/-</button>
+            <button class="button op" data-operation="/">/</button>
+            <button class="button num" data-number="7">7</button>
+
+            <button class="button num" data-number="8">8</button>
+            <button class="button num" data-number="9">9</button>
+            <button class="button op" data-operation="*">*</button>
+            <button class="button num" data-number="4">4</button>
+
+            <button class="button num" data-number="5">5</button>
+            <button class="button num" data-number="6">6</button>
+            <button class="button op" data-operation="-">-</button>
+            <button class="button num" data-number="1">1</button>
+
+            <button class="button num" data-number="2">2</button>
+            <button class="button num" data-number="3">3</button>
+            <button class="button op" data-operation="+">+</button>
+            <button class="button zero num" data-number="0">0</button>
+            <button class="button num" data-number=".">.</button>
+            <button class="button equals" data-action="equals">=</button>
+        </div>
+    </div>
+
+    <script>
+        // Get the display element
+        const displayElement = document.getElementById('display');
+
+        // Calculator state variables
+        let currentInput = '0'; // The number currently being entered or shown
+        let previousInput = ''; // The number before the operator was selected
+        let operation = undefined; // The selected arithmetic operation (+, -, *, /) or power (^)
+        let waitingForSecondOperand = false; // Flag to indicate if we're waiting for the second number after an operator
+
+        /**
+         * Updates the calculator display with the current input value.
+         */
+        function updateDisplay() {
+            displayElement.textContent = currentInput;
+        }
+
+        /**
+         * Clears all calculator state and resets the display.
+         */
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            operation = undefined;
+            waitingForSecondOperand = false;
+            updateDisplay();
+        }
+
+        /**
+         * Clears only the current input, useful for correcting entry mistakes.
+         */
+        function clearEntry() {
+            currentInput = '0';
+            updateDisplay();
+        }
+
+        /**
+         * Appends a number or decimal point to the current input string.
+         * @param {string} number - The digit or decimal point to append.
+         */
+        function appendNumber(number) {
+            // If waiting for a new operand, replace current input with the new number
+            if (waitingForSecondOperand) {
+                currentInput = number;
+                waitingForSecondOperand = false;
+                updateDisplay();
+                return;
+            }
+
+            // Prevent multiple decimal points
+            if (number === '.' && currentInput.includes('.')) return;
+
+            // Handle leading zero: if current input is '0' and a non-decimal number is pressed, replace '0'
+            if (currentInput === '0' && number !== '.') {
+                currentInput = number;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        /**
+         * Sets the chosen operation and prepares for the second operand.
+         * If there's a previous operation, it calculates the result first.
+         * @param {string} op - The operator string (+, -, *, /, ^).
+         */
+        function chooseOperation(op) {
+            // If an operation is already pending and not waiting for a new operand,
+            // calculate the intermediate result
+            if (previousInput !== '' && !waitingForSecondOperand) {
+                calculate();
+            }
+
+            // Set the new operation and store the current input as the previous input
+            operation = op;
+            previousInput = currentInput;
+            currentInput = '0'; // Clear current input for the next number
+            waitingForSecondOperand = true;
+            updateDisplay(); // Update display to show '0' or new input
+        }
+
+        /**
+         * Performs the calculation based on the stored previous input, current input, and operation.
+         */
+        function calculate() {
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            // If either operand is not a number, or if there's no previous input, do nothing
+            if (isNaN(prev) || isNaN(current) || previousInput === '') {
+                return;
+            }
+
+            switch (operation) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    if (current === 0) {
+                        alert("Cannot divide by zero!");
+                        clearAll(); // Reset calculator on error
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                case '^': // Power function (x^y)
+                    result = Math.pow(prev, current);
+                    break;
+                default:
+                    return; // No valid operation selected
+            }
+
+            // Update current input with the result, clear previous state
+            currentInput = result.toString();
+            operation = undefined;
+            previousInput = '';
+            waitingForSecondOperand = false;
+            updateDisplay();
+        }
+
+        /**
+         * Performs scientific functions on the current input.
+         * @param {string} func - The name of the scientific function (e.g., 'sin', 'sqrt').
+         */
+        function performScientific(func) {
+            let num = parseFloat(currentInput);
+            if (isNaN(num)) return; // If current input is not a valid number, do nothing
+
+            let result;
+            switch (func) {
+                case 'pi':
+                    result = Math.PI;
+                    break;
+                case 'e':
+                    result = Math.E;
+                    break;
+                case 'sqrt':
+                    if (num < 0) {
+                        alert("Cannot take square root of a negative number!");
+                        clearAll();
+                        return;
+                    }
+                    result = Math.sqrt(num);
+                    break;
+                case 'log': // Logarithm base 10
+                    result = Math.log10(num);
+                    break;
+                case 'ln': // Natural logarithm (base e)
+                    result = Math.log(num);
+                    break;
+                case 'sin':
+                    // Convert degrees to radians for Math.sin
+                    result = Math.sin(num * Math.PI / 180);
+                    break;
+                case 'cos':
+                    // Convert degrees to radians for Math.cos
+                    result = Math.cos(num * Math.PI / 180);
+                    break;
+                case 'tan':
+                    // Convert degrees to radians for Math.tan
+                    result = Math.tan(num * Math.PI / 180);
+                    break;
+                case 'percent':
+                    result = num / 100;
+                    break;
+                case 'negate':
+                    result = -num;
+                    break;
+                // 'pow' (x^y) is handled as a binary operator by chooseOperation
+                default:
+                    return;
+            }
+
+            currentInput = result.toString();
+            updateDisplay();
+        }
+
+        // Add event listener to the calculator container for all button clicks
+        document.addEventListener('DOMContentLoaded', () => {
+            const calculatorButtons = document.querySelector('.buttons');
+            calculatorButtons.addEventListener('click', e => {
+                const target = e.target;
+                // Ensure the clicked element is a button
+                if (!target.matches('button')) return;
+
+                // Handle number and decimal point inputs
+                if (target.dataset.number) {
+                    appendNumber(target.dataset.number);
+                }
+                // Handle arithmetic operations and power (x^y)
+                else if (target.dataset.operation) {
+                    chooseOperation(target.dataset.operation);
+                }
+                // Handle special actions like AC, C, =, +/-
+                else if (target.dataset.action) {
+                    switch (target.dataset.action) {
+                        case 'all-clear':
+                            clearAll();
+                            break;
+                        case 'clear-entry':
+                            clearEntry();
+                            break;
+                        case 'equals':
+                            calculate();
+                            break;
+                        case 'negate':
+                            performScientific('negate');
+                            break;
+                    }
+                }
+                // Handle scientific functions (sin, cos, tan, sqrt, log, ln, pi, e, %)
+                else if (target.dataset.function) {
+                    // For 'pow' (x^y), treat it as an operator, not a unary function
+                    if (target.dataset.function === 'pow') {
+                        chooseOperation('^');
+                    } else {
+                        performScientific(target.dataset.function);
+                    }
+                }
+            });
+
+            // Initialize the display when the page loads
+            clearAll();
+        });
+    </script>
+</body>
+</html>
