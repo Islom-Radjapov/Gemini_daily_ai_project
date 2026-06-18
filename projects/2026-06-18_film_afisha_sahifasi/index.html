@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Film Poster Showcase: Interstellar</title>
+    <style>
+        /*
+         * Inline CSS for a modern and responsive movie poster page.
+         * Design is dark-themed for a cinematic feel.
+         */
+
+        /* Basic Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a2e; /* Dark background */
+            color: #e0e0e0; /* Light text color */
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            padding: 20px;
+        }
+
+        /* Container for the entire page content */
+        .movie-poster-page {
+            width: 100%;
+            max-width: 1000px; /* Max width for content */
+            background-color: #16213e; /* Slightly lighter dark shade */
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            overflow: hidden; /* Ensures border-radius applies correctly */
+        }
+
+        /* Header Styles */
+        header {
+            background-color: #0f3460; /* Even darker shade for header */
+            padding: 20px 30px;
+            text-align: center;
+            border-bottom: 1px solid #1a1a2e;
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            color: #e94560; /* Accent color for title */
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Main Movie Card Section */
+        .movie-card {
+            display: flex;
+            flex-direction: column; /* Default to column for small screens */
+            padding: 30px;
+            gap: 30px; /* Space between poster and details */
+        }
+
+        /* Poster Section */
+        .poster-section {
+            flex-shrink: 0; /* Prevent shrinking */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .movie-poster {
+            width: 100%;
+            max-width: 300px; /* Max width for the poster */
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .movie-poster:hover {
+            transform: scale(1.03); /* Slight zoom on hover */
+        }
+
+        .movie-actions {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap; /* Allow buttons to wrap on small screens */
+            justify-content: center;
+        }
+
+        /* Action Buttons */
+        .action-button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            outline: none; /* Remove outline on focus */
+        }
+
+        .action-button.primary {
+            background-color: #e94560; /* Accent color */
+            color: #ffffff;
+        }
+
+        .action-button.primary:hover {
+            background-color: #ff6a80;
+            transform: translateY(-2px);
+        }
+        .action-button.primary:active {
+            transform: translateY(0);
+        }
+
+        .action-button.secondary {
+            background-color: #0f3460; /* Darker accent */
+            color: #ffffff;
+            border: 1px solid #0f3460;
+        }
+
+        .action-button.secondary:hover {
+            background-color: #1a4f8a;
+            transform: translateY(-2px);
+        }
+        .action-button.secondary:active {
+            transform: translateY(0);
+        }
+        
+        .action-button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none;
+        }
+
+        /* Details Section */
+        .details-section {
+            flex-grow: 1; /* Allow to take available space */
+        }
+
+        .movie-title {
+            font-size: 2.8em;
+            color: #e94560; /* Accent color */
+            margin-bottom: 10px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .movie-meta {
+            font-size: 0.95em;
+            color: #a0a0a0;
+            margin-bottom: 20px;
+        }
+
+        .movie-meta span {
+            margin-right: 8px;
+            padding: 2px 6px;
+            background-color: #2e3b5e;
+            border-radius: 3px;
+            white-space: nowrap; /* Prevent breaking */
+        }
+
+        .movie-director {
+            font-size: 1em;
+            color: #c0c0c0;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .details-section h3 {
+            font-size: 1.5em;
+            color: #e0e0e0;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #2e3b5e;
+            padding-bottom: 5px;
+        }
+
+        .movie-description {
+            font-size: 1.05em;
+            color: #c0c0c0;
+            margin-bottom: 20px;
+            line-height: 1.7;
+        }
+
+        /* Footer Styles */
+        footer {
+            background-color: #0f3460; /* Darker shade for footer */
+            padding: 15px 30px;
+            text-align: center;
+            font-size: 0.85em;
+            color: #a0a0a0;
+            border-top: 1px solid #1a1a2e;
+        }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            .movie-card {
+                flex-direction: row; /* Row layout for larger screens */
+                align-items: flex-start; /* Align items to the top */
+            }
+
+            .poster-section {
+                width: 350px; /* Fixed width for poster section */
+                margin-right: 30px;
+                align-items: flex-start; /* Align poster and buttons to the left */
+                text-align: left;
+            }
+
+            .movie-poster {
+                width: 300px; /* Set specific width for the poster */
+            }
+            
+            .movie-actions {
+                justify-content: flex-start; /* Align buttons to the left */
+            }
+
+            .details-section {
+                flex: 1; /* Allow details to take remaining space */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="movie-poster-page">
+        <header>
+            <h1>Film Poster Showcase</h1>
+        </header>
+
+        <main class="movie-card">
+            <div class="poster-section">
+                <!-- Movie poster image. Using a direct link to a TMDB image. -->
+                <img src="https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6blYU6GxYPtHQ.jpg" 
+                     alt="Interstellar Movie Poster" 
+                     class="movie-poster">
+                
+                <div class="movie-actions">
+                    <!-- Button to watch the trailer -->
+                    <button id="watchTrailerBtn" class="action-button primary">Watch Trailer</button>
+                    <!-- Button to add to watchlist -->
+                    <button id="addToWatchlistBtn" class="action-button secondary">Add to Watchlist</button>
+                </div>
+            </div>
+
+            <div class="details-section">
+                <!-- Movie title -->
+                <h2 class="movie-title">Interstellar</h2>
+                
+                <!-- Movie meta information -->
+                <p class="movie-meta">
+                    <span class="genre">Sci-Fi, Drama, Adventure</span> |
+                    <span class="release-date">2014</span> |
+                    <span class="runtime">2h 49m</span> |
+                    <span class="rating">PG-13</span>
+                </p>
+                
+                <!-- Movie director -->
+                <p class="movie-director">Directed by: Christopher Nolan</p>
+                
+                <h3>Synopsis</h3>
+                <!-- Movie description/synopsis -->
+                <p class="movie-description">
+                    In a dystopian future where humanity is struggling to survive, a group of explorers travel through a newly discovered wormhole near Saturn in an attempt to find a new habitable planet for mankind. Led by pilot Cooper, the team embarks on a perilous journey beyond our galaxy, facing unimaginable challenges and the relentless ticking of time.
+                </p>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2023 Film Poster Showcase. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        /*
+         * Inline JavaScript for interactive elements.
+         * Handles button click events.
+         */
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get references to the buttons
+            const watchTrailerBtn = document.getElementById('watchTrailerBtn');
+            const addToWatchlistBtn = document.getElementById('addToWatchlistBtn');
+
+            // Event listener for the "Watch Trailer" button
+            watchTrailerBtn.addEventListener('click', () => {
+                // Opens the Interstellar trailer on YouTube in a new tab
+                window.open('https://www.youtube.com/watch?v=zSWdgcM_i2Y', '_blank');
+            });
+
+            // Event listener for the "Add to Watchlist" button
+            addToWatchlistBtn.addEventListener('click', () => {
+                // Simulate adding to watchlist
+                alert('Interstellar successfully added to your watchlist!');
+                
+                // Change button text and disable it after adding
+                addToWatchlistBtn.textContent = 'Added to Watchlist!';
+                addToWatchlistBtn.disabled = true;
+                // Optionally, change its style to indicate it's disabled/completed
+                addToWatchlistBtn.style.backgroundColor = '#4CAF50'; // Green color
+                addToWatchlistBtn.style.cursor = 'default';
+            });
+        });
+    </script>
+</body>
+</html>
