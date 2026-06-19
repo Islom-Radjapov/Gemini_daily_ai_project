@@ -12,6 +12,7 @@
     "calculator::Temperatura konvertori",
     "python_api::Oddiy HTTP server",
     "calculator::Ilmiy kalkulyator",
-    "web_page::Film afisha sahifasi"
+    "web_page::Film afisha sahifasi",
+    "python_api::Oddiy unit test framework"
   ]
 }
