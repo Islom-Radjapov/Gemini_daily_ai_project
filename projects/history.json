@@ -13,6 +13,7 @@
     "python_api::Oddiy HTTP server",
     "calculator::Ilmiy kalkulyator",
     "web_page::Film afisha sahifasi",
-    "python_api::Oddiy unit test framework"
+    "python_api::Oddiy unit test framework",
+    "quiz_app::Umumiy bilim testi"
   ]
 }

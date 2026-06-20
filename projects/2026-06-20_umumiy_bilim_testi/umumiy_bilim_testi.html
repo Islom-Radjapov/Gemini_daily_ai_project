@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Umumiy Bilim Testi</title>
+    <!-- Inline CSS for styling the quiz interface -->
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #71b7e6, #9b59b6); /* Gradient background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            color: #333; /* Default text color */
+        }
+
+        /* Main quiz container styling */
+        .quiz-container {
+            background-color: #fff; /* White background */
+            padding: 40px;
+            border-radius: 15px; /* Rounded corners */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Soft shadow */
+            width: 100%;
+            max-width: 600px; /* Maximum width for larger screens */
+            text-align: center;
+            position: relative;
+            overflow: hidden; /* Ensure shadow/border radius work */
+        }
+
+        /* Main title styling */
+        h1 {
+            color: #555;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            position: relative;
+        }
+
+        /* Underline effect for the title */
+        h1::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background-color: #71b7e6; /* Accent color */
+            border-radius: 2px;
+        }
+
+        /* Quiz area styling */
+        .quiz-area {
+            margin-top: 20px;
+        }
+
+        /* Question text styling */
+        #question {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #333;
+            min-height: 80px; /* Ensure consistent height for question display */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: left;
+            padding: 0 10px;
+        }
+
+        /* Options container for grid layout */
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr; /* Single column layout */
+            gap: 15px; /* Space between options */
+            margin-bottom: 30px;
+        }
+
+        /* Individual option button styling */
+        .option-btn {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 2px solid #ddd;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transitions for hover effects */
+            text-align: left;
+            width: 100%; /* Full width */
+            box-sizing: border-box; /* Include padding/border in width */
+        }
+
+        /* Hover effect for option buttons */
+        .option-btn:hover:not(.disabled) {
+            background-color: #e0e0e0;
+            border-color: #c0c0c0;
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Soft shadow on hover */
+        }
+
+        /* Style for the selected option */
+        .option-btn.selected {
+            border-color: #71b7e6; /* Accent border */
+            background-color: #eaf6fc; /* Light blue background */
+        }
+
+        /* Style for correct answers */
+        .option-btn.correct {
+            background-color: #d4edda; /* Light green */
+            border-color: #28a745; /* Green */
+            color: #155724;
+            font-weight: bold;
+        }
+
+        /* Style for incorrect answers */
+        .option-btn.incorrect {
+            background-color: #f8d7da; /* Light red */
+            border-color: #dc3545; /* Red */
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        /* Style for disabled buttons */
+        .option-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.7; /* Reduce opacity */
+        }
+
+        /* Navigation buttons container */
+        .navigation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px; /* Space between buttons */
+        }
+
+        /* General button styling */
+        .btn {
+            background-color: #71b7e6; /* Accent background */
+            color: #fff; /* White text */
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hover effect for general buttons */
+        .btn:hover {
+            background-color: #5a9edc; /* Darker accent */
+            transform: translateY(-2px);
+        }
+
+        /* Active (click) effect for general buttons */
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Styling for submit/restart buttons (different accent) */
+        #submit-button, #restart-button, #final-restart-button {
+            background-color: #9b59b6; /* Purple accent */
+        }
+
+        /* Hover effect for submit/restart buttons */
+        #submit-button:hover, #restart-button:hover, #final-restart-button:hover {
+            background-color: #844dab; /* Darker purple */
+        }
+
+        /* Result container styling */
+        .result-container {
+            padding: 30px;
+            background-color: #eaf6fc; /* Light blue background */
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #cce5ff;
+        }
+
+        /* Result title styling */
+        .result-container h2 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        /* Result paragraph styling */
+        .result-container p {
+            font-size: 1.4em;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        /* Score display styling */
+        #score-display {
+            font-weight: bold;
+            color: #28a745; /* Green for score */
+            font-size: 1.2em;
+        }
+
+        /* Total questions display styling */
+        #total-questions-display {
+            font-weight: bold;
+            color: #71b7e6; /* Accent color for total questions */
+            font-size: 1.2em;
+        }
+
+        /* Basic Responsiveness for smaller screens */
+        @media (max-width: 768px) {
+            .quiz-container {
+                margin: 20px; /* Add margin on smaller screens */
+                padding: 30px;
+            }
+            h1 {
+                font-size: 1.8em; /* Adjust title font size */
+            }
+            #question {
+                font-size: 1.3em; /* Adjust question font size */
+                min-height: 60px; /* Smaller min-height */
+            }
+            .option-btn, .btn {
+                padding: 12px 15px;
+                font-size: 1em; /* Adjust button font size */
+            }
+            .navigation-buttons {
+                flex-direction: column; /* Stack buttons vertically */
+                gap: 10px;
+            }
+            .result-container p {
+                font-size: 1.2em; /* Adjust result text size */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Umumiy Bilim Testi</h1>
+        <div class="quiz-area">
+            <h2 id="question">Savol matni shu yerda</h2>
+            <div id="options-container" class="options-container">
+                <!-- Answer options will be dynamically injected here by JavaScript -->
+            </div>
+            <div class="navigation-buttons">
+                <button id="next-button" class="btn">Keyingi Savol</button>
+                <button id="submit-button" class="btn" style="display: none;">Natijalarni Ko'rish</button>
+                <!-- Restart button is primarily for the result screen, hidden during quiz flow -->
+                <button id="restart-button" class="btn" style="display: none;">Qayta Boshlash</button> 
+            </div>
+        </div>
+        <div id="result-container" class="result-container" style="display: none;">
+            <h2>Test Yakunlandi!</h2>
+            <p>Sizning natijangiz: <span id="score-display">0</span> / <span id="total-questions-display">0</span></p>
+            <button id="final-restart-button" class="btn">Qayta Boshlash</button>
+        </div>
+    </div>
+
+    <!-- Inline JavaScript for quiz logic -->
+    <script>
+        // Array of quiz questions. Each object contains a question, its options, and the index of the correct answer.
+        const questions = [
+            {
+                question: "Quyosh sistemasidagi eng katta sayyora qaysi?",
+                options: ["Mars", "Venera", "Yupiter", "Saturn"],
+                correctAnswerIndex: 2 // Yupiter
+            },
+            {
+                question: "Inson tanasidagi eng katta organ qaysi?",
+                options: ["Yurak", "Miya", "Jigar", "Teri"],
+                correctAnswerIndex: 3 // Teri
+            },
+            {
+                question: "Internetning to'liq nomi nima?",
+                options: ["International Network", "Interconnected Network", "Internal Network", "Intranet"],
+                correctAnswerIndex: 1 // Interconnected Network
+            },
+            {
+                question: "Eng baland tog' cho'qqisi qaysi?",
+                options: ["K2", "Everest", "Kangchenjunga", "Lhotse"],
+                correctAnswerIndex: 1 // Everest
+            },
+            {
+                question: "Qaysi davlat 'Quyosh chiqayotgan yurt' deb ataladi?",
+                options: ["Xitoy", "Yaponiya", "Janubiy Koreya", "Vetnam"],
+                correctAnswerIndex: 1 // Yaponiya
+            },
+            {
+                question: "Suvning kimyoviy formulasi nima?",
+                options: ["CO2", "O2", "H2O", "N2"],
+                correctAnswerIndex: 2 // H2O
+            },
+            {
+                question: "Dunyo bo'yicha eng ko'p gapiriladigan til qaysi?",
+                options: ["Ingliz tili", "Mandarin (Xitoy) tili", "Ispan tili", "Hind tili"],
+                correctAnswerIndex: 1 // Mandarin (Xitoy) tili
+            },
+            {
+                question: "Rim imperiyasining birinchi imperatori kim bo'lgan?",
+                options: ["Yuliy Sezar", "Avgust", "Neron", "Trajan"],
+                correctAnswerIndex: 1 // Avgust
+            },
+            {
+                question: "Qaysi olim tortishish qonunini kashf etgan?",
+                options: ["Albert Eynshteyn", "Isak Nyuton", "Galileo Galilei", "Nikola Tesla"],
+                correctAnswerIndex: 1 // Isak Nyuton
+            },
+            {
+                question: "Kompyuterning miyasi nima deb ataladi?",
+                options: ["RAM", "ROM", "CPU", "GPU"],
+                correctAnswerIndex: 2 // CPU
+            },
+            {
+                question: "Amazon daryosi qaysi qit'ada joylashgan?",
+                options: ["Afrika", "Osiyo", "Janubiy Amerika", "Shimoliy Amerika"],
+                correctAnswerIndex: 2 // Janubiy Amerika
+            },
+            {
+                question: "Birinchi jahon urushi qaysi yilda boshlangan?",
+                options: ["1905", "1914", "1918", "1929"],
+                correctAnswerIndex: 1 // 1914
+            }
+        ];
+
+        // Global variables to manage quiz state
+        let currentQuestionIndex = 0; // Tracks the current question number
+        let score = 0; // Stores the user's score
+        let selectedOptionIndex = null; // Stores the index of the option selected by the user for the current question
+
+        // Get references to DOM elements
+        const quizArea = document.querySelector('.quiz-area');
+        const questionElement = document.getElementById('question');
+        const optionsContainer = document.getElementById('options-container');
+        const nextButton = document.getElementById('next-button');
+        const submitButton = document.getElementById('submit-button');
+        const resultContainer = document.getElementById('result-container');
+        const scoreDisplay = document.getElementById('score-display');
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const finalRestartButton = document.getElementById('final-restart-button');
+
+        /**
+         * Loads the current question and its options into the UI.
+         * Clears previous options, displays the new question, and creates buttons for options.
+         */
+        function loadQuestion() {
+            optionsContainer.innerHTML = ''; // Clear any previously displayed options
+            selectedOptionIndex = null; // Reset the selected option for the new question
+
+            // Get the current question data from the questions array
+            const currentQuestion = questions[currentQuestionIndex];
+            questionElement.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+
+            // Create a button for each option and append it to the options container
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-btn');
+                // Attach an event listener to each button to handle user selection
+                button.addEventListener('click', (event) => selectOption(index, event.target));
+                optionsContainer.appendChild(button);
+            });
+
+            // Hide navigation buttons until an option is selected for the current question
+            nextButton.style.display = 'none';
+            submitButton.style.display = 'none';
+        }
+
+        /**
+         * Handles the user's selection of an option.
+         * Checks if the answer is correct, updates the score, and provides visual feedback.
+         * @param {number} selectedIndex - The index of the option selected by the user.
+         * @param {HTMLElement} selectedButton - The button element that was clicked.
+         */
+        function selectOption(selectedIndex, selectedButton) {
+            // Prevent multiple selections for the same question
+            if (selectedOptionIndex !== null) {
+                return;
+            }
+
+            // Store the selected option's index
+            selectedOptionIndex = selectedIndex;
+
+            // Disable all option buttons after selection to prevent further clicks
+            Array.from(optionsContainer.children).forEach(button => {
+                button.classList.add('disabled'); // Add 'disabled' class for styling
+                button.disabled = true; // Use HTML 'disabled' attribute to prevent interaction
+            });
+
+            // Add 'selected' class to the chosen option for visual indication
+            selectedButton.classList.add('selected');
+
+            // Check if the selected answer is correct
+            const currentQuestion = questions[currentQuestionIndex];
+            if (selectedIndex === currentQuestion.correctAnswerIndex) {
+                score++; // Increment score if the answer is correct
+                selectedButton.classList.add('correct'); // Highlight the selected button as correct
+            } else {
+                selectedButton.classList.add('incorrect'); // Highlight the selected button as incorrect
+                // Also highlight the truly correct answer
+                optionsContainer.children[currentQuestion.correctAnswerIndex].classList.add('correct');
+            }
+
+            // Show the appropriate navigation button based on whether it's the last question
+            if (currentQuestionIndex < questions.length - 1) {
+                nextButton.style.display = 'block'; // Show "Next Question" button
+            } else {
+                submitButton.style.display = 'block'; // Show "View Results" button for the last question
+            }
+        }
+
+        /**
+         * Moves to the next question in the quiz.
+         * If there are more questions, loads the next one; otherwise, shows the final result.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++; // Move to the next question
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion(); // Load the next question
+            } else {
+                showResult(); // If no more questions, show results
+            }
+        }
+
+        /**
+         * Displays the final quiz result to the user.
+         * Hides the quiz area and shows the result container with the score.
+         */
+        function showResult() {
+            quizArea.style.display = 'none'; // Hide the quiz interface
+            resultContainer.style.display = 'block'; // Show the result display area
+            scoreDisplay.textContent = score; // Update the score display
+            totalQuestionsDisplay.textContent = questions.length; // Display total number of questions
+        }
+
+        /**
+         * Resets the quiz to its initial state and starts it over.
+         * Resets score, question index, hides result, and loads the first question.
+         */
+        function restartQuiz() {
+            currentQuestionIndex = 0; // Reset question index
+            score = 0; // Reset score
+            selectedOptionIndex = null; // Clear selected option
+            quizArea.style.display = 'block'; // Show the quiz interface
+            resultContainer.style.display = 'none'; // Hide the result display
+            nextButton.style.display = 'none'; // Ensure navigation buttons are hidden initially
+            submitButton.style.display = 'none';
+            loadQuestion(); // Load the first question to start the quiz
+        }
+
+        // Event Listeners for navigation and restart buttons
+        nextButton.addEventListener('click', nextQuestion);
+        submitButton.addEventListener('click', showResult);
+        finalRestartButton.addEventListener('click', restartQuiz);
+
+        // Initialize the quiz when the page loads
+        loadQuestion();
+    </script>
+</body>
+</html>
