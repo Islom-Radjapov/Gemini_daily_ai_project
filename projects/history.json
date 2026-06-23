@@ -15,6 +15,7 @@
     "web_page::Film afisha sahifasi",
     "python_api::Oddiy unit test framework",
     "quiz_app::Umumiy bilim testi",
-    "css_animation::Animatsiyali tugmalar kolleksiyasi"
+    "css_animation::Animatsiyali tugmalar kolleksiyasi",
+    "web_page::Landing page"
   ]
 }

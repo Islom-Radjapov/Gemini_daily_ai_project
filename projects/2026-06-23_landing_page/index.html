@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Innovative Solutions - Landing Page</title>
+    <style>
+        /* Global styles and resets */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --accent-color: #28a745; /* Green */
+            --dark-color: #343a40; /* Dark Gray */
+            --light-color: #f8f9fa; /* Light Gray */
+            --white-color: #ffffff;
+            --text-color: #495057;
+            --heading-color: #212529;
+            --border-radius: 0.3rem;
+            --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+            --transition-speed: 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--light-color);
+            scroll-behavior: smooth; /* Smooth scrolling for the whole page */
+        }
+
+        /* Utility classes */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary-color);
+            color: var(--white-color);
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            transition: background var(--transition-speed);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: var(--white-color);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .section-heading {
+            font-size: 2.5rem;
+            color: var(--heading-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .section-subheading {
+            font-size: 1.1rem;
+            color: var(--secondary-color);
+            margin-bottom: 50px;
+            text-align: center;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Header / Navigation */
+        .main-header {
+            background: var(--white-color);
+            color: var(--dark-color);
+            padding: 1rem 0;
+            box-shadow: var(--box-shadow);
+            position: sticky; /* Make header sticky */
+            top: 0;
+            z-index: 1000;
+        }
+
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .navbar ul {
+            display: flex;
+            list-style: none;
+        }
+
+        .navbar ul li a {
+            color: var(--dark-color);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            transition: color var(--transition-speed);
+        }
+
+        .navbar ul li a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Hamburger menu for mobile */
+        .menu-toggle {
+            display: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--dark-color);
+            padding: 5px;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center center/cover;
+            color: var(--white-color);
+            text-align: center;
+            padding: 100px 20px;
+            min-height: 80vh; /* Minimum height for hero section */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: var(--white-color);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-item {
+            background: var(--white-color);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: transform var(--transition-speed);
+        }
+
+        .feature-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-item .icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .feature-item h3 {
+            font-size: 1.7rem;
+            color: var(--heading-color);
+            margin-bottom: 15px;
+        }
+
+        .feature-item p {
+            font-size: 1rem;
+            color: var(--secondary-color);
+        }
+
+        /* Testimonials Section */
+        .testimonials {
+            padding: 80px 0;
+            background: var(--light-color);
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .testimonial-item {
+            background: var(--white-color);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+
+        .testimonial-item p {
+            font-style: italic;
+            margin-bottom: 15px;
+            color: var(--dark-color);
+        }
+
+        .testimonial-item .customer-name {
+            font-weight: bold;
+            color: var(--heading-color);
+        }
+
+        /* Call to Action Section */
+        .cta {
+            background: var(--primary-color);
+            color: var(--white-color);
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .cta p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta .btn {
+            background: var(--accent-color);
+        }
+
+        .cta .btn:hover {
+            background: #218838;
+        }
+
+        /* Footer */
+        .main-footer {
+            background: var(--dark-color);
+            color: var(--light-color);
+            padding: 40px 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .main-footer .social-links a {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            margin: 0 10px;
+            transition: color var(--transition-speed);
+        }
+
+        .main-footer .social-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .main-footer p {
+            margin-top: 15px;
+        }
+
+        /* Simple icon styling - using unicode characters as a placeholder for proper icon fonts */
+        .icon-rocket::before { content: '🚀'; }
+        .icon-scale::before { content: '📈'; }
+        .icon-support::before { content: '📞'; }
+        .icon-facebook::before { content: '🔵'; } /* Placeholder for FB icon */
+        .icon-twitter::before { content: '🐦'; } /* Placeholder for TW icon */
+        .icon-linkedin::before { content: '💼'; } /* Placeholder for LI icon */
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .navbar ul {
+                display: none; /* Hide desktop nav */
+                flex-direction: column;
+                width: 100%;
+                background: var(--white-color);
+                position: absolute;
+                top: 70px; /* Below header */
+                left: 0;
+                box-shadow: var(--box-shadow);
+                padding: 15px 0;
+            }
+
+            .navbar ul.active {
+                display: flex; /* Show mobile nav when active */
+            }
+
+            .navbar ul li {
+                text-align: center;
+                margin: 10px 0;
+            }
+
+            .navbar ul li a {
+                color: var(--dark-color);
+                font-size: 1.1rem;
+                padding: 10px 0;
+                display: block;
+            }
+
+            .menu-toggle {
+                display: block; /* Show hamburger menu */
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .section-heading {
+                font-size: 2rem;
+            }
+
+            .features-grid, .testimonial-grid {
+                grid-template-columns: 1fr; /* Stack columns on small screens */
+            }
+
+            .cta h2 {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 80px 15px;
+            }
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .hero p {
+                font-size: 1rem;
+            }
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+            .section-heading {
+                font-size: 1.8rem;
+            }
+            .section-subheading {
+                font-size: 1rem;
+                margin-bottom: 30px;
+            }
+            .feature-item, .testimonial-item {
+                padding: 20px;
+            }
+            .cta h2 {
+                font-size: 1.8rem;
+            }
+            .cta p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="main-header">
+        <div class="container">
+            <a href="#" class="logo">Innovative Solutions</a>
+            <nav class="navbar">
+                <ul id="nav-links">
+                    <li><a href="#hero">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#testimonials">Testimonials</a></li>
+                    <li><a href="#cta-section">Contact</a></li>
+                </ul>
+                <div class="menu-toggle" id="menu-toggle">&#9776;</div> <!-- Hamburger icon -->
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero">
+        <div class="hero-content">
+            <h1>Innovate. Elevate. Achieve.</h1>
+            <p>Your trusted partner for cutting-edge solutions that drive growth and efficiency.</p>
+            <a href="#features" class="btn">Learn More</a>
+            <a href="#cta-section" class="btn btn-outline">Get Started</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-heading">Unlock Your Potential with Our Core Features</h2>
+            <p class="section-subheading">We provide robust solutions designed to empower your business operations and foster unparalleled success.</p>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="icon icon-rocket"></div>
+                    <h3>Seamless Integration</h3>
+                    <p>Connects effortlessly with your existing tools and workflows, ensuring a smooth transition and enhanced productivity.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="icon icon-scale"></div>
+                    <h3>Scalable Performance</h3>
+                    <p>Our solutions are built to grow with your business, offering flexible scalability to meet evolving demands without compromise.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="icon icon-support"></div>
+                    <h3>24/7 Dedicated Support</h3>
+                    <p>Benefit from round-the-clock expert assistance, ensuring your operations run smoothly with minimal downtime.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials">
+        <div class="container">
+            <h2 class="section-heading">What Our Clients Say</h2>
+            <p class="section-subheading">Hear directly from businesses who have experienced remarkable success with Innovative Solutions.</p>
+            <div class="testimonial-grid">
+                <div class="testimonial-item">
+                    <p>"Innovative Solutions transformed our workflow. Their integration was flawless, and the performance boost was immediate. Highly recommend!"</p>
+                    <p class="customer-name">- Jane Doe, CEO of TechCorp</p>
+                </div>
+                <div class="testimonial-item">
+                    <p>"The support team is incredibly responsive and knowledgeable. They guided us every step of the way, making complex challenges seem simple."</p>
+                    <p class="customer-name">- John Smith, Founder of CreativeLabs</p>
+                </div>
+                <div class="testimonial-item">
+                    <p>"We've seen significant growth since partnering with Innovative Solutions. Their scalable platform is exactly what our expanding business needed."</p>
+                    <p class="customer-name">- Emily White, Marketing Director at GlobalConnect</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action Section -->
+    <section id="cta-section" class="cta">
+        <div class="container">
+            <h2>Ready to Transform Your Business?</h2>
+            <p>Join countless satisfied clients who have elevated their operations with Innovative Solutions. Let's build your future together.</p>
+            <a href="#cta-section" class="btn">Contact Us Today</a>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="social-links">
+                <a href="#" aria-label="Facebook"><span class="icon-facebook"></span></a>
+                <a href="#" aria-label="Twitter"><span class="icon-twitter"></span></a>
+                <a href="#" aria-label="LinkedIn"><span class="icon-linkedin"></span></a>
+            </div>
+            <p>&copy; 2023 Innovative Solutions. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript for interactive elements
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get references to the navigation menu and toggle button
+            const navLinks = document.getElementById('nav-links');
+            const menuToggle = document.getElementById('menu-toggle');
+
+            // Toggle mobile navigation menu visibility
+            menuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active'); // Add/remove 'active' class to show/hide menu
+            });
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault(); // Prevent default anchor jump
+
+                    // Get the target element using the href attribute
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+
+                    if (targetElement) {
+                        // Scroll to the target element smoothly
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+
+                        // Hide the mobile menu after clicking a link (if it's open)
+                        if (navLinks.classList.contains('active')) {
+                            navLinks.classList.remove('active');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
