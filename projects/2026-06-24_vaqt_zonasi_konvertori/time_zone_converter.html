@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Zone Converter</title>
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Main container for the converter */
+        .converter-container {
+            background-color: #fff;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        /* Form group styling for inputs and labels */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        input[type="date"],
+        input[type="time"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            color: #333;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            -webkit-appearance: none; /* Remove default browser styling for select */
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #fcfcfc;
+        }
+
+        input[type="date"]:focus,
+        input[type="time"]:focus,
+        select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        /* Custom arrow for select dropdown */
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: '▼';
+            font-size: 0.8em;
+            color: #666;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        /* Button styling */
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Result display area */
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e9f7ef; /* Light green background for result */
+            border-radius: 8px;
+            border: 1px solid #c8e6c9;
+            color: #28a745; /* Green text for success */
+            font-size: 1.2em;
+            font-weight: 500;
+            line-height: 1.5;
+            min-height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            word-break: break-word; /* Ensure long text wraps */
+        }
+
+        #result strong {
+            color: #1a7e30;
+            font-weight: 700;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .converter-container {
+                padding: 25px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+            input[type="date"],
+            input[type="time"],
+            select {
+                padding: 10px 12px;
+                font-size: 0.95em;
+            }
+            #result {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="converter-container">
+        <h1>Time Zone Converter</h1>
+
+        <div class="form-group">
+            <label for="source_date">Date:</label>
+            <input type="date" id="source_date" required>
+        </div>
+
+        <div class="form-group">
+            <label for="source_time">Time:</label>
+            <input type="time" id="source_time" required>
+        </div>
+
+        <div class="form-group">
+            <label for="source_timezone">Source Time Zone:</label>
+            <div class="select-wrapper">
+                <select id="source_timezone" required></select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="target_timezone">Target Time Zone:</label>
+            <div class="select-wrapper">
+                <select id="target_timezone" required></select>
+            </div>
+        </div>
+
+        <button onclick="convertTime()">Convert Time</button>
+
+        <div id="result">
+            Converted time will appear here.
+        </div>
+    </div>
+
+    <script>
+        // Array of common time zones with IANA identifiers and display names.
+        // This list is curated to be representative and cover major regions.
+        const timeZones = [
+            { id: 'UTC', name: 'UTC' },
+            { id: 'Europe/London', name: 'London (GMT/BST)' },
+            { id: 'Europe/Paris', name: 'Paris (CET/CEST)' },
+            { id: 'Europe/Berlin', name: 'Berlin (CET/CEST)' },
+            { id: 'Africa/Cairo', name: 'Cairo (EET/EEST)' },
+            { id: 'Africa/Johannesburg', name: 'Johannesburg (SAST)' },
+            { id: 'Asia/Dubai', name: 'Dubai (GST)' },
+            { id: 'Asia/Kolkata', name: 'Kolkata (IST)' },
+            { id: 'Asia/Shanghai', name: 'Shanghai (CST)' },
+            { id: 'Asia/Tokyo', name: 'Tokyo (JST)' },
+            { id: 'Asia/Singapore', name: 'Singapore (SGT)' },
+            { id: 'Australia/Sydney', name: 'Sydney (AEST/AEDT)' },
+            { id: 'Pacific/Auckland', name: 'Auckland (NZST/NZDT)' },
+            { id: 'America/New_York', name: 'New York (EST/EDT)' },
+            { id: 'America/Chicago', name: 'Chicago (CST/CDT)' },
+            { id: 'America/Denver', name: 'Denver (MST/MDT)' },
+            { id: 'America/Los_Angeles', name: 'Los Angeles (PST/PDT)' },
+            { id: 'America/Vancouver', name: 'Vancouver (PST/PDT)' },
+            { id: 'America/Mexico_City', name: 'Mexico City (CST/CDT)' },
+            { id: 'America/Sao_Paulo', name: 'Sao Paulo (BRT/BRST)' },
+        ];
+
+        /**
+         * Populates the given select element with options from the timeZones array.
+         * @param {HTMLSelectElement} selectElement The select element to populate.
+         */
+        function populateTimeZoneDropdown(selectElement) {
+            timeZones.forEach(tz => {
+                const option = document.createElement('option');
+                option.value = tz.id;
+                option.textContent = tz.name;
+                selectElement.appendChild(option);
+            });
+        }
+
+        /**
+         * Sets the default date and time inputs to the current local date and time.
+         * Attempts to set the source timezone to the user's browser default if available in the list.
+         */
+        function setInitialDateTimeAndTimeZone() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+
+            document.getElementById('source_date').value = `${year}-${month}-${day}`;
+            document.getElementById('source_time').value = `${hours}:${minutes}`;
+
+            // Set default source timezone to user's current browser timezone if it's in our list
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (timeZones.some(tz => tz.id === userTimeZone)) {
+                document.getElementById('source_timezone').value = userTimeZone;
+            } else {
+                // Fallback to UTC or a sensible default if user's timezone is not in our list
+                document.getElementById('source_timezone').value = 'UTC';
+            }
+            // Set a default target timezone, e.g., London
+            document.getElementById('target_timezone').value = 'Europe/London';
+        }
+
+        /**
+         * Creates a Date object that represents the specified date and time components
+         * interpreted in a given time zone, returning its UTC timestamp.
+         * This function handles the complex conversion from "local time in X timezone" to UTC.
+         *
+         * @param {string} dateStr - Date string in 'YYYY-MM-DD' format.
+         * @param {string} timeStr - Time string in 'HH:MM' format.
+         * @param {string} timeZoneId - IANA time zone identifier (e.g., 'America/New_York').
+         * @returns {Date} A Date object representing the UTC timestamp of the input time in the specified timezone.
+         */
+        function createDateInTimeZone(dateStr, timeStr, timeZoneId) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const [hour, minute] = timeStr.split(':').map(Number);
+
+            // Create a reference date object using the input components, assuming UTC initially.
+            // This is a common trick to get an internal UTC timestamp that we can manipulate.
+            const referenceUtcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, 0, 0));
+
+            // Use Intl.DateTimeFormat to format this reference UTC date into the desired timezone.
+            // This allows us to extract the components (year, month, etc.) as they *would appear*
+            // in the target timezone for the given referenceUtcDate.
+            const options = {
+                year: 'numeric', month: 'numeric', day: 'numeric',
+                hour: 'numeric', minute: 'numeric', second: 'numeric',
+                hourCycle: 'h23', timeZone: timeZoneId
+            };
+            const dtf = new Intl.DateTimeFormat('en-US', options);
+            const parts = dtf.formatToParts(referenceUtcDate);
+
+            let tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond = 0;
+            for (const part of parts) {
+                if (part.type === 'year') tzYear = parseInt(part.value);
+                else if (part.type === 'month') tzMonth = parseInt(part.value);
+                else if (part.type === 'day') tzDay = parseInt(part.value);
+                else if (part.type === 'hour') tzHour = parseInt(part.value);
+                else if (part.type === 'minute') tzMinute = parseInt(part.value);
+                else if (part.type === 'second') tzSecond = parseInt(part.value);
+            }
+
+            // The components (tzYear, tzMonth, etc.) now represent the date and time that
+            // `referenceUtcDate` (our dummy UTC input) *actually corresponds to* in `timeZoneId`.
+            // The difference between `referenceUtcDate` and a new UTC date constructed from `tzYear` etc.
+            // will give us the actual offset of `timeZoneId` for that specific moment.
+
+            // To get the *true UTC timestamp* for the original input (year, month, day, hour, minute)
+            // *interpreted in `timeZoneId`*:
+            // We take the initial `referenceUtcDate` (which is the input's components as if they were UTC).
+            // Then we subtract the difference between how `referenceUtcDate` looks in `timeZoneId`
+            // and how it would look if `timeZoneId` had no offset (i.e., was UTC).
+            // This effectively "rewinds" `referenceUtcDate` by the offset of `timeZoneId`.
+
+            const dateInTargetTZAsUTC = new Date(Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMinute, tzSecond));
+            const offsetCorrectionMs = referenceUtcDate.getTime() - dateInTargetTZAsUTC.getTime();
+
+            // The final result is the original input's UTC equivalent, adjusted by the actual offset of `timeZoneId`.
+            return new Date(referenceUtcDate.getTime() - offsetCorrectionMs);
+        }
+
+        /**
+         * Performs the time zone conversion and displays the result.
+         */
+        function convertTime() {
+            const sourceDateStr = document.getElementById('source_date').value;
+            const sourceTimeStr = document.getElementById('source_time').value;
+            const sourceTimeZoneId = document.getElementById('source_timezone').value;
+            const targetTimeZoneId = document.getElementById('target_timezone').value;
+            const resultElement = document.getElementById('result');
+
+            if (!sourceDateStr || !sourceTimeStr) {
+                resultElement.innerHTML = "Please enter both date and time.";
+                return;
+            }
+
+            // Get the UTC timestamp corresponding to the input date/time interpreted in the source timezone.
+            const sourceUtcMoment = createDateInTimeZone(sourceDateStr, sourceTimeStr, sourceTimeZoneId);
+
+            // Format this UTC timestamp into the target time zone.
+            const targetOptions = {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                timeZone: targetTimeZoneId,
+                hour12: false // Use 24-hour format
+            };
+
+            const convertedDateTime = sourceUtcMoment.toLocaleString('en-US', targetOptions);
+
+            // Get the short name for the target timezone (e.g., "EDT", "BST").
+            const convertedTimezoneName = new Intl.DateTimeFormat('en-US', { timeZone: targetTimeZoneId, timeZoneName: 'short' }).format(sourceUtcMoment);
+
+            resultElement.innerHTML = `Converted Time: <br><strong>${convertedDateTime} ${convertedTimezoneName}</strong>`;
+        }
+
+        // Initialize the dropdowns and set default values when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            populateTimeZoneDropdown(document.getElementById('source_timezone'));
+            populateTimeZoneDropdown(document.getElementById('target_timezone'));
+            setInitialDateTimeAndTimeZone();
+        });
+    </script>
+</body>
+</html>
