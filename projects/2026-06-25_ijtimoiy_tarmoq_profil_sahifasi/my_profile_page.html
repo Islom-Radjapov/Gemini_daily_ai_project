@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Social Profile</title>
+    <style>
+        /* General Body Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5; /* Light gray background, common in social media UIs */
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #333;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+        }
+
+        /* Container for the whole profile page */
+        .profile-container {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+            width: 100%;
+            max-width: 600px; /* Max width for a clean, readable layout */
+            overflow: hidden; /* Ensures rounded corners are respected */
+        }
+
+        /* Profile Header Section (top part with picture, info, buttons) */
+        .profile-header {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center content horizontally */
+            border-bottom: 1px solid #eee; /* Separator from navigation */
+            position: relative;
+        }
+
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%; /* Circular profile picture */
+            object-fit: cover; /* Ensures image covers the area without distortion */
+            border: 4px solid #fff; /* White border around the picture */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Shadow for profile picture */
+            margin-bottom: 20px;
+        }
+
+        .profile-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-name {
+            font-size: 2em;
+            margin: 0;
+            font-weight: 700;
+            color: #222;
+        }
+
+        .profile-username {
+            font-size: 1.1em;
+            color: #666;
+            margin-top: 5px;
+            font-weight: 400;
+        }
+
+        .profile-bio {
+            font-size: 0.95em;
+            color: #555;
+            margin-top: 15px;
+            line-height: 1.5;
+            max-width: 400px; /* Limit bio width for readability */
+        }
+
+        /* Profile Actions (Follow/Message Buttons) */
+        .profile-actions {
+            display: flex;
+            gap: 15px; /* Space between buttons */
+            margin-top: 20px;
+        }
+
+        .profile-actions button {
+            padding: 10px 25px;
+            border-radius: 25px; /* Pill-shaped buttons */
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+        }
+
+        #followButton {
+            background-color: #007bff; /* Primary blue for follow */
+            color: white;
+        }
+
+        #followButton.following {
+            background-color: #e0e0e0; /* Gray when following */
+            color: #333;
+        }
+
+        #followButton:hover {
+            opacity: 0.9; /* Slight fade on hover */
+        }
+
+        #followButton.following:hover {
+            background-color: #d0d0d0;
+        }
+
+        .message-button {
+            background-color: #f0f2f5; /* Light gray for message button */
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
+        .message-button:hover {
+            background-color: #e0e2e5;
+        }
+
+        /* Profile Stats Section (Posts, Followers, Following) */
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #eee; /* Separator for stats */
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1; /* Distribute space evenly */
+        }
+
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #222;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        /* Navigation Tabs (Posts, Photos, Saved) */
+        .profile-nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: #fff;
+            border-bottom: 1px solid #eee;
+            margin-top: 0;
+            padding: 0;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            font-size: 1em;
+            font-weight: 600;
+            color: #777;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-tab:hover {
+            color: #333;
+        }
+
+        .nav-tab.active {
+            color: #007bff; /* Active tab color */
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #007bff; /* Blue line under active tab */
+        }
+
+        /* Profile Content Area */
+        .profile-content {
+            padding: 20px;
+        }
+
+        .content-section {
+            display: none; /* Hidden by default, JavaScript manages visibility */
+        }
+
+        .content-section.active {
+            display: block; /* Show active section */
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #888;
+            font-size: 1.1em;
+        }
+
+        /* Posts Grid */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Responsive grid columns */
+            gap: 20px;
+        }
+
+        .post-card {
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease; /* Lift effect on hover */
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .post-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .post-details {
+            padding: 15px;
+        }
+
+        .post-caption {
+            font-size: 0.9em;
+            color: #444;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .post-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .post-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #777;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 8px;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+        }
+
+        .post-actions button:hover {
+            background-color: #f0f2f5;
+        }
+
+        .post-actions .like-button.liked {
+            color: #e74c3c; /* Red color when liked */
+        }
+
+        .post-actions button span {
+            font-size: 0.9em;
+        }
+
+        /* Basic icon styling using emojis for simplicity and no external fonts */
+        .icon {
+            font-size: 1.2em;
+        }
+        .icon-heart::before { content: '❤️'; } /* Red heart emoji */
+        .icon-comment::before { content: '💬'; } /* Speech bubble emoji */
+
+        /* Responsive Adjustments for smaller screens */
+        @media (max-width: 650px) {
+            .profile-container {
+                width: 100%;
+                max-width: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            body {
+                padding: 0; /* Remove body padding on small screens */
+            }
+            .profile-header {
+                padding: 20px;
+            }
+            .profile-pic {
+                width: 100px;
+                height: 100px;
+            }
+            .profile-name {
+                font-size: 1.8em;
+            }
+            .profile-username {
+                font-size: 1em;
+            }
+            .profile-bio {
+                font-size: 0.9em;
+                margin-top: 10px;
+            }
+            .profile-actions {
+                flex-direction: column; /* Stack buttons vertically */
+                gap: 10px;
+            }
+            .profile-actions button {
+                width: 100%; /* Full width buttons */
+                padding: 12px 0;
+            }
+            .profile-stats {
+                flex-wrap: wrap; /* Allow stats to wrap if needed */
+                margin-top: 15px;
+                padding-top: 15px;
+            }
+            .stat-item {
+                width: 33%; /* Each stat takes 1/3rd width */
+                margin-bottom: 10px;
+            }
+            .posts-grid {
+                grid-template-columns: 1fr; /* Single column on small screens */
+            }
+            .post-image {
+                height: 250px; /* Taller images on mobile for better view */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <header class="profile-header">
+            <!-- Profile Picture -->
+            <img src="https://picsum.photos/id/1005/200/200" alt="Profile Picture" class="profile-pic">
+            
+            <!-- Profile Information -->
+            <div class="profile-info">
+                <h1 class="profile-name">Jane Doe</h1>
+                <p class="profile-username">@janedoe_official</p>
+                <p class="profile-bio">
+                    Creative developer and aspiring photographer. Sharing my journey and passion for beautiful code and captivating visuals. Always learning!
+                </p>
+            </div>
+
+            <!-- Profile Action Buttons -->
+            <div class="profile-actions">
+                <button id="followButton">Follow</button>
+                <button class="message-button">Message</button>
+            </div>
+
+            <!-- Profile Statistics -->
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">Posts</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="followersCount">1.2K</div>
+                    <div class="stat-label">Followers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">350</div>
+                    <div class="stat-label">Following</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="profile-nav">
+            <button class="nav-tab active" data-target="posts-section">Posts</button>
+            <button class="nav-tab" data-target="photos-section">Photos</button>
+            <button class="nav-tab" data-target="saved-section">Saved</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="profile-content">
+            <!-- Posts Section (default active) -->
+            <section id="posts-section" class="content-section active">
+                <div class="posts-grid">
+                    <!-- Post 1 -->
+                    <div class="post-card">
+                        <img src="https://picsum.photos/id/1018/400/300" alt="Post Image 1" class="post-image">
+                        <div class="post-details">
+                            <p class="post-caption">Exploring new horizons. Nature always inspires!</p>
+                            <div class="post-actions">
+                                <button class="like-button">
+                                    <span class="icon icon-heart"></span> <span class="like-count">120</span>
+                                </button>
+                                <button class="comment-button">
+                                    <span class="icon icon-comment"></span> <span>15</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Post 2 -->
+                    <div class="post-card">
+                        <img src="https://picsum.photos/id/1040/400/300" alt="Post Image 2" class="post-image">
+                        <div class="post-details">
+                            <p class="post-caption">Coding session with a view. #devlife</p>
+                            <div class="post-actions">
+                                <button class="like-button">
+                                    <span class="icon icon-heart"></span> <span class="like-count">85</span>
+                                </button>
+                                <button class="comment-button">
+                                    <span class="icon icon-comment"></span> <span>8</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Post 3 -->
+                    <div class="post-card">
+                        <img src="https://picsum.photos/id/1054/400/300" alt="Post Image 3" class="post-image">
+                        <div class="post-details">
+                            <p class="post-caption">Coffee and code, perfect combination.</p>
+                            <div class="post-actions">
+                                <button class="like-button">
+                                    <span class="icon icon-heart"></span> <span class="like-count">150</span>
+                                </button>
+                                <button class="comment-button">
+                                    <span class="icon icon-comment"></span> <span>22</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Post 4 -->
+                    <div class="post-card">
+                        <img src="https://picsum.photos/id/1069/400/300" alt="Post Image 4" class="post-image">
+                        <div class="post-details">
+                            <p class="post-caption">New project in the making. Stay tuned!</p>
+                            <div class="post-actions">
+                                <button class="like-button">
+                                    <span class="icon icon-heart"></span> <span class="like-count">98</span>
+                                </button>
+                                <button class="comment-button">
+                                    <span class="icon icon-comment"></span> <span>10</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Post 5 -->
+                    <div class="post-card">
+                        <img src="https://picsum.photos/id/1080/400/300" alt="Post Image 5" class="post-image">
+                        <div class="post-details">
+                            <p class="post-caption">Weekend getaway vibes. Recharge and reflect.</p>
+                            <div class="post-actions">
+                                <button class="like-button">
+                                    <span class="icon icon-heart"></span> <span class="like-count">110</span>
+                                </button>
+                                <button class="comment-button">
+                                    <span class="icon icon-comment"></span> <span>18</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Photos Section (initially empty) -->
+            <section id="photos-section" class="content-section">
+                <div class="empty-state">No photos yet. Check back soon!</div>
+            </section>
+
+            <!-- Saved Section (initially empty) -->
+            <section id="saved-section" class="content-section">
+                <div class="empty-state">You haven't saved anything yet.</div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // JavaScript for interactivity
+
+        // 1. Follow Button Logic
+        const followButton = document.getElementById('followButton');
+        const followersCountElement = document.getElementById('followersCount');
+        let isFollowing = false;
+        let followers = 1200; // Initial followers (1.2K)
+
+        // Event listener for the follow button
+        followButton.addEventListener('click', () => {
+            if (isFollowing) {
+                // Unfollow logic: Change text, remove 'following' class, decrease count
+                followButton.textContent = 'Follow';
+                followButton.classList.remove('following');
+                followers--;
+            } else {
+                // Follow logic: Change text, add 'following' class, increase count
+                followButton.textContent = 'Following';
+                followButton.classList.add('following');
+                followers++;
+            }
+            isFollowing = !isFollowing; // Toggle the follow state
+            followersCountElement.textContent = formatFollowersCount(followers); // Update displayed count
+        });
+
+        /**
+         * Formats a raw number of followers into a human-readable string (e.g., 1200 -> 1.2K).
+         * @param {number} count - The raw follower count.
+         * @returns {string} The formatted follower count.
+         */
+        function formatFollowersCount(count) {
+            if (count >= 1000) {
+                return (count / 1000).toFixed(1) + 'K';
+            }
+            return count.toString();
+        }
+
+        // Initialize followers count with formatted value when page loads
+        followersCountElement.textContent = formatFollowersCount(followers);
+
+
+        // 2. Like Button Logic for Posts
+        const likeButtons = document.querySelectorAll('.like-button'); // Get all like buttons
+
+        // Iterate over each like button to attach event listeners
+        likeButtons.forEach(button => {
+            let isLiked = false; // Initial state for each button (not liked)
+            const likeCountElement = button.querySelector('.like-count');
+            let initialLikes = parseInt(likeCountElement.textContent); // Parse initial likes from HTML
+
+            button.addEventListener('click', () => {
+                if (isLiked) {
+                    // Unlike logic: Remove 'liked' class, decrease count
+                    button.classList.remove('liked');
+                    initialLikes--;
+                } else {
+                    // Like logic: Add 'liked' class, increase count
+                    button.classList.add('liked');
+                    initialLikes++;
+                }
+                isLiked = !isLiked; // Toggle the like state
+                likeCountElement.textContent = initialLikes; // Update displayed count
+            });
+        });
+
+
+        // 3. Tab Navigation Logic
+        const navTabs = document.querySelectorAll('.nav-tab'); // Get all navigation tabs
+        const contentSections = document.querySelectorAll('.content-section'); // Get all content sections
+
+        // Add click event listener to each navigation tab
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove 'active' class from all tabs and content sections
+                navTabs.forEach(t => t.classList.remove('active'));
+                contentSections.forEach(s => s.classList.remove('active'));
+
+                // Add 'active' class to the clicked tab
+                tab.classList.add('active');
+
+                // Get the target section ID from the 'data-target' attribute of the clicked tab
+                const targetId = tab.dataset.target;
+                const targetSection = document.getElementById(targetId);
+
+                // If the target section exists, add 'active' class to show it
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
