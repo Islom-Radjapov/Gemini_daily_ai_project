@@ -18,6 +18,7 @@
     "css_animation::Animatsiyali tugmalar kolleksiyasi",
     "web_page::Landing page",
     "calculator::Vaqt zonasi konvertori",
-    "web_page::Ijtimoiy tarmoq profil sahifasi"
+    "web_page::Ijtimoiy tarmoq profil sahifasi",
+    "python_cli::Oddiy chat bot (terminal)"
   ]
 }
