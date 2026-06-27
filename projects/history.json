@@ -19,6 +19,7 @@
     "web_page::Landing page",
     "calculator::Vaqt zonasi konvertori",
     "web_page::Ijtimoiy tarmoq profil sahifasi",
-    "python_cli::Oddiy chat bot (terminal)"
+    "python_cli::Oddiy chat bot (terminal)",
+    "calculator::Rang konvertori (HEX/RGB/HSL)"
   ]
 }
