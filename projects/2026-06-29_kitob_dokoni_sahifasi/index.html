@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Book Store</title>
+    <style>
+        /*
+         * Global Styles & Reset
+         * Sets up basic typography, box model, and colors for the entire page.
+         */
+        :root {
+            --primary-color: #3f51b5; /* Indigo */
+            --primary-dark: #303f9f;
+            --accent-color: #ff4081; /* Pink */
+            --text-color: #333;
+            --light-bg: #f9f9f9;
+            --white: #fff;
+            --border-color: #eee;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--light-bg);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /*
+         * Header Styles
+         * Defines the layout and appearance of the page header, including navigation and cart icon.
+         */
+        header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-color) 0 2px 5px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+        }
+
+        nav ul li {
+            margin-left: 20px;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--accent-color);
+        }
+
+        .cart-icon {
+            font-size: 1.5rem;
+            cursor: pointer;
+            position: relative;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .cart-icon:hover {
+            background-color: var(--primary-dark);
+        }
+
+        #cart-item-count {
+            background-color: var(--accent-color);
+            color: var(--white);
+            border-radius: 50%;
+            padding: 3px 7px;
+            font-size: 0.8rem;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /*
+         * Main Content Styles
+         * Styles for the main area of the page, including hero section and book grid.
+         */
+        main {
+            flex-grow: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        section {
+            margin-bottom: 40px;
+            background-color: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-color) 0 2px 10px;
+        }
+
+        #hero-section {
+            text-align: center;
+            background: linear-gradient(rgba(63, 81, 181, 0.8), rgba(63, 81, 181, 0.8)), url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center center/cover;
+            color: var(--white);
+            padding: 80px 20px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+        }
+
+        #hero-section h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #hero-section p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            padding-top: 20px; /* Space for the h2 above */
+        }
+
+        /*
+         * Book Card Styles
+         * Styling for individual book items displayed in the grid.
+         */
+        .book-card {
+            background-color: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow-color) 0 2px 8px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden; /* Ensures image doesn't overflow rounded corners */
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-color) 0 5px 15px;
+        }
+
+        .book-card img {
+            max-width: 100%;
+            height: 250px; /* Fixed height for book covers */
+            object-fit: contain; /* Ensures entire image is visible without cropping */
+            border-radius: 4px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+        
+        .book-card:hover img {
+            transform: scale(1.02);
+        }
+
+        .book-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+        }
+
+        .book-card p {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .book-card .price {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+        }
+
+        .add-to-cart-button {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: auto; /* Pushes button to the bottom */
+        }
+
+        .add-to-cart-button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .add-to-cart-button:active {
+            transform: translateY(0);
+        }
+
+        /*
+         * Shopping Cart Sidebar Styles
+         * Defines the appearance and behavior of the slide-out shopping cart.
+         */
+        #shopping-cart {
+            position: fixed;
+            top: 0;
+            right: -350px; /* Hidden by default */
+            width: 350px;
+            height: 100%;
+            background-color: var(--white);
+            box-shadow: var(--shadow-color) -5px 0 15px;
+            z-index: 1000;
+            transition: right 0.4s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #shopping-cart.open {
+            right: 0; /* Slide in when 'open' class is added */
+        }
+
+        #shopping-cart h3 {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 1rem 1.5rem;
+            font-size: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--primary-dark);
+        }
+
+        #cart-items {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .cart-item img {
+            width: 60px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+
+        .cart-item-details {
+            flex-grow: 1;
+        }
+
+        .cart-item-details h4 {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+
+        .cart-item-details p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .remove-from-cart-button {
+            background-color: #f44336; /* Red */
+            color: var(--white);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background-color 0.3s ease;
+            margin-left: 10px;
+            flex-shrink: 0; /* Prevents button from shrinking */
+        }
+
+        .remove-from-cart-button:hover {
+            background-color: #d32f2f;
+        }
+
+        .empty-cart-message {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+        }
+
+        .cart-summary {
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem;
+            text-align: right;
+            background-color: var(--light-bg);
+            box-shadow: var(--shadow-color) 0 -2px 5px;
+        }
+
+        .cart-summary p {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+        }
+
+        .checkout-button {
+            background-color: var(--accent-color);
+            color: var(--white);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .checkout-button:hover {
+            background-color: #e91e63; /* Darker pink */
+            transform: translateY(-2px);
+        }
+
+        .checkout-button:active {
+            transform: translateY(0);
+        }
+
+        .close-cart-button {
+            background-color: #ccc;
+            color: var(--text-color);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 10px 1.5rem 1.5rem; /* Top, right/left, bottom */
+            transition: background-color 0.3s ease;
+        }
+        
+        .close-cart-button:hover {
+            background-color: #bbb;
+        }
+
+        /*
+         * Footer Styles
+         * Basic styling for the page footer.
+         */
+        footer {
+            background-color: var(--primary-dark);
+            color: var(--white);
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: auto; /* Pushes footer to the bottom */
+            font-size: 0.9rem;
+        }
+
+        /*
+         * Responsive Design
+         * Adjusts layout for smaller screens (e.g., mobile devices).
+         */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+            nav ul {
+                margin-top: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            nav ul li {
+                margin: 0 10px 10px 0;
+            }
+            
+            .cart-icon {
+                margin-top: 10px;
+            }
+
+            #hero-section h1 {
+                font-size: 2.2rem;
+            }
+
+            #hero-section p {
+                font-size: 1rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+
+            .book-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+
+            #shopping-cart {
+                width: 100%; /* Cart takes full width on small screens */
+                right: -100%;
+            }
+
+            #shopping-cart.open {
+                right: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 1.5rem;
+            }
+            
+            nav {
+                width: 100%;
+            }
+
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            nav ul li {
+                margin: 5px 0;
+            }
+
+            main {
+                padding: 10px;
+            }
+
+            section {
+                padding: 20px;
+            }
+
+            .book-grid {
+                grid-template-columns: 1fr; /* Single column on very small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Online Book Store</div>
+        <nav>
+            <ul>
+                <li><a href="#books-section">Books</a></li>
+                <!-- For a single page, these links scroll to sections -->
+                <li><a href="#shopping-cart" onclick="event.preventDefault(); toggleCart();">Cart</a></li> 
+            </ul>
+        </nav>
+        <div class="cart-icon" onclick="toggleCart()">
+            🛒 <span id="cart-item-count">0</span>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero-section">
+            <h1>Discover Your Next Great Read</h1>
+            <p>A curated collection of the best books across genres. Find your perfect story today!</p>
+        </section>
+
+        <section id="books-section">
+            <h2>Our Collection</h2>
+            <div class="book-grid" id="book-list">
+                <!-- Books will be dynamically loaded here by JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <div id="shopping-cart" class="cart-sidebar">
+        <h3>Your Shopping Cart</h3>
+        <div id="cart-items">
+            <!-- Cart items will be dynamically loaded here by JavaScript -->
+        </div>
+        <div class="cart-summary">
+            <p>Total: $<span id="cart-total">0.00</span></p>
+            <button class="checkout-button" onclick="checkout()">Checkout</button>
+        </div>
+        <button class="close-cart-button" onclick="toggleCart()">Close Cart</button>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Online Book Store. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Array of book objects representing the store's inventory.
+        // Each book has an ID, title, author, price, and an image URL.
+        const books = [
+            {
+                id: 'b1',
+                title: 'The Alchemist',
+                author: 'Paulo Coelho',
+                price: 12.99,
+                image: 'https://images.unsplash.com/photo-1544716278-f739670878e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTF8fGJvb2slMjBjb3ZlcnxlbnwwfHx8fDE3MDE1NTk0Nzh8MA&ixlib=rb-4.0.3&q=80&w=400'
+            },
+            {
+                id: 'b2',
+                title: '1984',
+                author: 'George Orwell',
+                price: 10.50,
+                image: 'https://images.unsplash.com/photo-1521193089901-b22877a56186?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTB8fGJvb2slMjBjb3ZlcnxlbnwwfHx8fDE3MDE1NTk0Nzh8MA&ixlib=rb-4.0.3&q=80&w=400'
+            },
+            {
+                id: 'b3',
+                title: 'To Kill a Mockingbird',
+                author: 'Harper Lee',
+                price: 14.00,
+                image: 'https://images.unsplash.com/photo-1593361405021-34440263f972?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTd8fGJvb2slMjBjb3ZlcnxlbnwwfHx8fDE3MDE1NTk0Nzh8MA&ixlib=rb-4.0.3&q=80&w=400'
+            },
+            {
+                id: 'b4',
+                title: 'The Great Gatsby',
+                author: 'F. Scott Fitzgerald',
+                price: 11.25,
+                image: 'https://images.unsplash.com/photo-1549448825-78e932b1a8d0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMjA3fDB8MXxzZWFyY2h8NHx8Ym9vayUyMGNvdmVyfGVufDB8fHx8fDE3MDE1NTk0Nzh8MA&ixlib=rb-4.0.3&q=80&w=400'
+            },
+            {
+                id: 'b5',
+                title: 'Pride and Prejudice',
+                author: 'Jane Austen',
+                price: 9.75,
+                image: 'https://images.unsplash.com/photo-1532012197247-ef1df96ce2e6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMjA3fDB8MXxzZWFyY2h8MTN8fGJvb2slMjBjb3ZlcnxlbnwwfHx8fDE3MDE1NTk0Nzh8MA&ixlib=rb-4.0.3&q=80&w=400'
+            },
+            {
+                id: 'b6',
+                title: 'The Hobbit',
+                author: 'J.R.R. Tolkien',
+                price: 15.99,
+                image: 'https://images.unsplash.com/photo-1579783900882-c0d3ce7c8bfa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMjA3fDB8MXxzZWFyY2h8Nnx8Ym9vayUyMGNvdmVyfGVufDB8fHx8fDE3MDE1NTk0OTh8MA&ixlib=rb-4.0.3&q=80&w=400'
+            }
+        ];
+
+        // The shopping cart array, storing items added by the user.
+        // Each item in the cart will be an object: { id, title, price, image, quantity }.
+        let cart = [];
+
+        // Get references to key DOM elements for dynamic updates.
+        const bookListElement = document.getElementById('book-list');
+        const cartItemsElement = document.getElementById('cart-items');
+        const cartTotalElement = document.getElementById('cart-total');
+        const cartItemCountElement = document.getElementById('cart-item-count');
+        const shoppingCartElement = document.getElementById('shopping-cart');
+
+        /**
+         * Renders all books from the 'books' array into the book list section.
+         * Creates a book card for each book with its details and an "Add to Cart" button.
+         */
+        function renderBooks() {
+            bookListElement.innerHTML = ''; // Clear existing content
+            books.forEach(book => {
+                const bookCard = document.createElement('div');
+                bookCard.className = 'book-card';
+                bookCard.innerHTML = `
+                    <img src="${book.image}" alt="${book.title} Cover">
+                    <h3>${book.title}</h3>
+                    <p>by ${book.author}</p>
+                    <p class="price">$${book.price.toFixed(2)}</p>
+                    <button class="add-to-cart-button" data-id="${book.id}">Add to Cart</button>
+                `;
+                // Attach event listener to the "Add to Cart" button
+                bookCard.querySelector('.add-to-cart-button').addEventListener('click', () => addToCart(book.id));
+                bookListElement.appendChild(bookCard);
+            });
+        }
+
+        /**
+         * Adds a book to the shopping cart.
+         * If the book is already in the cart, its quantity is incremented.
+         * Otherwise, the book is added as a new item with quantity 1.
+         * @param {string} bookId - The ID of the book to add.
+         */
+        function addToCart(bookId) {
+            const book = books.find(b => b.id === bookId);
+            if (!book) return; // Book not found
+
+            const cartItem = cart.find(item => item.id === bookId);
+
+            if (cartItem) {
+                cartItem.quantity++; // Increment quantity if item already exists
+            } else {
+                // Add new item to cart
+                cart.push({ ...book, quantity: 1 });
+            }
+            updateCart(); // Update cart display and total
+        }
+
+        /**
+         * Removes a specific item from the shopping cart.
+         * @param {string} bookId - The ID of the book to remove.
+         */
+        function removeFromCart(bookId) {
+            cart = cart.filter(item => item.id !== bookId); // Filter out the item to remove
+            updateCart(); // Update cart display and total
+        }
+
+        /**
+         * Updates the display of items in the shopping cart sidebar.
+         * It clears the current cart display and re-renders all items from the 'cart' array.
+         */
+        function renderCart() {
+            cartItemsElement.innerHTML = ''; // Clear existing cart items
+
+            if (cart.length === 0) {
+                cartItemsElement.innerHTML = '<p class="empty-cart-message">Your cart is empty.</p>';
+            } else {
+                cart.forEach(item => {
+                    const cartItemElement = document.createElement('div');
+                    cartItemElement.className = 'cart-item';
+                    cartItemElement.innerHTML = `
+                        <img src="${item.image}" alt="${item.title} Cover">
+                        <div class="cart-item-details">
+                            <h4>${item.title}</h4>
+                            <p>$${item.price.toFixed(2)} x ${item.quantity}</p>
+                        </div>
+                        <button class="remove-from-cart-button" data-id="${item.id}">Remove</button>
+                    `;
+                    // Attach event listener to the "Remove" button
+                    cartItemElement.querySelector('.remove-from-cart-button').addEventListener('click', () => removeFromCart(item.id));
+                    cartItemsElement.appendChild(cartItemElement);
+                });
+            }
+        }
+
+        /**
+         * Calculates and updates the total price of all items in the cart.
+         * Also updates the cart item count displayed in the header.
+         */
+        function updateCartTotal() {
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            cartTotalElement.textContent = total.toFixed(2); // Display total with 2 decimal places
+
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            cartItemCountElement.textContent = totalItems; // Display total number of items
+        }
+
+        /**
+         * A utility function to update both the cart display and the total.
+         * Should be called after any modification to the 'cart' array.
+         */
+        function updateCart() {
+            renderCart();
+            updateCartTotal();
+        }
+
+        /**
+         * Toggles the visibility of the shopping cart sidebar.
+         * Adds or removes the 'open' class which controls the sidebar's CSS 'right' property.
+         */
+        function toggleCart() {
+            shoppingCartElement.classList.toggle('open');
+            // Optional: Prevent body scrolling when cart is open
+            document.body.style.overflow = shoppingCartElement.classList.contains('open') ? 'hidden' : '';
+        }
+
+        /**
+         * Simulates a checkout process.
+         * Displays an alert, clears the cart, and updates the cart display.
+         */
+        function checkout() {
+            if (cart.length === 0) {
+                alert('Your cart is empty. Please add some books before checking out!');
+                return;
+            }
+            alert('Thank you for your purchase! Your order has been placed.');
+            cart = []; // Clear the cart
+            updateCart(); // Update display and total
+            toggleCart(); // Close the cart sidebar
+        }
+
+        // Initialize the page once the DOM is fully loaded.
+        document.addEventListener('DOMContentLoaded', () => {
+            renderBooks(); // Display all books
+            updateCart(); // Initialize cart display and total (should be empty initially)
+        });
+    </script>
+</body>
+</html>

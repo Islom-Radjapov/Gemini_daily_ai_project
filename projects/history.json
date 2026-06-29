@@ -20,6 +20,7 @@
     "calculator::Vaqt zonasi konvertori",
     "web_page::Ijtimoiy tarmoq profil sahifasi",
     "python_cli::Oddiy chat bot (terminal)",
-    "calculator::Rang konvertori (HEX/RGB/HSL)"
+    "calculator::Rang konvertori (HEX/RGB/HSL)",
+    "web_page::Kitob do'koni sahifasi"
   ]
 }
