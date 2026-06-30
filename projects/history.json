@@ -21,6 +21,7 @@
     "web_page::Ijtimoiy tarmoq profil sahifasi",
     "python_cli::Oddiy chat bot (terminal)",
     "calculator::Rang konvertori (HEX/RGB/HSL)",
-    "web_page::Kitob do'koni sahifasi"
+    "web_page::Kitob do'koni sahifasi",
+    "data_viz::Radar chart"
   ]
 }

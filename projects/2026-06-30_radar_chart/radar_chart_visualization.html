@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar Chart Visualization</title>
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Header styling */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+            text-align: center;
+        }
+
+        /* Paragraph styling */
+        p {
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        /* Chart container styling */
+        #chart-container {
+            position: relative;
+            width: clamp(300px, 80vw, 700px); /* Responsive width */
+            height: clamp(300px, 80vw, 700px); /* Responsive height */
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        /* Canvas styling */
+        canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px; /* Slightly rounded corners for the canvas itself */
+        }
+
+        /* Tooltip styling */
+        #tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            pointer-events: none; /* Allows mouse events to pass through */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transform: translate(-50%, -100%); /* Position above the mouse pointer */
+        }
+
+        #tooltip.visible {
+            opacity: 1;
+        }
+
+        /* Legend styling */
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            gap: 20px;
+            font-size: 0.95em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-color-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            margin-right: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1); /* Subtle border for visibility */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            p {
+                font-size: 0.95em;
+                margin-bottom: 20px;
+            }
+            #chart-container {
+                width: 90vw;
+                height: 90vw;
+            }
+            .legend {
+                gap: 15px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            p {
+                font-size: 0.9em;
+            }
+            #chart-container {
+                width: 95vw;
+                height: 95vw;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Interactive Skill Radar Chart</h1>
+    <p>Visualize and compare different skill sets across various categories using this interactive radar chart. Hover over data points to see specific values.</p>
+
+    <div id="chart-container">
+        <canvas id="radarChart"></canvas>
+        <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <div class="legend"></div>
+
+    <script>
+        // Get canvas element and its 2D rendering context
+        const canvas = document.getElementById('radarChart');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('chart-container');
+        const tooltip = document.getElementById('tooltip');
+        const legendDiv = document.querySelector('.legend');
+
+        // Chart data definition
+        // Each object in chartData represents a dataset (e.g., a person, a team, a project)
+        // 'values' array corresponds to the 'labels' array
+        const chartData = [
+            {
+                name: "Productivity Team",
+                values: [8, 7, 9, 6, 8, 7],
+                color: 'rgba(255, 99, 132, 0.7)', // Reddish
+                borderColor: 'rgba(255, 99, 132, 1)'
+            },
+            {
+                name: "Innovation Squad",
+                values: [7, 9, 7, 8, 6, 9],
+                color: 'rgba(54, 162, 235, 0.7)', // Bluish
+                borderColor: 'rgba(54, 162, 235, 1)'
+            },
+            {
+                name: "Customer Focus Group",
+                values: [9, 6, 8, 7, 7, 8],
+                color: 'rgba(75, 192, 192, 0.7)', // Greenish
+                borderColor: 'rgba(75, 192, 192, 1)'
+            }
+        ];
+
+        // Labels for each axis of the radar chart
+        const labels = [
+            "Communication",
+            "Problem Solving",
+            "Teamwork",
+            "Creativity",
+            "Technical Skill",
+            "Adaptability"
+        ];
+
+        // Maximum possible value for any axis
+        const maxValue = 10;
+        // Number of concentric circles for the grid
+        const gridLevels = 4;
+        // Radius for data points to be considered 'hovered'
+        const hoverRadius = 8;
+
+        // Store calculated points for hover detection
+        let allDataPoints = [];
+
+        // --- Utility Functions ---
+
+        /**
+         * Converts polar coordinates (radius, angle) to Cartesian coordinates (x, y).
+         * @param {number} r - The radius from the center.
+         * @param {number} angle - The angle in radians, relative to the positive x-axis.
+         * @param {number} centerX - The x-coordinate of the center.
+         * @param {number} centerY - The y-coordinate of the center.
+         * @returns {{x: number, y: number}} - The Cartesian coordinates.
+         */
+        function getCartesianCoordinates(r, angle, centerX, centerY) {
+            // Subtract Math.PI / 2 to make the 0-degree angle point upwards (12 o'clock)
+            const correctedAngle = angle - Math.PI / 2;
+            return {
+                x: centerX + r * Math.cos(correctedAngle),
+                y: centerY + r * Math.sin(correctedAngle)
+            };
+        }
+
+        /**
+         * Calculates the distance between two points.
+         * @param {{x: number, y: number}} p1 - First point.
+         * @param {{x: number, y: number}} p2 - Second point.
+         * @returns {number} - The distance between the points.
+         */
+        function distance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        // --- Chart Drawing Functions ---
+
+        /**
+         * Draws the concentric grid circles and axis lines of the radar chart.
+         * @param {number} centerX - The x-coordinate of the chart center.
+         * @param {number} centerY - The y-coordinate of the chart center.
+         * @param {number} chartRadius - The maximum radius of the chart.
+         * @param {number} numAxes - The number of axes (categories).
+         * @param {number} angleIncrement - The angle between each axis in radians.
+         */
+        function drawGrid(centerX, centerY, chartRadius, numAxes, angleIncrement) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 1;
+
+            // Draw concentric circles
+            for (let i = 0; i <= gridLevels; i++) {
+                const r = (i / gridLevels) * chartRadius;
+                ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+            }
+            ctx.stroke();
+
+            // Draw axis lines
+            ctx.beginPath();
+            for (let i = 0; i < numAxes; i++) {
+                const { x, y } = getCartesianCoordinates(chartRadius, i * angleIncrement, centerX, centerY);
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        /**
+         * Draws the labels for each axis of the radar chart.
+         * @param {number} centerX - The x-coordinate of the chart center.
+         * @param {number} centerY - The y-coordinate of the chart center.
+         * @param {number} chartRadius - The maximum radius of the chart.
+         * @param {string[]} labels - An array of label strings.
+         * @param {number} angleIncrement - The angle between each axis in radians.
+         */
+        function drawLabels(centerX, centerY, chartRadius, labels, angleIncrement) {
+            ctx.fillStyle = '#333';
+            ctx.font = '14px sans-serif';
+            ctx.textBaseline = 'middle';
+
+            const labelOffset = 20; // Distance from the outer edge of the chart
+            for (let i = 0; i < labels.length; i++) {
+                const angle = i * angleIncrement;
+                const { x, y } = getCartesianCoordinates(chartRadius + labelOffset, angle, centerX, centerY);
+
+                // Adjust text alignment for better readability around the circle
+                if (angle === 0 || angle === Math.PI) { // Top or bottom
+                    ctx.textAlign = 'center';
+                } else if (angle > 0 && angle < Math.PI) { // Right side
+                    ctx.textAlign = 'left';
+                } else { // Left side
+                    ctx.textAlign = 'right';
+                }
+
+                ctx.fillText(labels[i], x, y);
+            }
+        }
+
+        /**
+         * Draws all data polygons on the radar chart.
+         * @param {Array<Object>} chartData - The array of datasets.
+         * @param {number} centerX - The x-coordinate of the chart center.
+         * @param {number} centerY - The y-coordinate of the chart center.
+         * @param {number} chartRadius - The maximum radius of the chart.
+         * @param {number} numAxes - The number of axes.
+         * @param {number} angleIncrement - The angle between each axis in radians.
+         * @param {number} maxValue - The maximum possible value for any axis.
+         */
+        function drawData(chartData, centerX, centerY, chartRadius, numAxes, angleIncrement, maxValue) {
+            allDataPoints = []; // Clear previous points for redraw
+
+            chartData.forEach(dataset => {
+                const points = []; // Store points for this dataset
+                ctx.beginPath();
+                ctx.fillStyle = dataset.color;
+                ctx.strokeStyle = dataset.borderColor;
+                ctx.lineWidth = 2;
+
+                // Calculate and draw points for the data polygon
+                dataset.values.forEach((value, i) => {
+                    const r = (value / maxValue) * chartRadius;
+                    const { x, y } = getCartesianCoordinates(r, i * angleIncrement, centerX, centerY);
+                    points.push({ x, y, value, label: labels[i], datasetName: dataset.name });
+
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Draw circles at each data point for better visibility and hover detection
+                ctx.fillStyle = dataset.borderColor;
+                points.forEach(point => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    allDataPoints.push(point); // Add to global array for hover detection
+                });
+            });
+        }
+
+        /**
+         * Renders the legend for the chart data.
+         * @param {Array<Object>} chartData - The array of datasets.
+         */
+        function renderLegend(chartData) {
+            legendDiv.innerHTML = ''; // Clear existing legend
+            chartData.forEach(dataset => {
+                const item = document.createElement('div');
+                item.classList.add('legend-item');
+
+                const colorBox = document.createElement('div');
+                colorBox.classList.add('legend-color-box');
+                colorBox.style.backgroundColor = dataset.color;
+                colorBox.style.borderColor = dataset.borderColor; // Use border color for outline
+
+                const text = document.createElement('span');
+                text.textContent = dataset.name;
+
+                item.appendChild(colorBox);
+                item.appendChild(text);
+                legendDiv.appendChild(item);
+            });
+        }
+
+        /**
+         * Main function to render the entire radar chart.
+         */
+        function renderChart() {
+            // Adjust canvas size to fit container and maintain aspect ratio
+            const currentSize = Math.min(container.offsetWidth, container.offsetHeight);
+            canvas.width = currentSize;
+            canvas.height = currentSize;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            // Chart radius is a percentage of the smaller canvas dimension, leaving space for labels
+            const chartRadius = Math.min(centerX, centerY) * 0.7;
+            const numAxes = labels.length;
+            const angleIncrement = (Math.PI * 2) / numAxes;
+
+            // Clear the canvas before redrawing
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw all chart components
+            drawGrid(centerX, centerY, chartRadius, numAxes, angleIncrement);
+            drawLabels(centerX, centerY, chartRadius, labels, angleIncrement);
+            drawData(chartData, centerX, centerY, chartRadius, numAxes, angleIncrement, maxValue);
+            renderLegend(chartData);
+        }
+
+        // --- Event Listeners and Interactivity ---
+
+        /**
+         * Handles mouse movement over the canvas for tooltip display.
+         * @param {MouseEvent} event - The mouse event object.
+         */
+        canvas.addEventListener('mousemove', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            // Calculate mouse position relative to canvas
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            let hoveredPoint = null;
+
+            // Check if mouse is near any data point
+            for (const point of allDataPoints) {
+                if (distance({ x: mouseX, y: mouseY }, point) < hoverRadius) {
+                    hoveredPoint = point;
+                    break;
+                }
+            }
+
+            if (hoveredPoint) {
+                // Show tooltip
+                tooltip.classList.add('visible');
+                tooltip.style.left = `${event.clientX}px`;
+                tooltip.style.top = `${event.clientY}px`;
+                tooltip.innerHTML = `<strong>${hoveredPoint.datasetName}</strong><br>${hoveredPoint.label}: ${hoveredPoint.value}`;
+            } else {
+                // Hide tooltip
+                tooltip.classList.remove('visible');
+            }
+        });
+
+        // Hide tooltip when mouse leaves canvas
+        canvas.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('visible');
+        });
+
+        // Redraw chart if window is resized to make it responsive
+        window.addEventListener('resize', renderChart);
+
+        // Initial chart render when the page loads
+        document.addEventListener('DOMContentLoaded', renderChart);
+
+    </script>
+</body>
+</html>
