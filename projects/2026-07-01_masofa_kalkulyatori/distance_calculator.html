@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distance Converter</title>
+    <style>
+        /* Global styles for the body */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e0e5ec 100%);
+            color: #333;
+            box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
+        }
+
+        /* Styles for the main container of the converter */
+        .converter-container {
+            background-color: #ffffff;
+            padding: 35px 45px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            border: 1px solid #dcdcdc;
+        }
+
+        /* Heading style */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        /* Input group styling */
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        /* Labels for inputs */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        /* Styling for text inputs and select dropdowns */
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: calc(100% - 22px); /* Account for padding and border */
+            padding: 12px;
+            margin-right: 10px; /* Space between input and select */
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 1em;
+            color: #495057;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box; /* Include padding in width */
+            vertical-align: middle; /* Align input and select horizontally */
+            -webkit-appearance: none; /* Remove default styling for selects on WebKit browsers */
+            -moz-appearance: none; /* Remove default styling for selects on Mozilla browsers */
+            appearance: none; /* Remove default styling */
+            background-color: #fff;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13.6-6.4H18.9c-5%200-9.3%201.8-13.6%206.4-4.2%204.7-6.4%2010.5-6.4%2016.3%200%205.8%202.2%2011.1%206.4%2015.8l127.9%20127.9c4.2%204.7%209.1%207%2014.1%207s9.9-2.3%2014.1-7l127.9-127.9c4.2-4.7%206.4-10%206.4-15.8%200-5.8-2.2-11.1-6.4-16.3z%22%2F%3E%3C%2Fsvg%3E'); /* Custom dropdown arrow */
+            background-repeat: no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 12px auto;
+            padding-right: 30px; /* Make space for custom arrow */
+        }
+
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        
+        /* Adjust width for selects when they are side-by-side with inputs */
+        .input-group input[type="number"],
+        .input-group select {
+            width: calc(65% - 10px); /* Input takes more space */
+            margin-right: 10px;
+            display: inline-block;
+        }
+
+        .input-group select {
+            width: 35%; /* Select takes less space */
+            margin-right: 0;
+        }
+
+        /* Styling for the convert button */
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 20px;
+            width: 100%;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Styling for the output input to make it clearly read-only */
+        input[type="text"][readonly] {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            color: #6c757d;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .converter-container {
+                padding: 25px 30px;
+                width: 95%;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .input-group input[type="number"],
+            .input-group select {
+                width: 100%; /* Stack inputs and selects on smaller screens */
+                margin-right: 0;
+                margin-bottom: 10px; /* Add spacing when stacked */
+            }
+
+            .input-group select {
+                 margin-bottom: 0; /* Remove extra margin for the last select in group */
+            }
+            
+            button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="converter-container">
+        <h1>Distance Converter</h1>
+
+        <div class="input-group">
+            <label for="inputValue">Input Value:</label>
+            <input type="number" id="inputValue" value="1" placeholder="Enter distance" step="any">
+            <select id="inputUnit">
+                <option value="km">Kilometer (km)</option>
+                <option value="mile">Mile (mile)</option>
+                <option value="m">Meter (m)</option>
+                <option value="yard">Yard (yard)</option>
+                <option value="foot">Foot (ft)</option>
+                <option value="inch">Inch (in)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="outputValue">Output Value:</label>
+            <input type="text" id="outputValue" readonly>
+            <select id="outputUnit">
+                <option value="m">Meter (m)</option>
+                <option value="km">Kilometer (km)</option>
+                <option value="mile">Mile (mile)</option>
+                <option value="yard">Yard (yard)</option>
+                <option value="foot">Foot (ft)</option>
+                <option value="inch">Inch (in)</option>
+            </select>
+        </div>
+
+        <button onclick="convertDistance()">Convert</button>
+    </div>
+
+    <script>
+        // Object storing conversion factors to a base unit (meter).
+        // For example, 1 kilometer is 1000 meters, 1 mile is 1609.34 meters, etc.
+        const conversionFactorsToMeter = {
+            'km': 1000,         // Kilometers to meters
+            'mile': 1609.34,    // Miles to meters
+            'm': 1,             // Meters to meters (base unit)
+            'yard': 0.9144,     // Yards to meters
+            'foot': 0.3048,     // Feet to meters
+            'inch': 0.0254      // Inches to meters
+        };
+
+        /**
+         * Function to convert distance between selected units.
+         * It reads the input value and units, performs conversion, and displays the result.
+         */
+        function convertDistance() {
+            // Get references to input elements
+            const inputValueElement = document.getElementById('inputValue');
+            const inputUnitElement = document.getElementById('inputUnit');
+            const outputUnitElement = document.getElementById('outputUnit');
+            const outputValueElement = document.getElementById('outputValue');
+
+            // Get the numerical value from the input field
+            const inputValue = parseFloat(inputValueElement.value);
+
+            // Get the selected input and output units
+            const inputUnit = inputUnitElement.value;
+            const outputUnit = outputUnitElement.value;
+
+            // Basic validation: Check if the input is a valid number
+            if (isNaN(inputValue)) {
+                alert("Please enter a valid number for the distance.");
+                outputValueElement.value = ''; // Clear previous output
+                return; // Stop the function if input is invalid
+            }
+
+            // Step 1: Convert the input value from its unit to the base unit (meters).
+            // Multiply the input value by its corresponding conversion factor to get meters.
+            const valueInMeters = inputValue * conversionFactorsToMeter[inputUnit];
+
+            // Step 2: Convert the value in meters to the desired output unit.
+            // Divide the value in meters by the conversion factor of the output unit.
+            const convertedValue = valueInMeters / conversionFactorsToMeter[outputUnit];
+
+            // Display the result in the output field, formatted to 4 decimal places.
+            outputValueElement.value = convertedValue.toFixed(4);
+        }
+
+        // Initialize the conversion on page load with default values.
+        // This makes sure the output field is not empty when the page first loads.
+        window.onload = convertDistance;
+
+        // Optionally, re-run conversion when input value or units change for a more dynamic experience.
+        document.getElementById('inputValue').addEventListener('input', convertDistance);
+        document.getElementById('inputUnit').addEventListener('change', convertDistance);
+        document.getElementById('outputUnit').addEventListener('change', convertDistance);
+    </script>
+</body>
+</html>
