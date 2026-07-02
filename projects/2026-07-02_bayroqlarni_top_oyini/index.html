@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayroqlarni Top O'yini</title>
+    <style>
+        /* General styling for the body */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Styling for the main quiz container */
+        #quiz_container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+            transform: scale(1);
+        }
+
+        /* Title styling */
+        #game_title {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+
+        /* Styling for paragraphs */
+        p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        /* Styling for all buttons */
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            outline: none;
+            margin: 5px;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Styling for option buttons */
+        .option_button {
+            display: block;
+            width: calc(100% - 10px); /* Account for margin */
+            margin: 10px auto;
+            text-align: left;
+            background-color: #e9ecef;
+            color: #333;
+            border: 1px solid #ced4da;
+            padding: 15px 20px;
+            font-size: 1.05em;
+            font-weight: 500;
+        }
+
+        .option_button:hover:not(:disabled) {
+            background-color: #d8dee3;
+            border-color: #b0b4b8;
+            color: #222;
+        }
+
+        /* Correct and incorrect answer styling */
+        .option_button.correct {
+            background-color: #28a745; /* Green */
+            color: white;
+            border-color: #28a745;
+        }
+
+        .option_button.incorrect {
+            background-color: #dc3545; /* Red */
+            color: white;
+            border-color: #dc3545;
+        }
+
+        /* Flag image styling */
+        #flag_image {
+            width: 100%;
+            max-width: 250px;
+            height: auto;
+            margin-bottom: 25px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Feedback message styling */
+        #feedback_message {
+            margin-top: 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+            min-height: 25px; /* Reserve space */
+        }
+
+        /* Question number styling */
+        #question_number {
+            font-size: 0.95em;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        /* Hidden utility class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Styling for result screen score */
+        #final_score {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #quiz_container {
+                padding: 20px;
+                margin: 15px;
+            }
+            #game_title {
+                font-size: 1.8em;
+            }
+            button, .option_button {
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+            #flag_image {
+                max-width: 200px;
+            }
+            p {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz_container">
+        <h1 id="game_title">Bayroqlarni Top O'yini</h1>
+
+        <!-- Start screen -->
+        <div id="start_screen">
+            <p>Qaysi davlatga tegishli ekanligini toping! Har bir o'yinda 10 ta savol beriladi.</p>
+            <button id="start_button">Boshlash</button>
+        </div>
+
+        <!-- Quiz screen (hidden by default) -->
+        <div id="quiz_screen" class="hidden">
+            <p id="question_number">Savol 1 / 10</p>
+            <img id="flag_image" src="" alt="Davlat bayrog'i" width="160" height="120">
+            <div id="options_container">
+                <button class="option_button"></button>
+                <button class="option_button"></button>
+                <button class="option_button"></button>
+                <button class="option_button"></button>
+            </div>
+            <div id="feedback_message"></div>
+            <button id="next_button" class="hidden">Keyingi Savol</button>
+        </div>
+
+        <!-- Result screen (hidden by default) -->
+        <div id="result_screen" class="hidden">
+            <h2>Natijalar</h2>
+            <p id="final_score"></p>
+            <button id="restart_button">Qayta O'ynash</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions
+        // Each question object contains:
+        // - flagCode: ISO 3166-1 alpha-2 code for the flag (used with flagcdn.com)
+        // - options: An array of possible country names
+        // - correctAnswer: The correct country name
+        const ALL_QUESTIONS = [
+            { flagCode: "uz", options: ["Qozog'iston", "O'zbekiston", "Tojikiston", "Qirg'iziston"], correctAnswer: "O'zbekiston" },
+            { flagCode: "us", options: ["Kanada", "Buyuk Britaniya", "AQSh", "Avstraliya"], correctAnswer: "AQSh" },
+            { flagCode: "ca", options: ["Meksika", "Kanada", "AQSh", "Braziliya"], correctAnswer: "Kanada" },
+            { flagCode: "br", options: ["Argentina", "Peru", "Chili", "Braziliya"], correctAnswer: "Braziliya" },
+            { flagCode: "de", options: ["Avstriya", "Germaniya", "Belgiya", "Niderlandiya"], correctAnswer: "Germaniya" },
+            { flagCode: "fr", options: ["Italiya", "Belgiya", "Fransiya", "Ispaniya"], correctAnswer: "Fransiya" },
+            { flagCode: "jp", options: ["Xitoy", "Janubiy Koreya", "Yaponiya", "Tailand"], correctAnswer: "Yaponiya" },
+            { flagCode: "au", options: ["Yangi Zelandiya", "Avstraliya", "Fiji", "Indoneziya"], correctAnswer: "Avstraliya" },
+            { flagCode: "in", options: ["Pokiston", "Bangladesh", "Hindiston", "Shri Lanka"], correctAnswer: "Hindiston" },
+            { flagCode: "cn", options: ["Yaponiya", "Janubiy Koreya", "Xitoy", "Vyetnam"], correctAnswer: "Xitoy" },
+            { flagCode: "kr", options: ["Yaponiya", "Shimoliy Koreya", "Janubiy Koreya", "Tayvan"], correctAnswer: "Janubiy Koreya" },
+            { flagCode: "gb", options: ["Irlandiya", "Shotlandiya", "Buyuk Britaniya", "AQSh"], correctAnswer: "Buyuk Britaniya" },
+            { flagCode: "it", options: ["Gretsiya", "Ispaniya", "Fransiya", "Italiya"], correctAnswer: "Italiya" },
+            { flagCode: "es", options: ["Portugaliya", "Meksika", "Ispaniya", "Argentina"], correctAnswer: "Ispaniya" },
+            { flagCode: "ru", options: ["Polsha", "Ukraina", "Belarus", "Rossiya"], correctAnswer: "Rossiya" },
+            { flagCode: "eg", options: ["Jazoir", "Misr", "Marokash", "Sudan"], correctAnswer: "Misr" },
+            { flagCode: "za", options: ["Nigeriya", "Keniya", "Janubiy Afrika", "Misr"], correctAnswer: "Janubiy Afrika" },
+            { flagCode: "mx", options: ["AQSh", "Kolumbiya", "Meksika", "Kanada"], correctAnswer: "Meksika" },
+            { flagCode: "tr", options: ["Gretsiya", "Misr", "Turkiya", "Saudiya Arabistoni"], correctAnswer: "Turkiya" },
+            { flagCode: "se", options: ["Norvegiya", "Daniya", "Finlandiya", "Shvetsiya"], correctAnswer: "Shvetsiya" }
+        ];
+
+        // Constants for game configuration
+        const NUMBER_OF_QUESTIONS_PER_GAME = 10;
+        const FLAG_BASE_URL = "https://flagcdn.com/w160/"; // URL for flag images
+
+        // DOM elements
+        const startScreen = document.getElementById('start_screen');
+        const quizScreen = document.getElementById('quiz_screen');
+        const resultScreen = document.getElementById('result_screen');
+        const startButton = document.getElementById('start_button');
+        const questionNumberText = document.getElementById('question_number');
+        const flagImage = document.getElementById('flag_image');
+        const optionsContainer = document.getElementById('options_container');
+        const optionButtons = document.querySelectorAll('.option_button');
+        const feedbackMessage = document.getElementById('feedback_message');
+        const nextButton = document.getElementById('next_button');
+        const finalScoreText = document.getElementById('final_score');
+        const restartButton = document.getElementById('restart_button');
+
+        // Game state variables
+        let currentQuestions = []; // Questions for the current game
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        /**
+         * Shuffles an array in place using the Fisher-Yates (Knuth) algorithm.
+         * @param {Array} array - The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        /**
+         * Starts a new game.
+         * Initializes game state, shuffles questions, and displays the first question.
+         */
+        function startGame() {
+            score = 0;
+            currentQuestionIndex = 0;
+            
+            // Select and shuffle a subset of questions for the current game
+            const shuffledAllQuestions = shuffleArray([...ALL_QUESTIONS]); // Clone to avoid modifying original
+            currentQuestions = shuffledAllQuestions.slice(0, NUMBER_OF_QUESTIONS_PER_GAME);
+
+            // Show quiz screen and hide start/result screens
+            startScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+
+            displayQuestion();
+        }
+
+        /**
+         * Displays the current question (flag and options) on the screen.
+         */
+        function displayQuestion() {
+            clearFeedback(); // Clear previous feedback message
+            disableOptions(false); // Enable option buttons
+            nextButton.classList.add('hidden'); // Hide "Next" button
+
+            const question = currentQuestions[currentQuestionIndex];
+            if (!question) {
+                // Should not happen if game logic is correct, but good for safety
+                showResultScreen();
+                return;
+            }
+
+            // Update question number text
+            questionNumberText.textContent = `Savol ${currentQuestionIndex + 1} / ${NUMBER_OF_QUESTIONS_PER_GAME}`;
+            
+            // Set flag image source
+            flagImage.src = `${FLAG_BASE_URL}${question.flagCode}.png`;
+            flagImage.alt = `Davlat bayrog'i - ${question.correctAnswer}`;
+
+            // Shuffle options for the current question
+            const shuffledOptions = shuffleArray([...question.options]);
+
+            // Set text for each option button
+            optionButtons.forEach((button, index) => {
+                button.textContent = shuffledOptions[index];
+                button.classList.remove('correct', 'incorrect'); // Clear previous styling
+            });
+        }
+
+        /**
+         * Checks the selected answer against the correct answer.
+         * Provides visual feedback and updates the score.
+         * @param {string} selectedOption - The text content of the selected button.
+         */
+        function checkAnswer(selectedOption) {
+            disableOptions(true); // Disable buttons after an answer is chosen
+            nextButton.classList.remove('hidden'); // Show "Next" button
+
+            const question = currentQuestions[currentQuestionIndex];
+            const isCorrect = selectedOption === question.correctAnswer;
+
+            if (isCorrect) {
+                score++;
+                feedbackMessage.textContent = "To'g'ri!";
+                feedbackMessage.style.color = '#28a745'; // Green color
+            } else {
+                feedbackMessage.textContent = `Noto'g'ri. To'g'ri javob: ${question.correctAnswer}`;
+                feedbackMessage.style.color = '#dc3545'; // Red color
+            }
+
+            // Highlight correct/incorrect options
+            optionButtons.forEach(button => {
+                if (button.textContent === question.correctAnswer) {
+                    button.classList.add('correct');
+                } else if (button.textContent === selectedOption && !isCorrect) {
+                    button.classList.add('incorrect');
+                }
+            });
+        }
+
+        /**
+         * Proceeds to the next question or shows the result screen if the game is over.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < NUMBER_OF_QUESTIONS_PER_GAME) {
+                displayQuestion();
+            } else {
+                showResultScreen();
+            }
+        }
+
+        /**
+         * Displays the final score and the restart button.
+         */
+        function showResultScreen() {
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            finalScoreText.textContent = `Siz ${NUMBER_OF_QUESTIONS_PER_GAME} savoldan ${score} tasiga to'g'ri javob berdingiz!`;
+        }
+
+        /**
+         * Resets the game to its initial state.
+         */
+        function restartGame() {
+            startScreen.classList.remove('hidden');
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            clearFeedback();
+        }
+
+        /**
+         * Enables or disables all option buttons.
+         * @param {boolean} disabled - True to disable, false to enable.
+         */
+        function disableOptions(disabled) {
+            optionButtons.forEach(button => {
+                button.disabled = disabled;
+            });
+        }
+
+        /**
+         * Clears the feedback message and removes styling from option buttons.
+         */
+        function clearFeedback() {
+            feedbackMessage.textContent = '';
+            feedbackMessage.style.color = '';
+            optionButtons.forEach(button => {
+                button.classList.remove('correct', 'incorrect');
+            });
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startGame);
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', restartGame);
+
+        // Add event listeners for each option button
+        optionButtons.forEach(button => {
+            button.addEventListener('click', () => checkAnswer(button.textContent));
+        });
+    </script>
+</body>
+</html>
