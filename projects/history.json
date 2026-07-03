@@ -24,6 +24,7 @@
     "web_page::Kitob do'koni sahifasi",
     "data_viz::Radar chart",
     "calculator::Masofa kalkulyatori",
-    "quiz_app::Bayroqlarni top o'yini"
+    "quiz_app::Bayroqlarni top o'yini",
+    "js_game::Tic-tac-toe o'yini"
   ]
 }

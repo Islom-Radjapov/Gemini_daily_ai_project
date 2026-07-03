@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Game</title>
+    <style>
+        /* General body styling for centering content and dark theme */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #282c34; /* Dark background */
+            color: #ffffff; /* White text */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Styling for the main heading */
+        h1 {
+            margin-bottom: 30px;
+            color: #61dafb; /* Cyan accent color */
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Canvas styling */
+        canvas {
+            border: 5px solid #61dafb; /* Cyan border matching accent */
+            background-color: #3a404b; /* Slightly lighter dark gray for canvas background */
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            border-radius: 8px; /* Slightly rounded corners for the canvas */
+        }
+
+        /* Game status display area */
+        #gameStatus {
+            margin-top: 25px;
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        /* Reset button styling */
+        #resetButton {
+            margin-top: 30px;
+            padding: 12px 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #61dafb; /* Cyan button */
+            color: #282c34; /* Dark text for contrast */
+            border: none;
+            border-radius: 6px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #resetButton:hover {
+            background-color: #21a1f1; /* Slightly darker cyan on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        #resetButton:active {
+            transform: translateY(0); /* Press down effect */
+            background-color: #0d8ddb;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+                margin-bottom: 20px;
+            }
+            canvas {
+                width: 300px;
+                height: 300px;
+                border-width: 3px;
+            }
+            #gameStatus {
+                font-size: 1.3em;
+                margin-top: 20px;
+            }
+            #resetButton {
+                font-size: 1em;
+                padding: 10px 20px;
+                margin-top: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic-Tac-Toe Game</h1>
+    <canvas id="gameCanvas" width="450" height="450"></canvas>
+    <div id="gameStatus"></div>
+    <button id="resetButton">Reset Game</button>
+
+    <script>
+        // --- Game Setup ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusDisplay = document.getElementById('gameStatus');
+        const resetButton = document.getElementById('resetButton');
+
+        // Constants for game dimensions and players
+        const BOARD_SIZE = 3;
+        const CELL_SIZE = canvas.width / BOARD_SIZE; // Each cell will be 150x150 for a 450x450 canvas
+        const PLAYER_X = 'X';
+        const PLAYER_O = 'O';
+
+        // Winning conditions (rows, columns, diagonals)
+        const WIN_CONDITIONS = [
+            // Rows
+            [[0, 0], [0, 1], [0, 2]],
+            [[1, 0], [1, 1], [1, 2]],
+            [[2, 0], [2, 1], [2, 2]],
+            // Columns
+            [[0, 0], [1, 0], [2, 0]],
+            [[0, 1], [1, 1], [2, 1]],
+            [[0, 2], [1, 2], [2, 2]],
+            // Diagonals
+            [[0, 0], [1, 1], [2, 2]],
+            [[0, 2], [1, 1], [2, 0]]
+        ];
+
+        // --- Game State Variables ---
+        let board = [['', '', ''], ['', '', ''], ['', '', '']]; // Represents the 3x3 game board
+        let currentPlayer = PLAYER_X; // 'X' always starts first
+        let gameActive = true; // True if the game is ongoing, false otherwise
+
+        // --- Drawing Functions ---
+
+        /**
+         * Draws the Tic-Tac-Toe grid lines on the canvas.
+         */
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
+            ctx.strokeStyle = '#aabccb'; // Grid line color (light gray)
+            ctx.lineWidth = 4; // Thickness of the grid lines
+
+            // Draw vertical lines
+            for (let i = 1; i < BOARD_SIZE; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw horizontal lines
+            for (let i = 1; i < BOARD_SIZE; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(canvas.width, i * CELL_SIZE);
+                ctx.stroke();
+            }
+        }
+
+        /**
+         * Draws 'X' or 'O' marks on the canvas based on the current board state.
+         */
+        function drawMarks() {
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    const cellValue = board[row][col];
+                    if (cellValue !== '') {
+                        const centerX = col * CELL_SIZE + CELL_SIZE / 2;
+                        const centerY = row * CELL_SIZE + CELL_SIZE / 2;
+
+                        ctx.font = `${CELL_SIZE * 0.7}px Arial`; // Font size relative to cell size
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        if (cellValue === PLAYER_X) {
+                            ctx.fillStyle = '#ff3366'; // Red for X
+                        } else {
+                            ctx.fillStyle = '#3399ff'; // Blue for O
+                        }
+                        ctx.fillText(cellValue, centerX, centerY);
+                    }
+                }
+            }
+        }
+
+        /**
+         * The main rendering function to draw the entire game state.
+         */
+        function drawGame() {
+            drawBoard();
+            drawMarks();
+        }
+
+        // --- Game Logic Functions ---
+
+        /**
+         * Handles a click event on the canvas.
+         * Determines which cell was clicked and updates the game state.
+         * @param {MouseEvent} event - The click event object.
+         */
+        function handleCellClick(event) {
+            // If the game is not active or the click target is not the canvas itself, ignore
+            if (!gameActive || event.target !== canvas) {
+                return;
+            }
+
+            // Get mouse click coordinates relative to the canvas
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // Determine which cell was clicked
+            const col = Math.floor(mouseX / CELL_SIZE);
+            const row = Math.floor(mouseY / CELL_SIZE);
+
+            // Check if the clicked cell is within bounds and empty
+            if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE && board[row][col] === '') {
+                board[row][col] = currentPlayer; // Place the current player's mark
+                drawGame(); // Redraw the board with the new mark
+                checkGameResult(); // Check for a winner or draw
+                
+                // Only switch player and update status if the game is still active
+                if (gameActive) {
+                    switchPlayer();
+                    updateStatus();
+                }
+            }
+        }
+
+        /**
+         * Checks if there's a winner or if the game is a draw.
+         * Updates gameActive and statusDisplay accordingly.
+         */
+        function checkGameResult() {
+            let roundWon = false;
+
+            // Iterate through all winning conditions
+            for (let i = 0; i < WIN_CONDITIONS.length; i++) {
+                const condition = WIN_CONDITIONS[i];
+                const cellA = board[condition[0][0]][condition[0][1]];
+                const cellB = board[condition[1][0]][condition[1][1]];
+                const cellC = board[condition[2][0]][condition[2][1]];
+
+                // If any of the cells in the condition are empty, it's not a win yet
+                if (cellA === '' || cellB === '' || cellC === '') {
+                    continue;
+                }
+
+                // If all three cells in the condition are the same, we have a winner
+                if (cellA === cellB && cellB === cellC) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            // Handle win condition
+            if (roundWon) {
+                statusDisplay.textContent = `Player ${currentPlayer} has won!`;
+                gameActive = false; // End the game
+                return;
+            }
+
+            // Check for a draw (if no winner and all cells are filled)
+            const isDraw = board.flat().every(cell => cell !== '');
+            if (isDraw) {
+                statusDisplay.textContent = `Game ended in a draw!`;
+                gameActive = false; // End the game
+                return;
+            }
+        }
+
+        /**
+         * Switches the current player from 'X' to 'O' or vice-versa.
+         */
+        function switchPlayer() {
+            currentPlayer = (currentPlayer === PLAYER_X) ? PLAYER_O : PLAYER_X;
+        }
+
+        /**
+         * Updates the text content of the gameStatus display.
+         */
+        function updateStatus() {
+            if (gameActive) {
+                statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+            }
+            // If game is not active, status is already updated by checkGameResult
+        }
+
+        /**
+         * Resets the game to its initial state.
+         * Clears the board, sets current player to 'X', and reactivates the game.
+         */
+        function resetGame() {
+            board = [['', '', ''], ['', '', ''], ['', '', '']]; // Clear the board
+            currentPlayer = PLAYER_X; // Reset to Player X
+            gameActive = true; // Activate the game
+            updateStatus(); // Update status to show Player X's turn
+            drawGame(); // Redraw an empty board
+        }
+
+        // --- Initialization ---
+
+        /**
+         * Initializes the game by setting up event listeners and the initial game state.
+         */
+        function init() {
+            canvas.addEventListener('click', handleCellClick);
+            resetButton.addEventListener('click', resetGame);
+            resetGame(); // Start the first game
+        }
+
+        // Ensure the DOM is fully loaded before initializing the game
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
