@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Population Statistics Visualization</title>
+    <style>
+        /* General body styling for a clean, modern look */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Container for the entire application */
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            width: 90%;
+            max-width: 1200px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Heading style */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        /* Controls section styling */
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        /* Label for select dropdown */
+        .controls label {
+            font-size: 1.1em;
+            color: #555;
+            font-weight: 500;
+        }
+
+        /* Select dropdown styling */
+        .controls select {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            -webkit-appearance: none; /* Remove default arrow on WebKit browsers */
+            -moz-appearance: none; /* Remove default arrow on Firefox */
+            appearance: none; /* Remove default arrow */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+        }
+
+        .controls select:hover {
+            border-color: #a0a0a0;
+        }
+
+        .controls select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Canvas styling */
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #eee;
+            background-color: #fdfdfd;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Tooltip styling */
+        #chart-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            pointer-events: none; /* Allow mouse events to pass through */
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            white-space: nowrap;
+            font-size: 0.9em;
+            z-index: 100; /* Ensure tooltip is above other elements */
+            transform: translate(-50%, -10px); /* Center horizontally, slight offset vertically */
+        }
+
+        #chart-tooltip.active {
+            opacity: 1;
+            transform: translate(-50%, -20px); /* Move up slightly when active */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                width: 95%;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>World Population Statistics Visualization</h1>
+
+        <div class="controls">
+            <label for="year-selector">Select Year:</label>
+            <select id="year-selector">
+                <!-- Years will be populated by JavaScript -->
+            </select>
+        </div>
+
+        <canvas id="populationChart" width="1000" height="600"></canvas>
+        <div id="chart-tooltip"></div>
+    </div>
+
+    <script>
+        // Data for world population by country for different years.
+        // This data is static for demonstration purposes within a single HTML file.
+        // Real-world applications would fetch this data from an API or database.
+        const worldPopulationData = [
+            { year: 2020, country: "China", population: 1444216107 },
+            { year: 2020, country: "India", population: 1380004385 },
+            { year: 2020, country: "United States", population: 331002651 },
+            { year: 2020, country: "Indonesia", population: 273523615 },
+            { year: 2020, country: "Pakistan", population: 220892331 },
+            { year: 2020, country: "Brazil", population: 212559417 },
+            { year: 2020, country: "Nigeria", population: 206139589 },
+            { year: 2020, country: "Bangladesh", population: 164689383 },
+            { year: 2020, country: "Russia", population: 145934462 },
+            { year: 2020, country: "Mexico", population: 128932753 },
+
+            { year: 2021, country: "China", population: 1447999967 },
+            { year: 2021, country: "India", population: 1393409038 },
+            { year: 2021, country: "United States", population: 332915073 },
+            { year: 2021, country: "Indonesia", population: 276361788 },
+            { year: 2021, country: "Pakistan", population: 225199929 },
+            { year: 2021, country: "Brazil", population: 214326223 },
+            { year: 2021, country: "Nigeria", population: 211400708 },
+            { year: 2021, country: "Bangladesh", population: 166303498 },
+            { year: 2021, country: "Russia", population: 145610000 },
+            { year: 2021, country: "Mexico", population: 130262220 },
+
+            { year: 2022, country: "China", population: 1425671352 },
+            { year: 2022, country: "India", population: 1417173173 },
+            { year: 2022, country: "United States", population: 333287557 },
+            { year: 2022, country: "Indonesia", population: 279134505 },
+            { year: 2022, country: "Pakistan", population: 229199799 },
+            { year: 2022, country: "Brazil", population: 215313498 },
+            { year: 2022, country: "Nigeria", population: 218541212 },
+            { year: 2022, country: "Bangladesh", population: 167900000 },
+            { year: 2022, country: "Russia", population: 144236000 },
+            { year: 2022, country: "Mexico", population: 127504125 },
+
+            { year: 2023, country: "China", population: 1425671352 },
+            { year: 2023, country: "India", population: 1428627663 }, // India officially surpassed China in 2023
+            { year: 2023, country: "United States", population: 334805269 },
+            { year: 2023, country: "Indonesia", population: 280000000 },
+            { year: 2023, country: "Pakistan", population: 231500000 },
+            { year: 2023, country: "Brazil", population: 216422446 },
+            { year: 2023, country: "Nigeria", population: 223804632 },
+            { year: 2023, country: "Bangladesh", population: 169828911 },
+            { year: 2023, country: "Russia", population: 144700000 },
+            { year: 2023, country: "Mexico", population: 128455567 },
+        ];
+
+        // Get canvas and its 2D rendering context
+        const canvas = document.getElementById('populationChart');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('chart-tooltip');
+        const yearSelector = document.getElementById('year-selector');
+
+        // Chart dimensions and margins
+        const chart = {
+            margin: { top: 60, right: 30, bottom: 100, left: 100 },
+            width: canvas.width,
+            height: canvas.height,
+            barPadding: 0.2, // Padding between bars as a fraction of bar width
+            barColor: '#42a5f5', // Main color for bars
+            hoverColor: '#2196f3', // Color when hovering over a bar
+            axisColor: '#888',
+            gridColor: '#e0e0e0',
+            labelColor: '#555',
+            titleColor: '#333'
+        };
+
+        // Calculate actual drawing area
+        chart.drawingWidth = chart.width - chart.margin.left - chart.margin.right;
+        chart.drawingHeight = chart.height - chart.margin.top - chart.margin.bottom;
+
+        let currentBars = []; // Store bar positions for tooltip detection
+
+        /**
+         * Formats a large number with commas for better readability.
+         * @param {number} num - The number to format.
+         * @returns {string} The formatted number.
+         */
+        function formatPopulation(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        /**
+         * Draws the bar chart on the canvas.
+         * @param {Array<Object>} data - The data to visualize for the selected year.
+         */
+        function drawBarChart(data) {
+            ctx.clearRect(0, 0, chart.width, chart.height); // Clear the entire canvas
+
+            if (!data || data.length === 0) {
+                ctx.font = '20px Arial';
+                ctx.fillStyle = chart.titleColor;
+                ctx.textAlign = 'center';
+                ctx.fillText('No data available for selected year.', chart.width / 2, chart.height / 2);
+                return;
+            }
+
+            // Sort data by population in descending order
+            data.sort((a, b) => b.population - a.population);
+
+            // Determine max population for Y-axis scale
+            const maxPopulation = Math.max(...data.map(d => d.population));
+            const minPopulation = 0; // Bar charts typically start from 0 for fair comparison
+
+            // Y-axis scale (population)
+            // Maps a population value to a Y-coordinate on the canvas
+            const yScale = (population) => {
+                return chart.margin.top + chart.drawingHeight - (population / maxPopulation) * chart.drawingHeight;
+            };
+
+            // X-axis scale (countries)
+            const barWidth = chart.drawingWidth / data.length * (1 - chart.barPadding);
+            const barSpacing = chart.drawingWidth / data.length * chart.barPadding;
+
+            // Store bar positions for mouse interaction
+            currentBars = [];
+
+            // Draw Y-axis and grid lines
+            ctx.beginPath();
+            ctx.strokeStyle = chart.gridColor;
+            ctx.lineWidth = 1;
+            ctx.font = '12px ' + chart.fontFamily;
+            ctx.fillStyle = chart.labelColor;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            // Draw Y-axis labels and grid lines (e.g., 5 divisions)
+            const numYLabels = 5;
+            for (let i = 0; i <= numYLabels; i++) {
+                const populationValue = (maxPopulation / numYLabels) * i;
+                const yPos = yScale(populationValue);
+
+                // Draw horizontal grid line
+                ctx.moveTo(chart.margin.left, yPos);
+                ctx.lineTo(chart.width - chart.margin.right, yPos);
+
+                // Draw Y-axis label
+                ctx.fillText(formatPopulation(populationValue), chart.margin.left - 10, yPos);
+            }
+            ctx.stroke();
+
+            // Draw Y-axis line
+            ctx.beginPath();
+            ctx.strokeStyle = chart.axisColor;
+            ctx.lineWidth = 2;
+            ctx.moveTo(chart.margin.left, chart.margin.top);
+            ctx.lineTo(chart.margin.left, chart.height - chart.margin.bottom);
+            ctx.stroke();
+
+            // Draw X-axis line
+            ctx.beginPath();
+            ctx.strokeStyle = chart.axisColor;
+            ctx.lineWidth = 2;
+            ctx.moveTo(chart.margin.left, chart.height - chart.margin.bottom);
+            ctx.lineTo(chart.width - chart.margin.right, chart.height - chart.margin.bottom);
+            ctx.stroke();
+
+            // Draw bars and X-axis labels
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            data.forEach((item, index) => {
+                const xPos = chart.margin.left + (barWidth + barSpacing) * index + barSpacing / 2;
+                const barHeight = chart.drawingHeight - (yScale(item.population) - chart.margin.top);
+                const yStart = chart.height - chart.margin.bottom - barHeight;
+
+                // Draw bar
+                ctx.fillStyle = chart.barColor;
+                ctx.fillRect(xPos, yStart, barWidth, barHeight);
+
+                // Store bar position for tooltip
+                currentBars.push({
+                    x: xPos,
+                    y: yStart,
+                    width: barWidth,
+                    height: barHeight,
+                    data: item
+                });
+
+                // Draw X-axis label (country name)
+                ctx.save(); // Save the current canvas state
+                ctx.translate(xPos + barWidth / 2, chart.height - chart.margin.bottom + 10); // Move origin to label position
+                ctx.rotate(Math.PI / 4); // Rotate 45 degrees
+                ctx.font = '12px ' + chart.fontFamily;
+                ctx.fillStyle = chart.labelColor;
+                ctx.textAlign = 'left'; // Align text left after rotation
+                ctx.fillText(item.country, 0, 0);
+                ctx.restore(); // Restore the canvas state
+            });
+
+            // Chart title
+            ctx.font = '24px Arial';
+            ctx.fillStyle = chart.titleColor;
+            ctx.textAlign = 'center';
+            ctx.fillText(`Top Countries by Population in ${data[0].year}`, chart.width / 2, 30);
+
+            // Y-axis label
+            ctx.save();
+            ctx.translate(chart.margin.left / 2, chart.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.font = '16px Arial';
+            ctx.fillStyle = chart.titleColor;
+            ctx.textAlign = 'center';
+            ctx.fillText('Population', 0, 0);
+            ctx.restore();
+        }
+
+        /**
+         * Fills the year selector dropdown with available years from the data.
+         */
+        function populateYearSelector() {
+            const years = [...new Set(worldPopulationData.map(item => item.year))].sort((a, b) => b - a);
+            yearSelector.innerHTML = ''; // Clear existing options
+
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelector.appendChild(option);
+            });
+
+            // Set the latest year as selected by default
+            if (years.length > 0) {
+                yearSelector.value = years[0];
+            }
+        }
+
+        /**
+         * Handles year selection change, filters data, and redraws the chart.
+         */
+        function onYearChange() {
+            const selectedYear = parseInt(yearSelector.value);
+            const filteredData = worldPopulationData.filter(item => item.year === selectedYear);
+            drawBarChart(filteredData);
+        }
+
+        /**
+         * Handles mouse movement over the canvas for tooltip display.
+         * @param {MouseEvent} event - The mouse event.
+         */
+        function handleMouseMove(event) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            let hoveredBar = null;
+
+            // Check if mouse is over any bar
+            for (const bar of currentBars) {
+                if (mouseX >= bar.x && mouseX <= bar.x + bar.width &&
+                    mouseY >= bar.y && mouseY <= bar.y + bar.height) {
+                    hoveredBar = bar;
+                    break;
+                }
+            }
+
+            if (hoveredBar) {
+                // Highlight the bar
+                ctx.clearRect(hoveredBar.x, hoveredBar.y, hoveredBar.width, hoveredBar.height); // Clear original bar
+                ctx.fillStyle = chart.hoverColor;
+                ctx.fillRect(hoveredBar.x, hoveredBar.y, hoveredBar.width, hoveredBar.height); // Draw highlighted bar
+
+                // Bring back other bars (this is a simple way, full redraw is better for complex cases)
+                // For a proper hover effect without redrawing everything, you'd save/restore the whole chart state
+                // However, for this project, redrawing just the hovered bar is sufficient.
+                // A better approach would be to redraw the whole chart and then highlight, but this can cause flickering.
+                // A more performant way is to draw a separate highlight rect on top, then clear it.
+                // For this project, to meet "complete and working", we'll just redraw the bar and its background.
+                // It means when you move out, the original bar might not be perfectly restored unless it's a full redraw.
+                // To properly handle hover, a full chart redraw (or a separate hover layer) is usually implemented.
+                // For simplicity and to avoid partial redraw issues, we'll redraw the whole chart on mouseout.
+
+                // Show tooltip
+                tooltip.classList.add('active');
+                tooltip.style.left = `${event.pageX}px`;
+                tooltip.style.top = `${event.pageY}px`;
+                tooltip.innerHTML = `<strong>${hoveredBar.data.country}</strong><br>Population: ${formatPopulation(hoveredBar.data.population)}`;
+
+            } else {
+                // If no bar is hovered, re-draw the chart to remove any previous highlights.
+                // This ensures all bars are returned to their default color.
+                onYearChange(); // Redraws the chart with default colors
+
+                // Hide tooltip
+                tooltip.classList.remove('active');
+            }
+        }
+
+        /**
+         * Initializes the chart and sets up event listeners.
+         */
+        function init() {
+            populateYearSelector();
+            onYearChange(); // Initial chart draw
+
+            yearSelector.addEventListener('change', onYearChange);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseout', () => {
+                tooltip.classList.remove('active');
+                onYearChange(); // Redraw chart to clear any hover highlights
+            });
+        }
+
+        // Run initialization when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
