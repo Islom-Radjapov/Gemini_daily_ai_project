@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Fireworks Simulation</title>
+    <style>
+        /* Global styles for the body and canvas */
+        body {
+            margin: 0;
+            overflow: hidden; /* Hide scrollbars */
+            background-color: #000; /* Black background for the night sky */
+            cursor: crosshair; /* Custom cursor for interaction */
+        }
+
+        /* Canvas element takes full screen */
+        canvas {
+            display: block; /* Remove extra space below canvas */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireworksCanvas"></canvas>
+
+    <script>
+        // Get canvas and its 2D rendering context
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Arrays to hold active fireworks and particles
+        let fireworks = [];
+        let particles = [];
+
+        // --- Helper Functions ---
+
+        /**
+         * Generates a random number within a given range.
+         * @param {number} min - The minimum value (inclusive).
+         * @param {number} max - The maximum value (exclusive).
+         * @returns {number} A random number.
+         */
+        function random(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        /**
+         * Generates a random RGB color object.
+         * @returns {object} An object with r, g, b properties (e.g., {r: 255, g: 100, b: 50}).
+         */
+        function getRandomColorObject() {
+            return {
+                r: Math.floor(random(0, 255)),
+                g: Math.floor(random(0, 255)),
+                b: Math.floor(random(0, 255))
+            };
+        }
+
+        /**
+         * Sets the canvas dimensions to match the window size.
+         */
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        // --- Particle Class ---
+        /**
+         * Represents a single particle in the fireworks simulation.
+         * Particles can be part of a rocket's trail or explosion fragments.
+         */
+        class Particle {
+            /**
+             * @param {number} x - Initial X position.
+             * @param {number} y - Initial Y position.
+             * @param {number} vx - Initial velocity in X direction.
+             * @param {number} vy - Initial velocity in Y direction.
+             * @param {object} color - RGB color object {r, g, b}.
+             * @param {number} alpha - Initial opacity (0 to 1).
+             * @param {number} decay - Rate at which alpha decreases per frame.
+             * @param {number} radius - Radius of the particle.
+             * @param {boolean} hasGravity - True if particle is affected by gravity.
+             * @param {number} friction - Air resistance factor (0 to 1, typically 0.9-0.99).
+             */
+            constructor(x, y, vx, vy, color, alpha, decay, radius, hasGravity = true, friction = 0.98) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.alpha = alpha;
+                this.decay = decay;
+                this.radius = radius;
+                this.hasGravity = hasGravity;
+                this.friction = friction;
+                this.gravity = 0.5; // Constant gravity force
+            }
+
+            /**
+             * Updates the particle's position, velocity, and opacity.
+             */
+            update() {
+                if (this.hasGravity) {
+                    this.vy += this.gravity;
+                }
+                // Apply friction
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                this.alpha -= this.decay;
+                // Ensure alpha doesn't go below 0
+                this.alpha = Math.max(0, this.alpha);
+            }
+
+            /**
+             * Draws the particle on the canvas.
+             */
+            draw() {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.alpha})`;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // --- Firework Class ---
+        /**
+         * Represents a single firework rocket ascending to its target.
+         * Upon reaching the target, it triggers an explosion of particles.
+         */
+        class Firework {
+            /**
+             * @param {number} startX - Starting X position.
+             * @param {number} startY - Starting Y position.
+             * @param {number} targetX - Target X position where it explodes.
+             * @param {number} targetY - Target Y position where it explodes.
+             * @param {object} color - RGB color object {r, g, b} for the firework and its explosion.
+             */
+            constructor(startX, startY, targetX, targetY, color) {
+                this.x = startX;
+                this.y = startY;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.color = color;
+                this.speed = 10; // Speed of the rocket in pixels per frame
+
+                // Calculate velocity components to reach the target
+                const dx = targetX - startX;
+                const dy = targetY - startY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                this.vx = (dx / distance) * this.speed;
+                this.vy = (dy / distance) * this.speed;
+
+                this.trailDelay = 2; // Create a trail particle every N frames
+                this.frameCount = 0;
+                this.explosionThreshold = 10; // How close to target to explode
+            }
+
+            /**
+             * Updates the firework's position and creates trail particles.
+             * Checks if the target has been reached.
+             * @returns {boolean} True if the firework has reached its target and should explode.
+             */
+            update() {
+                this.frameCount++;
+
+                // Create a small trail particle periodically
+                if (this.frameCount % this.trailDelay === 0) {
+                    const trailColor = { ...this.color }; // Clone color for trail particles
+                    // Trail particles have no gravity, slight random velocity, and quick decay
+                    particles.push(new Particle(this.x, this.y, random(-0.5, 0.5), random(-0.5, 0.5), trailColor, 0.5, 0.02, random(1, 2), false, 0.9));
+                }
+
+                // Move the rocket
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Check if the rocket has reached or passed its target
+                const distanceToTarget = Math.sqrt(Math.pow(this.targetX - this.x, 2) + Math.pow(this.targetY - this.y, 2));
+
+                if (distanceToTarget < this.explosionThreshold) {
+                    return true; // Indicates that the firework should explode
+                }
+                return false; // Not yet exploded
+            }
+
+            /**
+             * Draws the rocket itself as a small dot.
+             */
+            draw() {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        /**
+         * Creates an explosion of particles at a given location and color.
+         * @param {number} x - X position of the explosion.
+         * @param {number} y - Y position of the explosion.
+         * @param {object} color - RGB color object {r, g, b} for the explosion particles.
+         */
+        function createExplosion(x, y, color) {
+            const explosionParticlesCount = random(50, 100); // Number of particles in the explosion
+            for (let i = 0; i < explosionParticlesCount; i++) {
+                const angle = random(0, Math.PI * 2); // Random angle for particle trajectory
+                const speed = random(1, 10); // Random initial speed
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                const radius = random(1, 3);
+                const decay = random(0.01, 0.05); // Faster decay for explosion particles
+
+                particles.push(new Particle(x, y, vx, vy, color, 1, decay, radius, true, 0.95));
+            }
+        }
+
+        // --- Main Animation Loop ---
+        /**
+         * The main animation loop that updates and draws all fireworks and particles.
+         * It uses requestAnimationFrame for smooth animations.
+         */
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Clear canvas with a semi-transparent black to create a trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw fireworks (rockets)
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                const firework = fireworks[i];
+                const exploded = firework.update();
+                firework.draw(); // Draw the rocket head
+
+                if (exploded) {
+                    createExplosion(firework.x, firework.y, firework.color);
+                    fireworks.splice(i, 1); // Remove the exploded firework
+                }
+            }
+
+            // Update and draw all particles (explosion fragments and rocket trails)
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.update();
+                // Remove particles that have faded or become too small
+                if (particle.alpha <= 0 || particle.radius <= 0.1) {
+                    particles.splice(i, 1);
+                } else {
+                    particle.draw();
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Adjust canvas size on window resize
+        window.addEventListener('resize', setCanvasSize);
+
+        // Mouse click event to launch a firework
+        canvas.addEventListener('click', (e) => {
+            const startX = canvas.width / 2; // Launch from bottom center
+            const startY = canvas.height;
+            const targetX = e.clientX; // Target X is mouse X position
+            const targetY = e.clientY; // Target Y is mouse Y position
+            fireworks.push(new Firework(startX, startY, targetX, targetY, getRandomColorObject()));
+        });
+
+        // Keyboard event to launch a firework
+        window.addEventListener('keydown', (e) => {
+            // Check for Spacebar or 'F' key
+            if (e.code === 'Space' || e.code === 'KeyF') {
+                e.preventDefault(); // Prevent default browser action (e.g., page scrolling for spacebar)
+                const startX = random(canvas.width * 0.2, canvas.width * 0.8); // Random starting X at bottom
+                const startY = canvas.height;
+                const targetX = random(canvas.width * 0.1, canvas.width * 0.9); // Random target X
+                const targetY = random(canvas.height * 0.1, canvas.height * 0.4); // Random target Y in upper half
+                fireworks.push(new Firework(startX, startY, targetX, targetY, getRandomColorObject()));
+            }
+        });
+
+        // --- Initialization ---
+        setCanvasSize(); // Set initial canvas size
+        animate(); // Start the animation loop
+    </script>
+</body>
+</html>
