@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animatsiyali Gradient Fon</title>
+    <style>
+        /* General body styles and reset for consistent display */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern, readable font */
+            height: 100vh; /* Full viewport height */
+            width: 100vw; /* Full viewport width */
+            display: flex; /* Use flexbox for centering content */
+            justify-content: center; /* Center content horizontally */
+            align-items: center; /* Center content vertically */
+            overflow: hidden; /* Hide any potential overflow from the large background */
+            position: relative; /* Needed for stacking context if more elements were added */
+
+            /* Gradient background definition */
+            /* Using multiple vibrant colors for a dynamic look */
+            background: linear-gradient(45deg, #FF6B6B, #F9C74F, #8DDEE8, #A3F7B5, #C780FF);
+            background-size: 400% 400%; /* Make the background much larger than the viewport */
+
+            /* Apply the animation */
+            /* animation-name, animation-duration, animation-timing-function, animation-iteration-count */
+            animation: gradient_animation 15s ease infinite;
+        }
+
+        /* Keyframes for the gradient animation */
+        @keyframes gradient_animation {
+            0% {
+                background-position: 0% 0%; /* Start position */
+            }
+            25% {
+                background-position: 100% 0%; /* Move right */
+            }
+            50% {
+                background-position: 100% 100%; /* Move down-right */
+            }
+            75% {
+                background-position: 0% 100%; /* Move down-left */
+            }
+            100% {
+                background-position: 0% 0%; /* Return to start, creating a smooth loop */
+            }
+        }
+
+        /* Styling for the content displayed over the animated background */
+        .content_container {
+            text-align: center; /* Center text within its container */
+            color: #ffffff; /* White text color for good contrast */
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7); /* Adds readability and depth */
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3); /* Slightly transparent background for the text for better readability */
+            border-radius: 10px; /* Rounded corners for modern look */
+            max-width: 80%; /* Limit width for better presentation on large screens */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* Subtle shadow for depth */
+        }
+
+        .content_container h1 {
+            font-size: 3em; /* Larger heading for emphasis */
+            margin-bottom: 10px;
+            letter-spacing: 2px; /* Spaced out letters for style */
+        }
+
+        .content_container p {
+            font-size: 1.2em; /* Readable paragraph text */
+            line-height: 1.5; /* Good line spacing */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .content_container h1 {
+                font-size: 2em; /* Smaller heading on smaller screens */
+            }
+            .content_container p {
+                font-size: 1em; /* Smaller paragraph on smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="content_container">
+        <h1>Xush Kelibsiz!</h1>
+        <p>Bu sahifa CSS animatsiyalari yordamida yaratilgan chiroyli va silliq gradient fonni namoyish etadi.</p>
+        <p>Hech qanday JavaScript ishlatilmagan. Faqat toza HTML va CSS!</p>
+    </div>
+</body>
+</html>
