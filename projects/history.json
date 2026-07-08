@@ -28,6 +28,7 @@
     "js_game::Tic-tac-toe o'yini",
     "data_viz::Dunyoning aholisi statistikasi",
     "interactive_art::Fireworks simulyatsiyasi",
-    "css_animation::Animatsiyali gradient fon"
+    "css_animation::Animatsiyali gradient fon",
+    "quiz_app::Kosmik viktorina"
   ]
 }

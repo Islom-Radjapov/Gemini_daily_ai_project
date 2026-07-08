@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kosmik Viktorina</title>
+    <style>
+        /*
+         * Global Styles
+         * Sets basic font, background, and text colors for the entire page.
+         */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #3a2e5d, #49133f); /* Deep space gradient */
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        /*
+         * Quiz Container
+         * Main wrapper for the quiz content.
+         */
+        .quiz-container {
+            background-color: rgba(25, 25, 50, 0.95); /* Slightly transparent dark background */
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 5px rgba(255, 255, 255, 0.05) inset;
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+            animation: fadeIn 1s ease-out;
+            border: 1px solid rgba(100, 100, 150, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /*
+         * Header Styling
+         * Title of the quiz application.
+         */
+        h1 {
+            color: #8be9fd; /* Light blue accent */
+            margin-bottom: 30px;
+            font-size: 2.8em;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 15px rgba(139, 233, 253, 0.6);
+        }
+
+        /*
+         * Question Section
+         * Styling for the question text.
+         */
+        #question {
+            font-size: 1.6em;
+            margin-bottom: 30px;
+            color: #f8f8f2;
+            line-height: 1.5;
+        }
+
+        /*
+         * Answer Buttons Container
+         * Flexbox for arranging answer options.
+         */
+        #answer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        /*
+         * Individual Answer Button Styling
+         */
+        .btn {
+            background-color: #44475a; /* Darker gray */
+            color: #f8f8f2;
+            border: 1px solid #6272a4; /* Lighter blue-gray border */
+            padding: 15px 20px;
+            text-align: left;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            width: 100%;
+            outline: none;
+        }
+
+        .btn:hover:not([disabled]) {
+            background-color: #6272a4; /* Lighter blue-gray on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active:not([disabled]) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /*
+         * Correct/Incorrect Answer Feedback
+         */
+        .btn.correct {
+            background-color: #50fa7b; /* Green for correct */
+            color: #282a36;
+            border-color: #50fa7b;
+            font-weight: bold;
+            animation: flashGreen 0.5s ease-out;
+        }
+
+        .btn.incorrect {
+            background-color: #ff5555; /* Red for incorrect */
+            color: #282a36;
+            border-color: #ff5555;
+            font-weight: bold;
+            animation: flashRed 0.5s ease-out;
+        }
+
+        @keyframes flashGreen {
+            0% { background-color: #44475a; }
+            50% { background-color: #50fa7b; }
+            100% { background-color: #50fa7b; }
+        }
+
+        @keyframes flashRed {
+            0% { background-color: #44475a; }
+            50% { background-color: #ff5555; }
+            100% { background-color: #ff5555; }
+        }
+
+        /*
+         * Next Button Styling
+         */
+        #next-btn {
+            background-color: #bd93f9; /* Purple accent */
+            color: #282a36;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 150px;
+            margin-top: 20px;
+            outline: none;
+        }
+
+        #next-btn:hover {
+            background-color: #ff79c6; /* Pink accent on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        #next-btn:active {
+            transform: translateY(0);
+        }
+
+        /*
+         * Hide element utility class
+         */
+        .hide {
+            display: none !important;
+        }
+
+        /*
+         * Results Display
+         */
+        #results {
+            font-size: 1.8em;
+            color: #8be9fd;
+            margin-bottom: 25px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(139, 233, 253, 0.4);
+        }
+
+        /*
+         * Play Again Button Styling (same as next-btn but for results)
+         */
+        #play-again-btn {
+            background-color: #ff79c6; /* Pink accent */
+            color: #282a36;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 180px;
+            margin-top: 20px;
+            outline: none;
+        }
+
+        #play-again-btn:hover {
+            background-color: #bd93f9; /* Purple accent on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        #play-again-btn:active {
+            transform: translateY(0);
+        }
+
+        /*
+         * Responsive Design
+         * Adjusts layout for smaller screens.
+         */
+        @media (max-width: 768px) {
+            .quiz-container {
+                padding: 25px;
+                margin: 10px;
+            }
+            h1 {
+                font-size: 2.2em;
+            }
+            #question {
+                font-size: 1.3em;
+            }
+            .btn {
+                padding: 12px 15px;
+                font-size: 1em;
+            }
+            #next-btn, #play-again-btn {
+                padding: 12px 25px;
+                font-size: 1.1em;
+                width: 140px;
+            }
+            #results {
+                font-size: 1.5em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .quiz-container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            #question {
+                font-size: 1.1em;
+            }
+            .btn {
+                padding: 10px 12px;
+                font-size: 0.9em;
+            }
+            #next-btn, #play-again-btn {
+                width: 120px;
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Kosmik Viktorina</h1>
+        <div id="quiz">
+            <h2 id="question">Question goes here</h2>
+            <div id="answer-buttons">
+                <!-- Answer buttons will be dynamically inserted here by JavaScript -->
+            </div>
+            <button id="next-btn">Keyingi</button>
+        </div>
+        <div id="end-screen" class="hide">
+            <p id="results"></p>
+            <button id="play-again-btn">Qayta o'ynash</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions
+        // Each object contains a question, an array of options, and the correct answer.
+        const questions = [
+            {
+                question: "Quyosh sistemasidagi eng katta sayyora qaysi?",
+                options: ["Mars", "Yupiter", "Saturn", "Yer"],
+                correctAnswer: "Yupiter"
+            },
+            {
+                question: "Bizning Quyosh sistemamiz qaysi galaktika tarkibiga kiradi?",
+                options: ["Andromeda", "Somon Yo'li", "Uchburchak", "Messier 81"],
+                correctAnswer: "Somon Yo'li"
+            },
+            {
+                question: "Oyni birinchi bo'lib bosib o'tgan inson kim?",
+                options: ["Yuriy Gagarin", "Neil Armstrong", "Buzz Aldrin", "Michael Collins"],
+                correctAnswer: "Neil Armstrong"
+            },
+            {
+                question: "Qaysi sayyora 'Qizil sayyora' nomi bilan tanilgan?",
+                options: ["Venera", "Mars", "Merkuriy", "Uran"],
+                correctAnswer: "Mars"
+            },
+            {
+                question: "Koinotdagi eng tez narsa nima?",
+                options: ["Ovoz tezligi", "Yorug'lik tezligi", "Gravitatsiya", "Qora tuynuk tortilishi"],
+                correctAnswer: "Yorug'lik tezligi"
+            },
+            {
+                question: "Quyosh sistemasida nechta sayyora bor?",
+                options: ["7", "8", "9", "10"],
+                correctAnswer: "8" // After Pluto's reclassification
+            },
+            {
+                question: "Sayyoralarni Quyosh atrofida ushlab turuvchi kuch nima?",
+                options: ["Magnit maydoni", "Atmosfera bosimi", "Gravitatsiya", "Markazdan qochma kuch"],
+                correctAnswer: "Gravitatsiya"
+            },
+            {
+                question: "Qaysi sayyora o'z o'qi atrofida orqaga (soat strelkasi bo'yicha) aylanadi?",
+                options: ["Mars", "Yupiter", "Venera", "Saturn"],
+                correctAnswer: "Venera"
+            },
+            {
+                question: "Birinchi sun'iy yo'ldoshning nomi nima edi?",
+                options: ["Apollon 11", "Xabbl", "Sputnik 1", "Voyager 1"],
+                correctAnswer: "Sputnik 1"
+            },
+            {
+                question: "Quyoshdagi asosiy elementlar qaysilar?",
+                options: ["Kislorod va Uglerod", "Temir va Nikel", "Vodorod va Geliy", "Titan va Alyuminiy"],
+                correctAnswer: "Vodorod va Geliy"
+            },
+            {
+                question: "Olamning yoshi taxminan qancha?",
+                options: ["4.5 milliard yil", "10 milliard yil", "13.8 milliard yil", "20 milliard yil"],
+                correctAnswer: "13.8 milliard yil"
+            },
+            {
+                question: "Quyoshga eng yaqin sayyora qaysi?",
+                options: ["Venera", "Mars", "Merkuriy", "Yer"],
+                correctAnswer: "Merkuriy"
+            }
+        ];
+
+        // Get references to DOM elements
+        const questionElement = document.getElementById("question");
+        const answerButtons = document.getElementById("answer-buttons");
+        const nextButton = document.getElementById("next-btn");
+        const quizScreen = document.getElementById("quiz");
+        const endScreen = document.getElementById("end-screen");
+        const resultsElement = document.getElementById("results");
+        const playAgainButton = document.getElementById("play-again-btn");
+
+        // Quiz state variables
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        /**
+         * Starts the quiz.
+         * Resets score and question index, then displays the first question.
+         */
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            nextButton.innerHTML = "Keyingi"; // Reset button text
+            nextButton.classList.add("hide"); // Hide next button initially
+            endScreen.classList.add("hide"); // Hide end screen
+            quizScreen.classList.remove("hide"); // Show quiz screen
+            showQuestion();
+        }
+
+        /**
+         * Displays the current question and its options.
+         */
+        function showQuestion() {
+            resetState(); // Clear previous question and answers
+
+            let currentQuestion = questions[currentQuestionIndex];
+            let questionNo = currentQuestionIndex + 1;
+            questionElement.innerHTML = questionNo + ". " + currentQuestion.question;
+
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement("button");
+                button.innerHTML = option;
+                button.classList.add("btn");
+                answerButtons.appendChild(button);
+                if (option === currentQuestion.correctAnswer) {
+                    button.dataset.correct = true; // Mark correct answer for later validation
+                }
+                button.addEventListener("click", selectAnswer);
+            });
+        }
+
+        /**
+         * Clears previous answer buttons and hides the next button.
+         */
+        function resetState() {
+            nextButton.classList.add("hide");
+            while (answerButtons.firstChild) {
+                answerButtons.removeChild(answerButtons.firstChild);
+            }
+        }
+
+        /**
+         * Handles the selection of an answer.
+         * Checks if the answer is correct, updates score, and provides visual feedback.
+         * @param {Event} e - The click event object.
+         */
+        function selectAnswer(e) {
+            const selectedBtn = e.target;
+            const isCorrect = selectedBtn.dataset.correct === "true";
+
+            if (isCorrect) {
+                selectedBtn.classList.add("correct");
+                score++;
+            } else {
+                selectedBtn.classList.add("incorrect");
+            }
+
+            // Disable all buttons after an answer is selected and show correct one
+            Array.from(answerButtons.children).forEach(button => {
+                if (button.dataset.correct === "true") {
+                    button.classList.add("correct");
+                }
+                button.disabled = true; // Disable all buttons
+            });
+            nextButton.classList.remove("hide"); // Show the next button
+        }
+
+        /**
+         * Handles the click on the "Next" button.
+         * Moves to the next question or shows results if all questions are answered.
+         */
+        function handleNextButton() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        /**
+         * Displays the final score and "Play Again" button.
+         */
+        function showResult() {
+            resetState(); // Clear questions and buttons
+            quizScreen.classList.add("hide"); // Hide quiz screen
+            endScreen.classList.remove("hide"); // Show end screen
+            resultsElement.innerHTML = `Siz ${questions.length} savoldan ${score} tasiga to'g'ri javob berdingiz!`;
+            // The playAgainButton is already visible through endScreen.classList.remove("hide");
+        }
+
+        // Event listener for the "Next" button
+        nextButton.addEventListener("click", () => {
+            if (currentQuestionIndex < questions.length) {
+                handleNextButton();
+            } else {
+                startQuiz(); // If quiz ended, clicking Next again should restart (or "Play Again" button)
+            }
+        });
+
+        // Event listener for the "Play Again" button
+        playAgainButton.addEventListener("click", startQuiz);
+
+        // Initialize the quiz when the page loads
+        startQuiz();
+    </script>
+</body>
+</html>
