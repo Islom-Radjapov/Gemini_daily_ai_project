@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geografiya Viktorinasi</title>
+    <style>
+        /* General body styling for background and font */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        /* Main quiz container styling */
+        .quiz_container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        /* Quiz title styling */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+
+        /* Question display area */
+        #question_display {
+            font-size: 1.4em;
+            margin-bottom: 30px;
+            min-height: 80px; /* Ensure consistent height for questions */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e8f0fe;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+            text-align: center;
+            line-height: 1.5;
+            color: #2980b9;
+            font-weight: 600;
+        }
+
+        /* Answer options container */
+        #answer_options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        /* Styling for each answer button */
+        .option_button {
+            background-color: #f8f9fa;
+            color: #555;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .option_button:hover:not(.disabled) {
+            background-color: #e0e6ea;
+            border-color: #c0c8cc;
+            transform: translateY(-2px);
+        }
+
+        /* Styles for correct and incorrect answers */
+        .option_button.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .option_button.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        /* Disabled state for buttons after an answer is chosen */
+        .option_button.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Next and Restart button styling */
+        .action_button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+            margin-top: 15px;
+        }
+
+        .action_button:hover:not(.disabled) {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .action_button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Results display styling */
+        #results_display {
+            font-size: 1.6em;
+            color: #28a745;
+            margin-bottom: 25px;
+            font-weight: bold;
+            display: none; /* Hidden by default */
+        }
+
+        #results_display span {
+            color: #007bff;
+        }
+
+        /* Hide elements dynamically */
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .quiz_container {
+                padding: 20px;
+                margin: 15px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            #question_display {
+                font-size: 1.2em;
+                min-height: 70px;
+                padding: 12px;
+            }
+            .option_button {
+                font-size: 1em;
+                padding: 12px 15px;
+            }
+            .action_button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+            #results_display {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz_container">
+        <h1>Geografiya Viktorinasi</h1>
+
+        <!-- Quiz section -->
+        <div id="quiz_section">
+            <div id="question_display"></div>
+            <div id="answer_options"></div>
+            <button id="next_button" class="action_button" disabled>Keyingi Savol</button>
+        </div>
+
+        <!-- Results section -->
+        <div id="results_section" class="hidden">
+            <div id="results_display">Sizning ballingiz: <span id="final_score">0</span> / <span id="total_questions">0</span></div>
+            <button id="restart_button" class="action_button">Qayta Boshlash</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of geography questions
+        const questions = [
+            {
+                question: "O'zbekistonning poytaxti qaysi shahar?",
+                options: ["Samarqand", "Buxoro", "Toshkent", "Xiva"],
+                correctAnswer: 2
+            },
+            {
+                question: "Dunyodagi eng baland tog' cho'qqisi qaysi?",
+                options: ["K2", "Kangchenjunga", "Lhotse", "Everest"],
+                correctAnswer: 3
+            },
+            {
+                question: "Nil daryosi qaysi qit'ada joylashgan?",
+                options: ["Osiyo", "Yevropa", "Afrika", "Janubiy Amerika"],
+                correctAnswer: 2
+            },
+            {
+                question: "Yaponiya davlatining poytaxti qaysi?",
+                options: ["Seul", "Pekin", "Tokio", "Bangkok"],
+                correctAnswer: 2
+            },
+            {
+                question: "Dunyodagi eng katta okean qaysi?",
+                options: ["Atlantika okeani", "Hind okeani", "Arktika okeani", "Tinch okeani"],
+                correctAnswer: 3
+            },
+            {
+                question: "Braziliya qaysi qit'ada joylashgan?",
+                options: ["Afrika", "Shimoliy Amerika", "Janubiy Amerika", "Avstraliya"],
+                correctAnswer: 2
+            },
+            {
+                question: "Avstraliya qit'asining poytaxti qaysi shahar?",
+                options: ["Sidney", "Melburn", "Kanberra", "Pert"],
+                correctAnswer: 2
+            },
+            {
+                question: "Dunyodagi eng uzun daryo qaysi?",
+                options: ["Amazonka", "Mississippi", "Nil", "Yangtze"],
+                correctAnswer: 2
+            },
+            {
+                question: "Misrning poytaxti qaysi shahar?",
+                options: ["Iskandariya", "Qohira", "Luxor", "Asvon"],
+                correctAnswer: 1
+            },
+            {
+                question: "Rossiya Federatsiyasining poytaxti qaysi?",
+                options: ["Sankt-Peterburg", "Moskva", "Qozon", "Novosibirsk"],
+                correctAnswer: 1
+            },
+            {
+                question: "Fransiya qaysi qit'ada joylashgan?",
+                options: ["Osiyo", "Afrika", "Yevropa", "Shimoliy Amerika"],
+                correctAnswer: 2
+            },
+            {
+                question: "Kanada davlatining poytaxti qaysi?",
+                options: ["Toronto", "Vankuver", "Ottava", "Monreal"],
+                correctAnswer: 2
+            }
+        ];
+
+        // DOM elements
+        const questionDisplay = document.getElementById('question_display');
+        const answerOptionsDiv = document.getElementById('answer_options');
+        const nextButton = document.getElementById('next_button');
+        const restartButton = document.getElementById('restart_button');
+        const quizSection = document.getElementById('quiz_section');
+        const resultsSection = document.getElementById('results_section');
+        const finalScoreSpan = document.getElementById('final_score');
+        const totalQuestionsSpan = document.getElementById('total_questions');
+
+        // Quiz state variables
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answerSelected = false; // Flag to check if an answer has been selected for the current question
+
+        /**
+         * Initializes the quiz, resets score and question index, and displays the first question.
+         */
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            resultsSection.classList.add('hidden'); // Hide results
+            quizSection.classList.remove('hidden'); // Show quiz
+            nextButton.classList.remove('hidden'); // Ensure next button is visible
+            nextButton.disabled = true; // Disable next button at the start of a question
+            totalQuestionsSpan.textContent = questions.length; // Set total questions in results
+            loadQuestion();
+        }
+
+        /**
+         * Loads and displays the current question and its options.
+         */
+        function loadQuestion() {
+            answerOptionsDiv.innerHTML = ''; // Clear previous options
+            nextButton.disabled = true; // Disable next button until an answer is selected
+            answerSelected = false; // Reset answer selected flag
+
+            if (currentQuestionIndex < questions.length) {
+                const currentQuestion = questions[currentQuestionIndex];
+                questionDisplay.textContent = currentQuestion.question;
+
+                currentQuestion.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option_button');
+                    button.addEventListener('click', () => selectAnswer(index, button));
+                    answerOptionsDiv.appendChild(button);
+                });
+            } else {
+                showResults(); // If no more questions, show results
+            }
+        }
+
+        /**
+         * Handles the selection of an answer.
+         * @param {number} selectedIndex - The index of the selected answer.
+         * @param {HTMLElement} selectedButton - The button element that was clicked.
+         */
+        function selectAnswer(selectedIndex, selectedButton) {
+            // Prevent selecting multiple answers for the same question
+            if (answerSelected) return;
+
+            answerSelected = true;
+            nextButton.disabled = false; // Enable next button
+
+            const currentQuestion = questions[currentQuestionIndex];
+            const allOptionButtons = answerOptionsDiv.querySelectorAll('.option_button');
+
+            // Disable all option buttons after selection
+            allOptionButtons.forEach(button => {
+                button.classList.add('disabled');
+                button.removeEventListener('click', () => {}); // Remove event listener to prevent further clicks
+            });
+
+            // Check if the selected answer is correct
+            if (selectedIndex === currentQuestion.correctAnswer) {
+                score++;
+                selectedButton.classList.add('correct'); // Highlight correct answer
+            } else {
+                selectedButton.classList.add('incorrect'); // Highlight incorrect answer
+                // Also highlight the correct answer
+                allOptionButtons[currentQuestion.correctAnswer].classList.add('correct');
+            }
+        }
+
+        /**
+         * Moves to the next question or shows results if all questions are answered.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        /**
+         * Displays the final score and allows restarting the quiz.
+         */
+        function showResults() {
+            quizSection.classList.add('hidden'); // Hide quiz
+            resultsSection.classList.remove('hidden'); // Show results
+            nextButton.classList.add('hidden'); // Hide next button
+            finalScoreSpan.textContent = score;
+        }
+
+        // Event listeners
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', startQuiz);
+
+        // Start the quiz when the page loads
+        startQuiz();
+    </script>
+</body>
+</html>
