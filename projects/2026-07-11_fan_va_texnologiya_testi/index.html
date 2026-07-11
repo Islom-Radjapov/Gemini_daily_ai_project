@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fan va Texnologiya Viktorinasi</title>
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #74ebd5, #9face6); /* Modern gradient background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Quiz container styling */
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            padding: 40px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out; /* Simple fade-in animation */
+        }
+
+        /* Fade-in animation for the quiz container */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Styling for main headings */
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        /* Styling for the question text */
+        .question {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #444;
+        }
+
+        /* Container for answer options */
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr; /* Single column layout for options */
+            gap: 15px; /* Space between options */
+            margin-bottom: 30px;
+        }
+
+        /* Styling for individual option buttons */
+        .option-button {
+            background-color: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transitions for hover and state changes */
+            text-align: left;
+            color: #555;
+            outline: none; /* Remove default focus outline */
+        }
+
+        /* Hover effect for option buttons */
+        .option-button:hover {
+            background-color: #e0e0e0;
+            border-color: #c0c0c0;
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Styling for a selected option */
+        .option-button.selected {
+            background-color: #cceeff; /* Light blue */
+            border-color: #99ddff;
+            color: #222;
+        }
+
+        /* Styling for a correct answer */
+        .option-button.correct {
+            background-color: #d4edda; /* Light green */
+            border-color: #28a745;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        /* Styling for an incorrect answer */
+        .option-button.incorrect {
+            background-color: #f8d7da; /* Light red */
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        /* Styling for disabled option buttons */
+        .option-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Container for navigation buttons */
+        .navigation-container {
+            display: flex;
+            justify-content: flex-end; /* Align to the right for "Next Question" button */
+            align-items: center;
+        }
+
+        /* Styling for feedback messages (e.g., "Correct!", "Incorrect!") */
+        .feedback-message {
+            margin-top: -10px; /* Adjust spacing */
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-height: 25px; /* Reserve space to prevent layout shift */
+        }
+
+        /* Color for correct feedback */
+        .feedback-message.correct-text {
+            color: #28a745;
+        }
+
+        /* Color for incorrect feedback */
+        .feedback-message.incorrect-text {
+            color: #dc3545;
+        }
+
+        /* Styling for action buttons (Start, Next, Restart) */
+        .action-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            min-width: 150px;
+            outline: none; /* Remove default focus outline */
+        }
+
+        /* Hover effect for action buttons */
+        .action-button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Styling for disabled action buttons */
+        .action-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.8;
+        }
+
+        /* Styling for start and results screens */
+        #start-screen, #results-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #start-screen h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        #start-screen p {
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            color: #555;
+            max-width: 450px;
+        }
+
+        #results-screen h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        #results-screen p {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #444;
+            font-weight: bold;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .quiz-container {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .question {
+                font-size: 1.3em;
+            }
+            .option-button, .action-button {
+                font-size: 1em;
+                padding: 12px 15px;
+            }
+            #start-screen h2, #results-screen h2 {
+                font-size: 1.7em;
+            }
+            #start-screen p, #results-screen p {
+                font-size: 1.2em;
+            }
+        }
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            .question {
+                font-size: 1.1em;
+            }
+            .option-button, .action-button {
+                font-size: 0.9em;
+                padding: 10px 12px;
+            }
+            .navigation-container {
+                flex-direction: column; /* Stack buttons vertically */
+                gap: 15px;
+                justify-content: center; /* Center the buttons when stacked */
+            }
+            .action-button {
+                width: 100%; /* Make action buttons full width */
+                min-width: unset;
+            }
+            #start-screen h2, #results-screen h2 {
+                font-size: 1.5em;
+            }
+            #start-screen p, #results-screen p {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>Fan va Texnologiya Viktorinasi</h1>
+            <h2>Bilimingizni sinab ko'ring!</h2>
+            <p>Bu viktorina sizning fan va texnologiya sohasidagi bilimlaringizni sinash uchun mo'ljallangan. Har bir savolga javob berib, natijangizni bilib oling!</p>
+            <button id="start-quiz-button" class="action-button">Viktorinani boshlash</button>
+        </div>
+
+        <!-- Quiz Screen (hidden initially) -->
+        <div id="quiz-screen" style="display: none;">
+            <h1>Fan va Texnologiya Viktorinasi</h1>
+            <p class="question" id="question-text"></p>
+            <div class="options-container" id="options-container">
+                <!-- Answer options will be dynamically loaded here by JavaScript -->
+            </div>
+            <div class="feedback-message" id="feedback-message"></div>
+            <div class="navigation-container">
+                <button id="next-button" class="action-button" disabled>Keyingi savol</button>
+            </div>
+        </div>
+
+        <!-- Results Screen (hidden initially) -->
+        <div id="results-screen" style="display: none;">
+            <h1>Viktorina yakunlandi!</h1>
+            <h2>Natijangiz:</h2>
+            <p id="final-score"></p>
+            <button id="restart-button" class="action-button">Qayta boshlash</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions. Each object contains the question, an array of options, and the index of the correct answer.
+        const questions = [
+            {
+                question: "Suvning kimyoviy formulasi qaysi?",
+                options: ["CO2", "O2", "H2O", "N2"],
+                correctAnswer: 2 // Index of 'H2O'
+            },
+            {
+                question: "Qaysi sayyora 'Qizil sayyora' deb ataladi?",
+                options: ["Venera", "Mars", "Yupiter", "Saturn"],
+                correctAnswer: 1 // Index of 'Mars'
+            },
+            {
+                question: "HTML nima degan ma'noni anglatadi?",
+                options: ["HyperText Markup Language", "High-Level Text Management", "Hyperlink and Text Markup", "Home Tool Markup Language"],
+                correctAnswer: 0 // Index of 'HyperText Markup Language'
+            },
+            {
+                question: "Nisbiylik nazariyasini kim ishlab chiqqan?",
+                options: ["Isaak Nyuton", "Galileo Galiley", "Albert Eynshteyn", "Nikola Tesla"],
+                correctAnswer: 2 // Index of 'Albert Eynshteyn'
+            },
+            {
+                question: "Veb-ishlab chiqishda HTML va CSS bilan birga ko'pincha qaysi dasturlash tili ishlatiladi?",
+                options: ["Python", "Java", "C++", "JavaScript"],
+                correctAnswer: 3 // Index of 'JavaScript'
+            },
+            {
+                question: "Materiyaning eng kichik birligi nima?",
+                options: ["Molekula", "Proton", "Atom", "Elektron"],
+                correctAnswer: 2 // Index of 'Atom'
+            },
+            {
+                question: "Har qanday jismlarning tortishish qonunini kim kashf qilgan?",
+                options: ["Stiven Hoking", "Isaak Nyuton", "Meri Kyuri", "Charlz Darvin"],
+                correctAnswer: 1 // Index of 'Isaak Nyuton'
+            },
+            {
+                question: "DNKning asosiy vazifasi nima?",
+                options: ["Energiya ishlab chiqarish", "Oqsillarni sintez qilish", "Irsiy ma'lumotlarni tashish", "Hujayra nafas olishini boshqarish"],
+                correctAnswer: 2 // Index of 'Irsiy ma'lumotlarni tashish'
+            },
+            {
+                question: "O'simliklar yorug'lik energiyasini kimyoviy energiyaga aylantiradigan jarayon nima deb ataladi?",
+                options: ["Nafas olish", "Fotosintez", "Transpiratsiya", "Fermentatsiya"],
+                correctAnswer: 1 // Index of 'Fotosintez'
+            },
+            {
+                question: "Kompyuterda CPU nimani anglatadi?",
+                options: ["Central Power Unit", "Central Processing Unit", "Computer Personal Utility", "Core Program Unit"],
+                correctAnswer: 1 // Index of 'Central Processing Unit'
+            },
+            {
+                question: "Qaysi energiya manbai qayta tiklanuvchan hisoblanadi?",
+                options: ["Neft", "Ko'mir", "Quyosh energiyasi", "Tabiiy gaz"],
+                correctAnswer: 2 // Index of 'Quyosh energiyasi'
+            },
+            {
+                question: "Yerning tabiiy yo'ldoshi qaysi?",
+                options: ["Mars", "Venera", "Oy", "Xiron"],
+                correctAnswer: 2 // Index of 'Oy'
+            }
+        ];
+
+        // Get references to DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const startQuizButton = document.getElementById('start-quiz-button');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextButton = document.getElementById('next-button');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const finalScore = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        // Quiz state variables
+        let currentQuestionIndex = 0; // Tracks the current question number
+        let score = 0; // Tracks the user's score
+        let answered = false; // Flag to prevent multiple answers for the same question
+
+        // Function to start the quiz from the beginning
+        function startQuiz() {
+            startScreen.style.display = 'none'; // Hide the start screen
+            quizScreen.style.display = 'block'; // Show the quiz screen
+            currentQuestionIndex = 0; // Reset question index
+            score = 0; // Reset score
+            showQuestion(); // Display the first question
+        }
+
+        // Function to display a question and its answer options
+        function showQuestion() {
+            resetState(); // Clear previous question's state and feedback
+
+            const question = questions[currentQuestionIndex];
+            questionText.textContent = `${currentQuestionIndex + 1}. ${question.question}`; // Display question text with number
+
+            // Create buttons for each answer option
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.dataset.index = index; // Store the original index of the option
+                // Add event listener to handle option selection
+                button.addEventListener('click', () => selectAnswer(button, index));
+                optionsContainer.appendChild(button); // Add button to the options container
+            });
+        }
+
+        // Function to reset the UI state for a new question
+        function resetState() {
+            feedbackMessage.textContent = ''; // Clear feedback message
+            feedbackMessage.className = 'feedback-message'; // Reset feedback message classes
+            nextButton.disabled = true; // Disable the "Next Question" button
+            // Remove all existing option buttons
+            while (optionsContainer.firstChild) {
+                optionsContainer.removeChild(optionsContainer.firstChild);
+            }
+            answered = false; // Reset answered flag for the new question
+        }
+
+        // Function to handle user's answer selection
+        function selectAnswer(button, selectedIndex) {
+            if (answered) return; // If already answered, do nothing
+
+            answered = true; // Mark question as answered
+
+            // Disable all option buttons and remove 'selected' class from others if any
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.disabled = true; // Disable interaction
+                btn.classList.remove('selected'); // Ensure no other button is 'selected'
+            });
+
+            button.classList.add('selected'); // Highlight the selected option
+
+            checkAnswer(selectedIndex); // Check if the selected answer is correct
+            nextButton.disabled = false; // Enable the "Next Question" button
+        }
+
+        // Function to check the selected answer against the correct answer
+        function checkAnswer(selectedIndex) {
+            const question = questions[currentQuestionIndex];
+            const correctIndex = question.correctAnswer;
+
+            // Highlight the correct answer among all options
+            Array.from(optionsContainer.children).forEach(btn => {
+                if (parseInt(btn.dataset.index) === correctIndex) {
+                    btn.classList.add('correct'); // Mark the correct option with green
+                }
+            });
+
+            // Provide feedback based on correctness
+            if (selectedIndex === correctIndex) {
+                score++; // Increment score if correct
+                feedbackMessage.textContent = "To'g'ri javob!";
+                feedbackMessage.classList.add('correct-text');
+            } else {
+                // If incorrect, remove 'selected' and mark the chosen option as 'incorrect'
+                const selectedButton = Array.from(optionsContainer.children).find(btn => parseInt(btn.dataset.index) === selectedIndex);
+                if (selectedButton) {
+                    selectedButton.classList.remove('selected');
+                    selectedButton.classList.add('incorrect');
+                }
+                feedbackMessage.textContent = "Noto'g'ri javob.";
+                feedbackMessage.classList.add('incorrect-text');
+            }
+        }
+
+        // Function to move to the next question or show results if quiz is finished
+        function nextQuestion() {
+            currentQuestionIndex++; // Move to the next question
+            if (currentQuestionIndex < questions.length) {
+                showQuestion(); // Display the next question
+            } else {
+                showResults(); // Show final results if all questions are answered
+            }
+        }
+
+        // Function to display the final quiz results
+        function showResults() {
+            quizScreen.style.display = 'none'; // Hide the quiz screen
+            resultsScreen.style.display = 'block'; // Show the results screen
+            finalScore.textContent = `${score} / ${questions.length} ball`; // Display final score
+        }
+
+        // Function to restart the quiz
+        function restartQuiz() {
+            resultsScreen.style.display = 'none'; // Hide the results screen
+            quizScreen.style.display = 'block'; // Show the quiz screen
+            currentQuestionIndex = 0; // Reset question index
+            score = 0; // Reset score
+            showQuestion(); // Display the first question
+        }
+
+        // Event Listeners for buttons
+        startQuizButton.addEventListener('click', startQuiz);
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', restartQuiz);
+    </script>
+</body>
+</html>
