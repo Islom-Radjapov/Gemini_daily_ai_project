@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard</title>
+    <!-- Google Fonts for a modern look. This is an external resource, but widely accepted for design aesthetics. -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General styles and CSS variables for theming */
+        :root {
+            --primary-color: #4A90E2; /* A modern blue */
+            --secondary-color: #50E3C2; /* A vibrant teal */
+            --background-color: #f4f7f6; /* Light gray background */
+            --card-background: #ffffff; /* White cards */
+            --text-color: #333; /* Dark gray for primary text */
+            --light-text-color: #666; /* Lighter gray for secondary text */
+            --border-color: #e0e0e0; /* Light border color */
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Soft shadow for cards */
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        /* Basic reset for consistent styling */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Body styling */
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align content to the top */
+            min-height: 100vh; /* Full viewport height */
+            padding: 20px;
+        }
+
+        /* Dashboard main container using CSS Grid for layout */
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px; /* Max width for larger screens */
+            display: grid;
+            gap: 20px; /* Space between grid items */
+            grid-template-columns: repeat(1, 1fr); /* Default single column for small screens */
+            /* Define grid areas for better readability and maintainability */
+            grid-template-areas:
+                "header"
+                "metrics"
+                "department-chart"
+                "age-chart"
+                "gender-chart"
+                "recent-hires"
+                "open-positions";
+        }
+
+        /* Media queries for responsive layout */
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns for medium screens */
+                grid-template-areas:
+                    "header header"
+                    "metrics metrics"
+                    "department-chart age-chart"
+                    "gender-chart recent-hires"
+                    "open-positions open-positions";
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .dashboard-container {
+                grid-template-columns: repeat(3, 1fr); /* 3 columns for large screens */
+                grid-template-areas:
+                    "header header header"
+                    "metrics metrics metrics"
+                    "department-chart age-chart gender-chart"
+                    "recent-hires recent-hires open-positions";
+            }
+        }
+
+        /* Header styling */
+        .dashboard-header {
+            grid-area: header; /* Assign to header grid area */
+            background-color: var(--card-background);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-left: 8px solid var(--primary-color); /* Accent border on the left */
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.5em;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin: 0;
+            margin-left: 15px; /* Space from icon */
+        }
+
+        .dashboard-header .logo {
+            font-size: 2.2em; /* Icon size */
+            color: var(--secondary-color);
+        }
+        .dashboard-header > div {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Generic card styling for sections */
+        .card {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 150px; /* Ensure cards have a minimum height */
+        }
+
+        .card h2 {
+            font-size: 1.3em;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        /* Metric cards section */
+        .metric-cards {
+            grid-area: metrics; /* Assign to metrics grid area */
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive columns for metrics */
+            gap: 20px;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            background-color: var(--card-background);
+            transition: transform 0.2s ease-in-out; /* Smooth hover effect */
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .metric-card .value {
+            font-size: 2.8em;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            line-height: 1.1;
+        }
+
+        .metric-card .label {
+            font-size: 0.9em;
+            color: var(--light-text-color);
+            font-weight: 400;
+        }
+
+        /* Chart container styles (used for both bar and pie chart sections) */
+        .chart-container {
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            background-color: var(--card-background);
+        }
+
+        .chart-container h2 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        /* Bar chart specific styles */
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Space between bars */
+        }
+
+        .bar-chart-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.9em;
+        }
+
+        .bar-chart-label {
+            width: 120px; /* Fixed width for labels to align bars */
+            flex-shrink: 0; /* Prevent label from shrinking */
+            text-align: right;
+            color: var(--light-text-color);
+            white-space: nowrap; /* Prevent label text from wrapping */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Add ellipsis if label is too long */
+        }
+
+        .bar-chart-bar-wrapper {
+            flex-grow: 1; /* Bar wrapper takes remaining space */
+            background-color: var(--background-color);
+            border-radius: 5px;
+            overflow: hidden;
+            height: 28px; /* Height of the bar */
+            display: flex;
+            align-items: center;
+            position: relative; /* For absolute positioning of value */
+        }
+
+        .bar-chart-bar {
+            height: 100%;
+            background-color: var(--secondary-color);
+            border-radius: 5px;
+            transition: width 0.5s ease-out; /* Smooth width transition */
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Align value text to the right inside the bar */
+            padding-right: 8px; /* Space for the value text */
+        }
+
+        .bar-chart-value {
+            position: absolute; /* Position value over the bar */
+            right: 8px;
+            color: white; /* Make text visible over bar */
+            font-weight: 500;
+            font-size: 0.85em;
+            text-shadow: 0 0 4px rgba(0,0,0,0.4); /* Add shadow for readability */
+            pointer-events: none; /* Prevent text from interfering with hover */
+        }
+        
+        /* If bar width is 0%, move value outside and use default text color */
+        .bar-chart-bar[style*="width: 0%"] .bar-chart-value,
+        .bar-chart-bar[style*="width: 1%"] .bar-chart-value,
+        .bar-chart-bar[style*="width: 2%"] .bar-chart-value,
+        .bar-chart-bar[style*="width: 3%"] .bar-chart-value,
+        .bar-chart-bar[style*="width: 4%"] .bar-chart-value,
+        .bar-chart-bar[style*="width: 5%"] .bar-chart-value {
+            color: var(--text-color); /* Default text color */
+            position: static; /* Let it flow naturally */
+            margin-left: 5px; /* Add some spacing */
+            text-shadow: none;
+            order: 2; /* Place it after the bar in flex order */
+        }
+
+        /* Pie Chart for Gender Distribution */
+        .pie-chart-container {
+            position: relative;
+            width: 200px; /* Size of the pie chart */
+            height: 200px;
+            border-radius: 50%; /* Make it a perfect circle */
+            background: conic-gradient(#ccc 0% 100%); /* Default background if no data */
+            margin: 20px auto; /* Center the pie chart */
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.15); /* Inner shadow for depth */
+            border: 5px solid var(--card-background); /* White border around the pie chart */
+        }
+
+        .pie-chart-legend {
+            list-style: none;
+            padding: 0;
+            margin-top: 25px;
+            display: flex;
+            flex-wrap: wrap; /* Allow legend items to wrap */
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .pie-chart-legend li {
+            display: flex;
+            align-items: center;
+            font-size: 0.9em;
+            color: var(--light-text-color);
+        }
+
+        .pie-chart-legend li::before {
+            content: '';
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            margin-right: 8px;
+            flex-shrink: 0; /* Prevent indicator from shrinking */
+        }
+
+        /* Colors for legend items, corresponding to pie chart segments */
+        .pie-chart-legend li.female::before { background-color: var(--primary-color); }
+        .pie-chart-legend li.male::before { background-color: var(--secondary-color); }
+        .pie-chart-legend li.other::before { background-color: #ffcc00; } /* A distinct yellow for 'Other' */
+
+        /* Recent Hires List */
+        .recent-hires {
+            grid-area: recent-hires; /* Assign to recent-hires grid area */
+        }
+
+        .recent-hires ul {
+            list-style: none;
+            padding: 0;
+            max-height: 350px; /* Limit height for scrollability */
+            overflow-y: auto; /* Enable vertical scroll if content overflows */
+        }
+
+        .recent-hires li {
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95em;
+        }
+
+        .recent-hires li:last-child {
+            border-bottom: none; /* No border for the last item */
+        }
+
+        .recent-hires .hire-name {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .recent-hires .hire-date {
+            color: var(--light-text-color);
+            font-size: 0.85em;
+            white-space: nowrap; /* Prevent date from wrapping */
+        }
+
+        /* Open Positions Table */
+        .open-positions {
+            grid-area: open-positions; /* Assign to open-positions grid area */
+        }
+
+        .open-positions table {
+            width: 100%;
+            border-collapse: collapse; /* Collapse table borders */
+            font-size: 0.9em;
+        }
+
+        .open-positions th, .open-positions td {
+            text-align: left;
+            padding: 14px 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .open-positions th {
+            background-color: var(--background-color);
+            color: var(--light-text-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            letter-spacing: 0.5px;
+        }
+
+        .open-positions td {
+            color: var(--text-color);
+        }
+
+        .open-positions tbody tr:hover {
+            background-color: #fcfcfc; /* Light hover effect for table rows */
+        }
+        
+        .open-positions tbody tr:last-child td {
+            border-bottom: none; /* No border for the last row */
+        }
+
+        /* Utility classes */
+        .text-center { text-align: center; }
+
+        /* Custom scrollbar styling for lists/tables that overflow */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--background-color);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1; /* Darker gray for thumb */
+            border-radius: 10px;
+            border: 2px solid var(--background-color); /* Match background color */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8; /* Even darker on hover */
+        }
+
+        /* Smaller screen adjustments */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .dashboard-header {
+                padding: 20px;
+                flex-direction: column; /* Stack header items vertically */
+                align-items: flex-start;
+            }
+            .dashboard-header h1 {
+                font-size: 2em;
+                margin-top: 10px;
+                margin-left: 0;
+            }
+            .dashboard-header .logo {
+                font-size: 1.8em;
+            }
+            .metric-card .value {
+                font-size: 2.2em;
+            }
+            .card h2 {
+                font-size: 1.2em;
+            }
+            .pie-chart-container {
+                width: 160px;
+                height: 160px;
+            }
+            .bar-chart-label {
+                width: 80px; /* Adjust label width for smaller screens */
+            }
+            .bar-chart-item {
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Dashboard Header Section -->
+        <header class="dashboard-header">
+            <div>
+                <span class="logo">&#x1F465;</span> <!-- HR icon (two people) -->
+                <h1>HR Dashboard</h1>
+            </div>
+            <!-- Additional elements like user profile or date can be added here -->
+        </header>
+
+        <!-- Key Metric Cards Section -->
+        <section class="metric-cards">
+            <div class="metric-card">
+                <div class="value" id="totalEmployees">0</div>
+                <div class="label">Total Employees</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="newHires">0</div>
+                <div class="label">New Hires (Last 30 Days)</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="openPositions">0</div>
+                <div class="label">Open Positions</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="turnoverRate">0%</div>
+                <div class="label">Employee Turnover Rate</div>
+            </div>
+        </section>
+
+        <!-- Employee Distribution by Department Chart Section -->
+        <section class="chart-container" style="grid-area: department-chart;">
+            <h2>Employee Distribution by Department</h2>
+            <div class="bar-chart" id="departmentChart">
+                <!-- Bar chart items will be injected here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Employee Age Distribution Chart Section -->
+        <section class="chart-container" style="grid-area: age-chart;">
+            <h2>Employee Age Distribution</h2>
+            <div class="bar-chart" id="ageChart">
+                <!-- Bar chart items will be injected here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Gender Distribution Pie Chart Section -->
+        <section class="chart-container" style="grid-area: gender-chart;">
+            <h2>Gender Distribution</h2>
+            <div class="text-center">
+                <div class="pie-chart-container" id="genderPieChart"></div>
+                <ul class="pie-chart-legend" id="genderLegend">
+                    <!-- Legend items will be injected here by JavaScript -->
+                </ul>
+            </div>
+        </section>
+
+        <!-- Recent Hires List Section -->
+        <section class="card recent-hires">
+            <h2>Recent Hires</h2>
+            <ul id="recentHiresList">
+                <!-- Recent hires will be injected here by JavaScript -->
+            </ul>
+        </section>
+
+        <!-- Open Positions Table Section -->
+        <section class="card open-positions">
+            <h2>Open Positions</h2>
+            <table id="openPositionsTable">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Open positions will be injected here by JavaScript -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script>
+        // Fake Data Generation Function
+        const generateFakeData = () => {
+            // Define possible values for fake data
+            const departments = ['Engineering', 'Marketing', 'Sales', 'Human Resources', 'Finance', 'Operations', 'Product Management'];
+            const genders = ['Female', 'Male', 'Other'];
+            const firstNames = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Heidi', 'Ivan', 'Judy', 'Kevin', 'Laura', 'Michael', 'Nora', 'Oscar', 'Pamela', 'Quinn', 'Rachel', 'Steve', 'Tina'];
+            const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Jackson', 'White'];
+
+            const employees = [];
+            const numEmployees = 200 + Math.floor(Math.random() * 100); // Generate between 200-300 employees
+
+            // Generate fake employees
+            for (let i = 0; i < numEmployees; i++) {
+                const department = departments[Math.floor(Math.random() * departments.length)];
+                const gender = genders[Math.floor(Math.random() * genders.length)];
+                const age = Math.floor(Math.random() * (65 - 20 + 1)) + 20; // Ages between 20 and 65
+                const hireDate = new Date();
+                
+                // Randomly set hire date within the last 2 years
+                hireDate.setDate(hireDate.getDate() - Math.floor(Math.random() * 730)); 
+                
+                // Increase chance of recent hires for demonstration
+                if (Math.random() < 0.25) { // 25% chance of being a recent hire (last 30 days)
+                    hireDate.setDate(new Date().getDate() - Math.floor(Math.random() * 30));
+                }
+
+                employees.push({
+                    id: i + 1,
+                    name: `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
+                    department: department,
+                    age: age,
+                    gender: gender,
+                    hireDate: hireDate.toISOString().split('T')[0] // Format: YYYY-MM-DD
+                });
+            }
+
+            const openPositions = [];
+            const numOpenPositions = 5 + Math.floor(Math.random() * 7); // Generate between 5-11 open positions
+            const jobTitles = ['Software Engineer', 'Marketing Specialist', 'Sales Manager', 'HR Generalist', 'Financial Analyst', 'Project Manager', 'Data Scientist', 'Operations Coordinator', 'UI/UX Designer', 'Account Executive'];
+            const positionStatuses = ['Open', 'Interviewing', 'Pending Approval', 'On Hold'];
+
+            // Generate fake open positions
+            for (let i = 0; i < numOpenPositions; i++) {
+                openPositions.push({
+                    id: i + 1,
+                    title: jobTitles[Math.floor(Math.random() * jobTitles.length)],
+                    department: departments[Math.floor(Math.random() * departments.length)],
+                    status: positionStatuses[Math.floor(Math.random() * positionStatuses.length)]
+                });
+            }
+
+            // Simulate turnover rate (a random percentage between 5% and 15%)
+            const turnoverRate = (Math.random() * (0.15 - 0.05) + 0.05).toFixed(2); 
+
+            return { employees, openPositions, turnoverRate };
+        };
+
+        // Function to render the entire dashboard
+        const renderDashboard = () => {
+            const { employees, openPositions, turnoverRate } = generateFakeData();
+
+            // 1. Render Key Metrics
+            const totalEmployees = employees.length;
+            document.getElementById('totalEmployees').textContent = totalEmployees;
+
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            // Filter new hires within the last 30 days
+            const newHires = employees.filter(emp => new Date(emp.hireDate) >= thirtyDaysAgo);
+            document.getElementById('newHires').textContent = newHires.length;
+
+            document.getElementById('openPositions').textContent = openPositions.length;
+            document.getElementById('turnoverRate').textContent = `${(turnoverRate * 100).toFixed(1)}%`;
+
+            // 2. Render Employee Distribution by Department (Bar Chart)
+            const departmentCounts = employees.reduce((acc, emp) => {
+                acc[emp.department] = (acc[emp.department] || 0) + 1;
+                return acc;
+            }, {});
+            renderBarChart('departmentChart', departmentCounts, totalEmployees);
+
+            // 3. Render Employee Age Distribution (Bar Chart)
+            const ageBins = {
+                '20-29': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0
+            };
+            employees.forEach(emp => {
+                if (emp.age >= 20 && emp.age <= 29) ageBins['20-29']++;
+                else if (emp.age >= 30 && emp.age <= 39) ageBins['30-39']++;
+                else if (emp.age >= 40 && emp.age <= 49) ageBins['40-49']++;
+                else if (emp.age >= 50 && emp.age <= 59) ageBins['50-59']++;
+                else if (emp.age >= 60) ageBins['60+']++;
+            });
+            renderBarChart('ageChart', ageBins, totalEmployees);
+
+            // 4. Render Gender Distribution (Pie Chart)
+            const genderCounts = employees.reduce((acc, emp) => {
+                acc[emp.gender] = (acc[emp.gender] || 0) + 1;
+                return acc;
+            }, {});
+            renderGenderPieChart(genderCounts, totalEmployees);
+
+            // 5. Render Recent Hires List
+            const sortedRecentHires = newHires.sort((a, b) => new Date(b.hireDate) - new Date(a.hireDate)); // Sort by most recent first
+            const recentHiresList = document.getElementById('recentHiresList');
+            recentHiresList.innerHTML = ''; // Clear previous entries
+            if (sortedRecentHires.length === 0) {
+                recentHiresList.innerHTML = '<li>No recent hires in the last 30 days.</li>';
+            } else {
+                // Display up to 10 recent hires
+                sortedRecentHires.slice(0, 10).forEach(hire => { 
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <span class="hire-name">${hire.name}</span>
+                        <span class="hire-date">${new Date(hire.hireDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    `;
+                    recentHiresList.appendChild(listItem);
+                });
+            }
+
+            // 6. Render Open Positions Table
+            const openPositionsTableBody = document.querySelector('#openPositionsTable tbody');
+            openPositionsTableBody.innerHTML = ''; // Clear previous entries
+            if (openPositions.length === 0) {
+                const row = openPositionsTableBody.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 3; // Span across all 3 columns
+                cell.textContent = 'No open positions currently.';
+                cell.style.textAlign = 'center';
+                cell.style.padding = '20px';
+                cell.style.color = 'var(--light-text-color)';
+            } else {
+                openPositions.forEach(pos => {
+                    const row = openPositionsTableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${pos.title}</td>
+                        <td>${pos.department}</td>
+                        <td>${pos.status}</td>
+                    `;
+                });
+            }
+        };
+
+        // Helper function to render a generic bar chart
+        // elementId: ID of the container element for the chart
+        // data: An object where keys are labels and values are counts (e.g., { 'Department A': 50, 'Department B': 30 })
+        // total: The total count for calculating percentages
+        const renderBarChart = (elementId, data, total) => {
+            const container = document.getElementById(elementId);
+            container.innerHTML = ''; // Clear previous bars
+
+            // Sort data in descending order by count for better visualization
+            const sortedData = Object.entries(data).sort(([, a], [, b]) => b - a); 
+            let maxCount = Math.max(...Object.values(data)); // Find max count for relative bar scaling
+            if (maxCount === 0) maxCount = 1; // Prevent division by zero if all counts are zero
+
+            sortedData.forEach(([label, count]) => {
+                const percentage = total > 0 ? (count / total * 100) : 0;
+                // Calculate width relative to the max count for better visual comparison within the chart
+                const barWidthPercentage = (count / maxCount * 100); 
+
+                const item = document.createElement('div');
+                item.className = 'bar-chart-item';
+                item.innerHTML = `
+                    <span class="bar-chart-label">${label}</span>
+                    <div class="bar-chart-bar-wrapper">
+                        <div class="bar-chart-bar" style="width: ${barWidthPercentage.toFixed(1)}%;">
+                            <span class="bar-chart-value">${count} (${percentage.toFixed(1)}%)</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        };
+
+        // Helper function to render gender distribution pie chart using conic-gradient
+        // genderCounts: An object with gender categories and their counts (e.g., { 'Female': 100, 'Male': 120, 'Other': 5 })
+        // total: Total number of employees
+        const renderGenderPieChart = (genderCounts, total) => {
+            const pieChartContainer = document.getElementById('genderPieChart');
+            const legendContainer = document.getElementById('genderLegend');
+            legendContainer.innerHTML = ''; // Clear previous legend items
+
+            const femaleCount = genderCounts['Female'] || 0;
+            const maleCount = genderCounts['Male'] || 0;
+            const otherCount = genderCounts['Other'] || 0;
+
+            const femalePercentage = total > 0 ? (femaleCount / total * 100) : 0;
+            const malePercentage = total > 0 ? (maleCount / total * 100) : 0;
+            const otherPercentage = total > 0 ? (otherCount / total * 100) : 0;
+
+            let currentDegree = 0; // Starting degree for conic gradient
+            const segments = []; // Array to hold CSS conic-gradient segments
+
+            // Add segments only if their percentage is greater than 0
+            if (femalePercentage > 0) {
+                const startDegree = currentDegree;
+                const endDegree = currentDegree + (femalePercentage / 100) * 360;
+                segments.push(`var(--primary-color) ${startDegree}deg ${endDegree}deg`);
+                currentDegree = endDegree;
+                const legendItem = document.createElement('li');
+                legendItem.className = 'female';
+                legendItem.textContent = `Female (${femaleCount} - ${femalePercentage.toFixed(1)}%)`;
+                legendContainer.appendChild(legendItem);
+            }
+            if (malePercentage > 0) {
+                const startDegree = currentDegree;
+                const endDegree = currentDegree + (malePercentage / 100) * 360;
+                segments.push(`var(--secondary-color) ${startDegree}deg ${endDegree}deg`);
+                currentDegree = endDegree;
+                const legendItem = document.createElement('li');
+                legendItem.className = 'male';
+                legendItem.textContent = `Male (${maleCount} - ${malePercentage.toFixed(1)}%)`;
+                legendContainer.appendChild(legendItem);
+            }
+            if (otherPercentage > 0) {
+                const startDegree = currentDegree;
+                const endDegree = currentDegree + (otherPercentage / 100) * 360;
+                segments.push(`#ffcc00 ${startDegree}deg ${endDegree}deg`);
+                currentDegree = endDegree;
+                const legendItem = document.createElement('li');
+                legendItem.className = 'other';
+                legendItem.textContent = `Other (${otherCount} - ${otherPercentage.toFixed(1)}%)`;
+                legendContainer.appendChild(legendItem);
+            }
+            
+            let gradientString = segments.join(', '); // Join segments with commas
+
+            // If no data or all counts are zero, show a gray circle and "No data" legend
+            if (segments.length === 0) {
+                gradientString = '#ccc 0% 100%';
+                const legendItem = document.createElement('li');
+                legendItem.textContent = 'No data';
+                legendContainer.appendChild(legendItem);
+            }
+
+            pieChartContainer.style.background = `conic-gradient(${gradientString})`;
+        };
+
+        // Initialize the dashboard when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', renderDashboard);
+    </script>
+</body>
+</html>
