@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Landmark Map</title>
+    <style>
+        /* Basic reset and typography */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* Main container for map and info panel */
+        .map-section {
+            display: flex;
+            flex-direction: column; /* Default for smaller screens */
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (min-width: 768px) {
+            .map-section {
+                flex-direction: row; /* Side-by-side on larger screens */
+            }
+        }
+
+        /* Map container styling */
+        #map-container {
+            flex: 2; /* Takes more space */
+            position: relative;
+            width: 100%;
+            padding-bottom: 60%; /* Aspect ratio 5:3 (height/width = 300/500 = 0.6) */
+            height: 0;
+            background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%); /* Ocean/water base */
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #map-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #72b09c; /* Landmass color */
+            /* A simple pattern to simulate land features */
+            background-image:
+                linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            /* Using a clip-path for an irregular shape of the "land" */
+            clip-path: polygon(
+                10% 0%, 90% 0%, 100% 20%, 95% 40%, 100% 60%, 90% 80%, 80% 100%,
+                20% 100%, 0% 80%, 5% 60%, 0% 40%, 10% 20%
+            );
+            transform: scale(0.95); /* Slightly smaller than container to show "water" border */
+        }
+
+
+        /* Marker styling */
+        .marker {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background-color: #e63946;
+            border-radius: 50%;
+            border: 3px solid #f1faee;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #f1faee;
+            font-weight: bold;
+            font-size: 14px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            z-index: 10;
+        }
+
+        .marker:hover {
+            transform: scale(1.2);
+            background-color: #a8dadc;
+        }
+
+        /* Info panel styling */
+        #info-panel {
+            flex: 1; /* Takes remaining space */
+            background-color: #f1faee;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 15px;
+            min-width: 280px;
+        }
+
+        #info-panel h2 {
+            color: #1d3557;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #a8dadc;
+            padding-bottom: 10px;
+        }
+
+        #info-panel p {
+            color: #457b9d;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        #info-panel img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+        }
+
+        /* Fallback for image loading issues */
+        #info-panel img::before {
+            content: 'Image not available';
+            display: block;
+            width: 100%;
+            height: 150px; /* Placeholder height */
+            background-color: #ccc;
+            color: #666;
+            text-align: center;
+            line-height: 150px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Landmark Map</h1>
+
+    <div class="map-section">
+        <div id="map-container">
+            <!-- This div represents the actual "land" area on the map -->
+            <div id="map-area">
+                <!-- Markers are positioned relative to #map-area -->
+                <div class="marker" data-id="park" style="top: 25%; left: 35%;">1</div>
+                <div class="marker" data-id="cafe" style="top: 60%; left: 50%;">2</div>
+                <div class="marker" data-id="library" style="top: 40%; left: 70%;">3</div>
+                <div class="marker" data-id="museum" style="top: 75%; left: 20%;">4</div>
+                <div class="marker" data-id="hospital" style="top: 15%; left: 60%;">5</div>
+                <div class="marker" data-id="station" style="top: 85%; left: 65%;">6</div>
+            </div>
+        </div>
+
+        <div id="info-panel">
+            <h2 id="info-title">Select a Landmark</h2>
+            <p id="info-description">Click on any marker on the map to see details about that location.</p>
+            <img id="info-image" src="" alt="Landmark Image" style="display: none;">
+        </div>
+    </div>
+
+    <script>
+        // Data for each landmark on the map
+        const landmarkData = {
+            'park': {
+                name: 'Central Park',
+                description: 'A vast urban park with beautiful green spaces, walking trails, and recreational facilities. Perfect for a leisurely stroll or a family picnic.',
+                imageUrl: 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=Central+Park'
+            },
+            'cafe': {
+                name: 'Cozy Corner Cafe',
+                description: 'A charming local cafe known for its artisanal coffee, delicious pastries, and a warm, inviting atmosphere. A great spot to relax and enjoy a brew.',
+                imageUrl: 'https://via.placeholder.com/300x200/FF5722/FFFFFF?text=Cozy+Cafe'
+            },
+            'library': {
+                name: 'City Public Library',
+                description: 'The city\'s main public library, offering an extensive collection of books, digital resources, study areas, and community events for all ages.',
+                imageUrl: 'https://via.placeholder.com/300x200/2196F3/FFFFFF?text=Public+Library'
+            },
+            'museum': {
+                name: 'Art & History Museum',
+                description: 'Explore local and international art collections, historical artifacts, and rotating exhibits. A cultural hub for art enthusiasts and history buffs.',
+                imageUrl: 'https://via.placeholder.com/300x200/9C27B0/FFFFFF?text=City+Museum'
+            },
+            'hospital': {
+                name: 'General Hospital',
+                description: 'A leading medical institution providing comprehensive healthcare services, emergency care, and specialized treatments to the community.',
+                imageUrl: 'https://via.placeholder.com/300x200/00BCD4/FFFFFF?text=Hospital'
+            },
+            'station': {
+                name: 'Main Train Station',
+                description: 'The primary transportation hub, connecting the city with regional and national destinations. Features modern facilities and easy access to public transit.',
+                imageUrl: 'https://via.placeholder.com/300x200/FFC107/000000?text=Train+Station'
+            }
+        };
+
+        // Get all marker elements
+        const markers = document.querySelectorAll('.marker');
+
+        // Get elements for the info panel
+        const infoPanel = document.getElementById('info-panel');
+        const infoTitle = document.getElementById('info-title');
+        const infoDescription = document.getElementById('info-description');
+        const infoImage = document.getElementById('info-image');
+
+        /**
+         * Handles the click event on a marker.
+         * Displays the relevant landmark information in the info panel.
+         * @param {Event} event The click event object.
+         */
+        function handleMarkerClick(event) {
+            // Get the unique ID of the clicked marker from its data-id attribute
+            const markerId = event.target.dataset.id;
+
+            // Retrieve the data for this marker from the landmarkData object
+            const data = landmarkData[markerId];
+
+            // If data exists, update the info panel
+            if (data) {
+                infoTitle.textContent = data.name;
+                infoDescription.textContent = data.description;
+                infoImage.src = data.imageUrl;
+                infoImage.alt = data.name + " image";
+                infoImage.style.display = 'block'; // Show the image
+
+                // Make sure the info panel is visible
+                infoPanel.style.display = 'flex';
+            } else {
+                // If no data found (should not happen with correct data-id), clear and hide
+                infoTitle.textContent = 'Landmark Not Found';
+                infoDescription.textContent = 'Details for this landmark are not available.';
+                infoImage.src = '';
+                infoImage.alt = '';
+                infoImage.style.display = 'none'; // Hide the image
+            }
+        }
+
+        // Add a click event listener to each marker
+        markers.forEach(marker => {
+            marker.addEventListener('click', handleMarkerClick);
+        });
+
+        // Initialize the info panel with a default message if not already set
+        // (This part is mostly for robustness; the HTML already has a default)
+        document.addEventListener('DOMContentLoaded', () => {
+            if (infoTitle.textContent === 'Select a Landmark' && infoDescription.textContent === 'Click on any marker on the map to see details about that location.') {
+                infoImage.style.display = 'none'; // Ensure image is hidden until a marker is clicked
+            }
+        });
+    </script>
+</body>
+</html>
