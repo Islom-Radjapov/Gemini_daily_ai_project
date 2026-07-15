@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Bar Chart</title>
+    <style>
+        /*
+         * General body styling to center content and apply a modern font.
+         */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6; /* Light background for the page */
+            color: #333; /* Dark gray text color */
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /*
+         * Container for the entire chart project, giving it a card-like appearance.
+         */
+        .container {
+            background-color: #fff; /* White background for the card */
+            padding: 30px 40px;
+            border-radius: 12px; /* Rounded corners */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /*
+         * Styling for the main title of the chart.
+         */
+        h1 {
+            color: #2c3e50; /* Dark blue-gray for the title */
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        /*
+         * SVG element styling, setting a border and background.
+         */
+        svg {
+            border: 1px solid #e0e0e0; /* Light gray border */
+            background-color: #ffffff; /* White background inside the SVG */
+            border-radius: 8px; /* Rounded corners for the SVG area */
+            overflow: visible; /* Allow labels to extend slightly beyond SVG bounds */
+            margin-top: 15px;
+        }
+
+        /*
+         * Styling for axis lines.
+         */
+        .x-axis line, .y-axis line {
+            stroke: #aaa; /* Gray stroke for axis lines */
+            stroke-width: 1px;
+            shape-rendering: crispEdges; /* Ensures sharp lines */
+        }
+
+        /*
+         * Styling for axis labels (text).
+         */
+        .x-axis-label, .y-axis-label {
+            font-size: 0.9em;
+            fill: #555; /* Darker gray for labels */
+        }
+
+        /*
+         * Styling for horizontal grid lines in the chart.
+         */
+        .y-axis .grid-line {
+            stroke: #e0e0e0; /* Very light gray for grid lines */
+            stroke-dasharray: 4 4; /* Dashed line pattern */
+            shape-rendering: crispEdges;
+        }
+
+        /*
+         * Styling for the individual bars in the chart.
+         */
+        .bar {
+            transition: fill 0.2s ease-out, transform 0.2s ease-out; /* Smooth transition for hover effects */
+            transform-origin: bottom; /* Anchor point for potential future scaling effects */
+        }
+
+        /*
+         * Hover effect for bars: changes color and slightly scales up.
+         */
+        .bar:hover {
+            cursor: pointer; /* Pointer cursor on hover */
+            fill: #FFC107 !important; /* Yellow-orange highlight color */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        /*
+         * Styling for the tooltip that appears on bar hover.
+         */
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.85); /* Dark translucent background */
+            color: #fff; /* White text */
+            padding: 10px 14px;
+            border-radius: 6px;
+            pointer-events: none; /* Allows mouse events to pass through to the element underneath */
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.2s ease-out; /* Smooth fade in/out */
+            font-size: 0.87em;
+            white-space: nowrap; /* Prevent text wrapping */
+            z-index: 1000; /* Ensure tooltip is above all other content */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Soft shadow for the tooltip */
+            text-align: left;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Monthly Sales Performance</h1>
+        <!-- The SVG element where the bar chart will be rendered -->
+        <svg id="barChartSvg"></svg>
+        <!-- The tooltip element, initially hidden, shown on bar hover -->
+        <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <script>
+        // Ensure the DOM is fully loaded before running the script
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sample data for the bar chart. Each object represents a category and its value.
+            const data = [
+                { label: 'January', value: 120 },
+                { label: 'February', value: 180 },
+                { label: 'March', value: 150 },
+                { label: 'April', value: 220 },
+                { label: 'May', value: 190 },
+                { label: 'June', value: 250 },
+                { label: 'July', value: 210 },
+                { label: 'August', value: 200 },
+                { label: 'September', value: 170 },
+                { label: 'October', value: 230 },
+                { label: 'November', value: 260 },
+                { label: 'December', value: 290 }
+            ];
+
+            // Define dimensions for the SVG container and margins for the chart area.
+            const svgWidth = 800;
+            const svgHeight = 450;
+            // Margins provide space for axes and labels.
+            const margin = { top: 30, right: 30, bottom: 60, left: 60 };
+            const chartWidth = svgWidth - margin.left - margin.right;
+            const chartHeight = svgHeight - margin.top - margin.bottom;
+
+            // Get the SVG element and set its dimensions.
+            const svg = document.getElementById('barChartSvg');
+            svg.setAttribute('width', svgWidth);
+            svg.setAttribute('height', svgHeight);
+
+            // Create a main group element within the SVG to hold all chart elements.
+            // This group is translated to account for the left and top margins,
+            // making (0,0) of this group the top-left of the actual chart drawing area.
+            const chartGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            chartGroup.setAttribute('transform', `translate(${margin.left}, ${margin.top})`);
+            svg.appendChild(chartGroup);
+
+            // --- Scales ---
+            // X-axis scale (band scale for categories).
+            // Manually implement a band-like scale for bar positioning.
+            const xDomain = data.map(d => d.label);
+            const numBars = xDomain.length;
+            const barPadding = 0.2; // 20% padding between bars
+            const barWidth = chartWidth / numBars; // Initial width if no padding
+            const effectiveBarWidth = barWidth * (1 - barPadding); // Width after applying padding
+            const barSpacing = barWidth * barPadding; // Space between bars
+
+            // Function to get the x position for a given label.
+            const getXPosition = (label) => {
+                const index = xDomain.indexOf(label);
+                return index * barWidth + barSpacing / 2; // Position from left edge of chart area
+            };
+
+            // Y-axis scale (linear scale for values).
+            // Find the maximum value in the data to determine the y-axis range.
+            const yMax = Math.max(...data.map(d => d.value));
+            // Add a small buffer to yMax for better visual spacing at the top.
+            const yAxisMax = yMax * 1.1;
+
+            // Function to scale a data value to a pixel height in the chart.
+            // SVG's y-axis origin is top-left, so we subtract from chartHeight to invert.
+            const yScale = (value) => chartHeight - (value / yAxisMax) * chartHeight;
+            // Function to calculate the actual height of a bar from a data value.
+            const getBarHeight = (value) => (value / yAxisMax) * chartHeight;
+
+            // --- Draw X-axis ---
+            const xAxisGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            xAxisGroup.setAttribute('class', 'x-axis');
+            xAxisGroup.setAttribute('transform', `translate(0, ${chartHeight})`); // Move to bottom of chart area
+            chartGroup.appendChild(xAxisGroup);
+
+            // Draw the X-axis line.
+            const xAxisLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxisLine.setAttribute('x1', 0);
+            xAxisLine.setAttribute('y1', 0);
+            xAxisLine.setAttribute('x2', chartWidth);
+            xAxisLine.setAttribute('y2', 0);
+            xAxisGroup.appendChild(xAxisLine);
+
+            // Draw X-axis labels for each category.
+            xDomain.forEach(label => {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', getXPosition(label) + effectiveBarWidth / 2);
+                text.setAttribute('y', 20); // Position below the axis line
+                text.setAttribute('text-anchor', 'middle'); // Center text horizontally
+                text.setAttribute('class', 'x-axis-label');
+                text.textContent = label;
+                xAxisGroup.appendChild(text);
+            });
+
+            // --- Draw Y-axis ---
+            const yAxisGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            yAxisGroup.setAttribute('class', 'y-axis');
+            chartGroup.appendChild(yAxisGroup);
+
+            // Draw the Y-axis line.
+            const yAxisLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxisLine.setAttribute('x1', 0);
+            yAxisLine.setAttribute('y1', 0);
+            yAxisLine.setAttribute('x2', 0);
+            yAxisLine.setAttribute('y2', chartHeight);
+            yAxisGroup.appendChild(yAxisLine);
+
+            // Add ticks and labels to the Y-axis.
+            const numTicks = 5; // Number of major ticks
+            for (let i = 0; i <= numTicks; i++) {
+                const value = (yAxisMax / numTicks) * i;
+                const yPos = yScale(value);
+
+                // Tick mark (small line extending from the axis).
+                const tickLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                tickLine.setAttribute('x1', -5); // Extend 5px to the left
+                tickLine.setAttribute('y1', yPos);
+                tickLine.setAttribute('x2', 0);
+                tickLine.setAttribute('y2', yPos);
+                yAxisGroup.appendChild(tickLine);
+
+                // Grid line (horizontal line across the chart).
+                const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                gridLine.setAttribute('class', 'grid-line');
+                gridLine.setAttribute('x1', 0);
+                gridLine.setAttribute('y1', yPos);
+                gridLine.setAttribute('x2', chartWidth);
+                gridLine.setAttribute('y2', yPos);
+                yAxisGroup.appendChild(gridLine);
+
+                // Label for the tick value.
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', -10); // Position 10px to the left of the axis
+                text.setAttribute('y', yPos + 4); // Adjust for vertical centering
+                text.setAttribute('text-anchor', 'end'); // Align text to the end (right)
+                text.setAttribute('class', 'y-axis-label');
+                text.textContent = Math.round(value); // Display rounded value
+                yAxisGroup.appendChild(text);
+            }
+
+            // --- Draw Bars ---
+            data.forEach(d => {
+                const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bar.setAttribute('class', 'bar');
+                bar.setAttribute('x', getXPosition(d.label));
+                bar.setAttribute('y', yScale(d.value)); // Top-left Y position of the bar
+                bar.setAttribute('width', effectiveBarWidth);
+                bar.setAttribute('height', getBarHeight(d.value)); // Height of the bar
+                bar.setAttribute('fill', '#4CAF50'); // Green color for bars
+                
+                // Store data directly on the bar element for easy access in event handlers.
+                bar.dataset.label = d.label;
+                bar.dataset.value = d.value;
+                chartGroup.appendChild(bar);
+            });
+
+            // --- Tooltip Interactivity ---
+            const tooltip = document.getElementById('tooltip');
+
+            // Event listener for mouse over any element within the chart group.
+            chartGroup.addEventListener('mouseover', (event) => {
+                // Check if the hovered element is a bar.
+                if (event.target.classList.contains('bar')) {
+                    const bar = event.target;
+                    const label = bar.dataset.label;
+                    const value = bar.dataset.value;
+
+                    // Update tooltip content and position.
+                    tooltip.innerHTML = `<strong>${label}</strong><br>Sales: ${value}`;
+                    tooltip.style.left = `${event.pageX + 10}px`; // Position right of cursor
+                    tooltip.style.top = `${event.pageY - 20}px`; // Position above cursor
+                    tooltip.style.opacity = 1; // Make tooltip visible
+                    bar.style.fill = '#FFC107'; // Highlight bar color
+                }
+            });
+
+            // Event listener for mouse moving over the chart group.
+            chartGroup.addEventListener('mousemove', (event) => {
+                // If a bar is currently hovered, update tooltip position to follow cursor.
+                if (event.target.classList.contains('bar') && tooltip.style.opacity === '1') {
+                    tooltip.style.left = `${event.pageX + 10}px`;
+                    tooltip.style.top = `${event.pageY - 20}px`;
+                }
+            });
+
+            // Event listener for mouse leaving any element within the chart group.
+            chartGroup.addEventListener('mouseout', (event) => {
+                // If the mouse leaves a bar, hide tooltip and revert bar color.
+                if (event.target.classList.contains('bar')) {
+                    tooltip.style.opacity = 0; // Hide tooltip
+                    event.target.style.fill = '#4CAF50'; // Restore original bar color
+                }
+            });
+        });
+    </script>
+</body>
+</html>
