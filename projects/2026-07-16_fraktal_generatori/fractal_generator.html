@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraktal Generatori</title>
+    <style>
+        /* General Body Styling */
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1e1e1e; /* Dark background */
+            color: #e0e0e0; /* Light text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Container for main content */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 20px;
+            background-color: #2a2a2a; /* Slightly lighter dark for content areas */
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #00bcd4; /* Accent color for headings */
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        p {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #b0b0b0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Control Panel Styling */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 150px;
+        }
+
+        .controls label {
+            margin-bottom: 5px;
+            color: #a0a0a0;
+            font-size: 0.9em;
+        }
+
+        .controls input[type="number"],
+        .controls input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #333;
+            color: #e0e0e0;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-sizing: border-box; /* Ensures padding doesn't increase total width */
+        }
+
+        .controls input[type="number"]:focus,
+        .controls input[type="text"]:focus {
+            border-color: #00bcd4;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.3);
+        }
+
+        .controls button {
+            background-color: #00bcd4;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 188, 212, 0.2);
+            margin-top: 20px; /* Space for buttons below inputs */
+            min-width: 120px;
+        }
+
+        .controls button:hover {
+            background-color: #00acc1; /* Slightly darker accent */
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 188, 212, 0.3);
+        }
+
+        .controls button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 188, 212, 0.2);
+        }
+
+        /* Canvas Styling */
+        canvas {
+            display: block; /* Remove extra space below canvas */
+            background-color: #000;
+            border: 2px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            margin: 0 auto;
+            max-width: 100%; /* Ensure canvas doesn't overflow on small screens */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        /* Status Message */
+        #status_message {
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: #00bcd4;
+            font-weight: 500;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #status_message.visible {
+            opacity: 1;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .controls button {
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fraktal Generatori</h1>
+        <p>
+            HTML Canvas yordamida Mandelbrot fraktalini interaktiv tarzda kashf eting.
+            Markazni o'zgartirish uchun canvasga bosing, kattalashtirish uchun ikki marta bosing,
+            kichiklashtirish uchun o'ng tugmani bosing.
+        </p>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="max_iterations">Maksimal Iteratsiyalar:</label>
+                <input type="number" id="max_iterations" value="100" min="10" max="5000">
+            </div>
+
+            <div class="control-group">
+                <label for="center_x">Markaz X (Real):</label>
+                <input type="number" id="center_x" value="-0.5" step="0.000000000000001">
+            </div>
+
+            <div class="control-group">
+                <label for="center_y">Markaz Y (Xayoliy):</label>
+                <input type="number" id="center_y" value="0" step="0.000000000000001">
+            </div>
+
+            <div class="control-group">
+                <label for="zoom_level">Zoom darajasi:</label>
+                <input type="number" id="zoom_level" value="1" min="0.000000000000001" step="0.000000000000001">
+            </div>
+
+            <button id="generate_button">Chizish</button>
+            <button id="reset_button">Qayta o'rnatish</button>
+        </div>
+    </div>
+
+    <canvas id="fractal_canvas" width="800" height="800"></canvas>
+    <div id="status_message" class="status-message">Fraktal yaratilmoqda...</div>
+
+    <script>
+        // Get canvas and context
+        const canvas = document.getElementById('fractal_canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get control elements
+        const maxIterationsInput = document.getElementById('max_iterations');
+        const centerXInput = document.getElementById('center_x');
+        const centerYInput = document.getElementById('center_y');
+        const zoomLevelInput = document.getElementById('zoom_level');
+        const generateButton = document.getElementById('generate_button');
+        const resetButton = document.getElementById('reset_button');
+        const statusMessage = document.getElementById('status_message');
+
+        // Default fractal parameters
+        const defaultParams = {
+            maxIterations: 100,
+            centerX: -0.5,
+            centerY: 0,
+            zoomLevel: 1
+        };
+
+        // Current fractal parameters
+        let currentParams = { ...defaultParams };
+
+        /**
+         * Converts pixel coordinates to complex plane coordinates.
+         * @param {number} px - X pixel coordinate.
+         * @param {number} py - Y pixel coordinate.
+         * @returns {{cx: number, cy: number}} - Complex plane coordinates.
+         */
+        function pixelToComplex(px, py) {
+            const aspectRatio = canvas.width / canvas.height;
+            const complexWidth = 3.5 / currentParams.zoomLevel; // Standard Mandelbrot range is roughly -2.5 to 1.0 = 3.5 units wide
+            const complexHeight = complexWidth / aspectRatio;
+
+            const cx = currentParams.centerX + (px - canvas.width / 2) * (complexWidth / canvas.width);
+            const cy = currentParams.centerY + (py - canvas.height / 2) * (complexHeight / canvas.height);
+            return { cx, cy };
+        }
+
+        /**
+         * Draws the Mandelbrot fractal on the canvas.
+         */
+        async function drawFractal() {
+            statusMessage.classList.add('visible');
+            statusMessage.textContent = 'Fraktal yaratilmoqda...';
+
+            // Use requestAnimationFrame for a non-blocking UI update before drawing
+            // This ensures the "Generating..." message is visible before heavy computation starts.
+            await new Promise(resolve => requestAnimationFrame(resolve));
+
+            const { maxIterations, centerX, centerY, zoomLevel } = currentParams;
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const imageData = ctx.createImageData(canvasWidth, canvasHeight);
+            const data = imageData.data;
+
+            const aspectRatio = canvasWidth / canvasHeight;
+            const complexWidth = 3.5 / zoomLevel;
+            const complexHeight = complexWidth / aspectRatio;
+
+            const halfCanvasWidth = canvasWidth / 2;
+            const halfCanvasHeight = canvasHeight / 2;
+
+            const scaleX = complexWidth / canvasWidth;
+            const scaleY = complexHeight / canvasHeight;
+
+            // Loop through each pixel
+            for (let py = 0; py < canvasHeight; py++) {
+                for (let px = 0; px < canvasWidth; px++) {
+                    const c_real = centerX + (px - halfCanvasWidth) * scaleX;
+                    const c_imag = centerY + (py - halfCanvasHeight) * scaleY;
+
+                    let z_real = 0;
+                    let z_imag = 0;
+                    let n = 0;
+
+                    // Mandelbrot iteration
+                    while (z_real * z_real + z_imag * z_imag < 4 && n < maxIterations) {
+                        const z_real_new = z_real * z_real - z_imag * z_imag + c_real;
+                        const z_imag_new = 2 * z_real * z_imag + c_imag;
+                        z_real = z_real_new;
+                        z_imag = z_imag_new;
+                        n++;
+                    }
+
+                    let r, g, b;
+
+                    if (n === maxIterations) {
+                        r = g = b = 0; // Black for points inside the set
+                    } else {
+                        // HSL to RGB conversion for a colorful gradient
+                        const H = (n * 10) % 360; // Hue shifts through the spectrum
+                        const S = 100; // Full saturation
+                        const L = 20 + (n % 2 * 20); // Vary lightness slightly for texture
+
+                        const s = S / 100;
+                        const l = L / 100;
+                        const c = (1 - Math.abs(2 * l - 1)) * s;
+                        const x = c * (1 - Math.abs((H / 60) % 2 - 1));
+                        const m = l - c / 2;
+
+                        [r, g, b] = [0, 0, 0]; // Default values
+                        if (0 <= H && H < 60) { [r, g, b] = [c, x, 0]; }
+                        else if (60 <= H && H < 120) { [r, g, b] = [x, c, 0]; }
+                        else if (120 <= H && H < 180) { [r, g, b] = [0, c, x]; }
+                        else if (180 <= H && H < 240) { [r, g, b] = [0, x, c]; }
+                        else if (240 <= H && H < 300) { [r, g, b] = [x, 0, c]; }
+                        else if (300 <= H && H < 360) { [r, g, b] = [c, 0, x]; }
+
+                        r = Math.round((r + m) * 255);
+                        g = Math.round((g + m) * 255);
+                        b = Math.round((b + m) * 255);
+                    }
+
+                    const index = (py * canvasWidth + px) * 4;
+                    data[index] = r;     // Red channel
+                    data[index + 1] = g; // Green channel
+                    data[index + 2] = b; // Blue channel
+                    data[index + 3] = 255; // Alpha channel (fully opaque)
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0); // Put the pixel data onto the canvas
+            statusMessage.classList.remove('visible'); // Hide status message
+            statusMessage.textContent = ''; // Clear status message text
+        }
+
+        /**
+         * Updates input fields with current parameter values.
+         */
+        function updateUI() {
+            maxIterationsInput.value = currentParams.maxIterations;
+            centerXInput.value = currentParams.centerX;
+            centerYInput.value = currentParams.centerY;
+            zoomLevelInput.value = currentParams.zoomLevel;
+        }
+
+        /**
+         * Reads parameters from input fields and updates currentParams.
+         */
+        function readParamsFromUI() {
+            currentParams.maxIterations = parseInt(maxIterationsInput.value, 10);
+            currentParams.centerX = parseFloat(centerXInput.value);
+            currentParams.centerY = parseFloat(centerYInput.value);
+            currentParams.zoomLevel = parseFloat(zoomLevelInput.value);
+
+            // Basic validation and fallback to defaults if invalid input
+            if (isNaN(currentParams.maxIterations) || currentParams.maxIterations < 10) currentParams.maxIterations = defaultParams.maxIterations;
+            if (isNaN(currentParams.centerX)) currentParams.centerX = defaultParams.centerX;
+            if (isNaN(currentParams.centerY)) currentParams.centerY = defaultParams.centerY;
+            if (isNaN(currentParams.zoomLevel) || currentParams.zoomLevel <= 0) currentParams.zoomLevel = defaultParams.zoomLevel;
+
+            updateUI(); // Ensure displayed values are valid after parsing/validation
+        }
+
+        // --- Event Listeners ---
+
+        // Draw fractal when the "Chizish" button is clicked
+        generateButton.addEventListener('click', () => {
+            readParamsFromUI(); // Get latest parameters from UI
+            drawFractal();      // Redraw the fractal
+        });
+
+        // Reset to default parameters when the "Qayta o'rnatish" button is clicked
+        resetButton.addEventListener('click', () => {
+            currentParams = { ...defaultParams }; // Reset current parameters to defaults
+            updateUI();                         // Update UI with default values
+            drawFractal();                      // Redraw the fractal
+        });
+
+        // Canvas single click to re-center the fractal view
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect(); // Get canvas position and size
+            const mouseX = event.clientX - rect.left;   // Mouse X coordinate relative to canvas
+            const mouseY = event.clientY - rect.top;    // Mouse Y coordinate relative to canvas
+
+            const { cx, cy } = pixelToComplex(mouseX, mouseY); // Convert pixel to complex coordinates
+            currentParams.centerX = cx; // Update center X
+            currentParams.centerY = cy; // Update center Y
+            updateUI();                 // Update UI inputs
+            drawFractal();              // Redraw the fractal
+        });
+
+        // Canvas double-click to zoom in on the clicked point
+        canvas.addEventListener('dblclick', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // Recenter first to the clicked point
+            const { cx, cy } = pixelToComplex(mouseX, mouseY);
+            currentParams.centerX = cx;
+            currentParams.centerY = cy;
+
+            // Then zoom in by a factor
+            currentParams.zoomLevel *= 2; // Double the zoom level
+            updateUI();                   // Update UI inputs
+            drawFractal();                // Redraw the fractal
+        });
+
+        // Canvas right-click to zoom out (and prevent default context menu)
+        canvas.addEventListener('contextmenu', (event) => {
+            event.preventDefault(); // Prevent showing the browser's context menu
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // Recenter first to the clicked point (optional, but good for consistent experience)
+            const { cx, cy } = pixelToComplex(mouseX, mouseY);
+            currentParams.centerX = cx;
+            currentParams.centerY = cy;
+
+            // Then zoom out by a factor
+            currentParams.zoomLevel /= 2; // Halve the zoom level
+            // Ensure zoom does not go below the initial zoom level
+            if (currentParams.zoomLevel < defaultParams.zoomLevel) {
+                currentParams.zoomLevel = defaultParams.zoomLevel;
+            }
+            updateUI();    // Update UI inputs
+            drawFractal(); // Redraw the fractal
+        });
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUI();   // Set initial UI values from defaultParams
+            drawFractal(); // Draw the initial fractal on page load
+        });
+    </script>
+</body>
+</html>

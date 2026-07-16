@@ -35,6 +35,7 @@
     "quiz_app::Fan va texnologiya testi",
     "dashboard::HR dashboard",
     "web_page::Interaktiv xarita sahifasi",
-    "data_viz::Ustunli diagramma"
+    "data_viz::Ustunli diagramma",
+    "data_viz::Fraktal generatori"
   ]
 }
