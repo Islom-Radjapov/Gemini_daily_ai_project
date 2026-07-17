@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Clone</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #282c34;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #61dafb;
+            margin-bottom: 20px;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            border: 2px solid #61dafb;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #3a3f4a;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        canvas {
+            background-color: #000;
+            border: 1px solid #61dafb;
+            display: block; /* Remove extra space below canvas */
+        }
+
+        #game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%; /* Match canvas width */
+            max-width: calc(10 * 30px); /* 10 cells * 30px/cell for 10x20 board */
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+
+        #score-display {
+            color: #a2f26d;
+        }
+
+        #game-over-display {
+            color: #f26d6d;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        button {
+            background-color: #61dafb;
+            color: #282c34;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #21a1f1;
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tetris Clone</h1>
+    <div id="game-container">
+        <canvas id="tetrisCanvas" width="300" height="600"></canvas>
+        <div id="game-info">
+            <div id="score-display">Score: 0</div>
+            <div id="game-over-display" style="display: none;">Game Over!</div>
+        </div>
+        <button id="startButton">Start Game</button>
+    </div>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('tetrisCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game constants
+        const CELL_SIZE = 30; // Size of each block cell in pixels
+        const BOARD_WIDTH = 10; // Number of cells horizontally
+        const BOARD_HEIGHT = 20; // Number of cells vertically
+        const COLORS = [
+            '#000',      // 0: Empty (black background)
+            '#0f0f0f',   // 1: Grid lines (dark grey, not used as block color)
+            '#00FFFF',   // I (Cyan)
+            '#FFFF00',   // O (Yellow)
+            '#800080',   // T (Purple)
+            '#00FF00',   // S (Green)
+            '#FF0000',   // Z (Red)
+            '#0000FF',   // J (Blue)
+            '#FFA500'    // L (Orange)
+        ];
+
+        // Tetromino shapes (0s for empty, 1s for blocks relative to piece's top-left)
+        // Each shape has multiple rotations
+        const SHAPES = [
+            // I-Tetromino (Cyan)
+            [
+                [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]], // 0 degrees
+                [[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]], // 90 degrees
+                [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]], // 180 degrees
+                [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]  // 270 degrees
+            ],
+            // O-Tetromino (Yellow)
+            [
+                [[1, 1], [1, 1]]
+            ],
+            // T-Tetromino (Purple)
+            [
+                [[0, 1, 0], [1, 1, 1], [0, 0, 0]],
+                [[0, 1, 0], [0, 1, 1], [0, 1, 0]],
+                [[0, 0, 0], [1, 1, 1], [0, 1, 0]],
+                [[0, 1, 0], [1, 1, 0], [0, 1, 0]]
+            ],
+            // S-Tetromino (Green)
+            [
+                [[0, 1, 1], [1, 1, 0], [0, 0, 0]],
+                [[0, 1, 0], [0, 1, 1], [0, 0, 1]]
+            ],
+            // Z-Tetromino (Red)
+            [
+                [[1, 1, 0], [0, 1, 1], [0, 0, 0]],
+                [[0, 0, 1], [0, 1, 1], [0, 1, 0]]
+            ],
+            // J-Tetromino (Blue)
+            [
+                [[1, 0, 0], [1, 1, 1], [0, 0, 0]],
+                [[0, 1, 1], [0, 1, 0], [0, 1, 0]],
+                [[0, 0, 0], [1, 1, 1], [0, 0, 1]],
+                [[0, 1, 0], [0, 1, 0], [1, 1, 0]]
+            ],
+            // L-Tetromino (Orange)
+            [
+                [[0, 0, 1], [1, 1, 1], [0, 0, 0]],
+                [[0, 1, 0], [0, 1, 0], [0, 1, 1]],
+                [[0, 0, 0], [1, 1, 1], [1, 0, 0]],
+                [[1, 1, 0], [0, 1, 0], [0, 1, 0]]
+            ]
+        ];
+
+        // Map shape index to its color index in COLORS array
+        const SHAPE_COLOR_INDICES = [2, 3, 4, 5, 6, 7, 8]; // Corresponds to COLORS indices for I, O, T, S, Z, J, L
+
+        // Game state variables
+        let board;
+        let currentPiece;
+        let currentPieceX, currentPieceY;
+        let currentPieceRotation;
+        let score;
+        let gameOver;
+        let gameInterval;
+        let dropInterval = 1000; // Time in ms for a piece to drop one cell
+        let lastDropTime = 0;
+
+        // HTML elements
+        const scoreDisplay = document.getElementById('score-display');
+        const gameOverDisplay = document.getElementById('game-over-display');
+        const startButton = document.getElementById('startButton');
+
+        /**
+         * Initializes an empty game board filled with 0s.
+         * A 0 means an empty cell.
+         * @returns {Array<Array<number>>} The initialized game board.
+         */
+        function createBoard() {
+            return Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
+        }
+
+        /**
+         * Draws a single square block on the canvas.
+         * @param {number} x - The x-coordinate (column) of the block on the board.
+         * @param {number} y - The y-coordinate (row) of the block on the board.
+         * @param {number} colorIndex - The index of the color from the COLORS array.
+         */
+        function drawSquare(x, y, colorIndex) {
+            ctx.fillStyle = COLORS[colorIndex];
+            ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            ctx.strokeStyle = '#222'; // Darker border for blocks
+            ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        }
+
+        /**
+         * Draws the entire game board, including settled blocks and grid lines.
+         */
+        function drawBoard() {
+            for (let r = 0; r < BOARD_HEIGHT; r++) {
+                for (let c = 0; c < BOARD_WIDTH; c++) {
+                    if (board[r][c] !== 0) {
+                        drawSquare(c, r, board[r][c]);
+                    } else {
+                        // Draw empty cell with a subtle grid line
+                        ctx.fillStyle = COLORS[0]; // Background color
+                        ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                        ctx.strokeStyle = '#1a1a1a'; // Grid line color
+                        ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Generates a new random tetromino and places it at the top-center of the board.
+         * Checks for immediate collision (game over condition).
+         */
+        function generateNewPiece() {
+            const shapeIndex = Math.floor(Math.random() * SHAPES.length);
+            currentPiece = SHAPES[shapeIndex];
+            currentPieceRotation = 0;
+            currentPieceX = Math.floor(BOARD_WIDTH / 2) - Math.floor(currentPiece[currentPieceRotation][0].length / 2);
+            currentPieceY = 0; // Start at the very top
+
+            // Assign color based on the shape index
+            currentPiece.colorIndex = SHAPE_COLOR_INDICES[shapeIndex];
+
+            // Check for immediate game over
+            if (!isValidMove(currentPieceX, currentPieceY, currentPieceRotation)) {
+                gameOver = true;
+                clearInterval(gameInterval); // Stop the game loop
+                gameOverDisplay.style.display = 'block';
+                startButton.textContent = "Restart Game";
+                startButton.disabled = false;
+            }
+        }
+
+        /**
+         * Draws the current falling tetromino on the canvas.
+         */
+        function drawPiece() {
+            const shape = currentPiece[currentPieceRotation];
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c] !== 0) {
+                        drawSquare(currentPieceX + c, currentPieceY + r, currentPiece.colorIndex);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Checks if a proposed move (new position/rotation) for the current piece is valid.
+         * (i.e., within board boundaries and not colliding with settled blocks).
+         * @param {number} x - Proposed new X coordinate.
+         * @param {number} y - Proposed new Y coordinate.
+         * @param {number} rotationIndex - Proposed new rotation index.
+         * @returns {boolean} True if the move is valid, false otherwise.
+         */
+        function isValidMove(x, y, rotationIndex) {
+            const shape = currentPiece[rotationIndex];
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c] !== 0) {
+                        const boardX = x + c;
+                        const boardY = y + r;
+
+                        // Check board boundaries
+                        if (boardX < 0 || boardX >= BOARD_WIDTH || boardY >= BOARD_HEIGHT) {
+                            return false; // Out of bounds horizontally or hit bottom
+                        }
+                        if (boardY < 0) { // Allow pieces to spawn above the board
+                            continue;
+                        }
+                        // Check collision with settled blocks
+                        if (board[boardY][boardX] !== 0) {
+                            return false; // Collision with an existing block
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Moves the current piece by dx horizontally and dy vertically.
+         * @param {number} dx - Change in X-coordinate.
+         * @param {number} dy - Change in Y-coordinate.
+         * @returns {boolean} True if the move was successful, false if it collided.
+         */
+        function movePiece(dx, dy) {
+            if (isValidMove(currentPieceX + dx, currentPieceY + dy, currentPieceRotation)) {
+                currentPieceX += dx;
+                currentPieceY += dy;
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Rotates the current piece.
+         */
+        function rotatePiece() {
+            const newRotation = (currentPieceRotation + 1) % currentPiece.length;
+            if (isValidMove(currentPieceX, currentPieceY, newRotation)) {
+                currentPieceRotation = newRotation;
+            } else {
+                // Wall kick / floor kick logic (simple implementation):
+                // Try to nudge the piece left/right if rotation is blocked
+                const kicks = [0, 1, -1, 2, -2]; // Attempt original, then 1-2 cells left/right
+                for (let k = 0; k < kicks.length; k++) {
+                    if (isValidMove(currentPieceX + kicks[k], currentPieceY, newRotation)) {
+                        currentPieceX += kicks[k];
+                        currentPieceRotation = newRotation;
+                        return;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Locks the current piece into the board array.
+         * This happens when the piece can no longer move down.
+         */
+        function lockPiece() {
+            const shape = currentPiece[currentPieceRotation];
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c] !== 0) {
+                        if (currentPieceY + r < 0) { // If piece is locked above the board, it's game over
+                            gameOver = true;
+                            clearInterval(gameInterval);
+                            gameOverDisplay.style.display = 'block';
+                            startButton.textContent = "Restart Game";
+                            startButton.disabled = false;
+                            return;
+                        }
+                        board[currentPieceY + r][currentPieceX + c] = currentPiece.colorIndex;
+                    }
+                }
+            }
+            clearLines();
+            generateNewPiece(); // Generate a new piece after locking
+        }
+
+        /**
+         * Checks for and clears any full lines on the board.
+         * Updates the score.
+         */
+        function clearLines() {
+            let linesCleared = 0;
+            for (let r = BOARD_HEIGHT - 1; r >= 0; r--) {
+                if (board[r].every(cell => cell !== 0)) {
+                    // Line is full, remove it
+                    board.splice(r, 1);
+                    // Add an empty line at the top
+                    board.unshift(Array(BOARD_WIDTH).fill(0));
+                    linesCleared++;
+                    r++; // Re-check the current row index, as all rows have shifted down
+                }
+            }
+            if (linesCleared > 0) {
+                // Simple scoring: 100 for single, 300 for double, 500 for triple, 800 for tetris
+                score += linesCleared === 1 ? 100 :
+                         linesCleared === 2 ? 300 :
+                         linesCleared === 3 ? 500 :
+                         linesCleared === 4 ? 800 : 0;
+                scoreDisplay.textContent = `Score: ${score}`;
+            }
+        }
+
+        /**
+         * Main game update logic. Called repeatedly by the game interval.
+         * Handles piece dropping, locking, and game over checks.
+         */
+        function update() {
+            if (gameOver) return;
+
+            const currentTime = Date.now();
+            if (currentTime - lastDropTime > dropInterval) {
+                if (!movePiece(0, 1)) { // Try to move down
+                    lockPiece(); // If can't move down, lock it
+                }
+                lastDropTime = currentTime;
+            }
+            draw(); // Redraw everything after update
+        }
+
+        /**
+         * Main drawing function. Clears the canvas and redraws all game elements.
+         */
+        function draw() {
+            // Clear the entire canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the board and its settled blocks
+            drawBoard();
+
+            // Draw the current falling piece (if game not over)
+            if (!gameOver) {
+                drawPiece();
+            }
+        }
+
+        /**
+         * Handles user input from keyboard.
+         * @param {KeyboardEvent} event - The keyboard event object.
+         */
+        function handleKeyPress(event) {
+            if (gameOver) return;
+
+            switch (event.key) {
+                case 'ArrowLeft':
+                    movePiece(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    movePiece(1, 0);
+                    break;
+                case 'ArrowDown':
+                    if (movePiece(0, 1)) {
+                        score += 1; // Soft drop bonus
+                        scoreDisplay.textContent = `Score: ${score}`;
+                    } else {
+                        lockPiece();
+                    }
+                    lastDropTime = Date.now(); // Reset drop time to prevent immediate double drop
+                    break;
+                case 'ArrowUp':
+                    rotatePiece();
+                    break;
+                case ' ': // Spacebar for hard drop
+                    event.preventDefault(); // Prevent page scrolling
+                    while (movePiece(0, 1)) {
+                        score += 2; // Hard drop bonus
+                        scoreDisplay.textContent = `Score: ${score}`;
+                    }
+                    lockPiece();
+                    break;
+            }
+            draw(); // Redraw immediately after input
+        }
+
+        /**
+         * Initializes or resets the game state and starts the game loop.
+         */
+        function startGame() {
+            clearInterval(gameInterval); // Clear any existing game loop
+
+            board = createBoard();
+            score = 0;
+            gameOver = false;
+            dropInterval = 1000;
+            lastDropTime = 0;
+
+            scoreDisplay.textContent = `Score: ${score}`;
+            gameOverDisplay.style.display = 'none';
+            startButton.disabled = true; // Disable button while game is active
+            startButton.textContent = "Playing...";
+
+
+            generateNewPiece();
+            draw(); // Initial draw
+            gameInterval = setInterval(update, dropInterval / 2); // Update faster than drop time for smooth input
+        }
+
+        // Event Listeners
+        document.addEventListener('keydown', handleKeyPress);
+        startButton.addEventListener('click', startGame);
+
+        // Initial setup on page load (optional, but good practice to ensure canvas size is set)
+        canvas.width = BOARD_WIDTH * CELL_SIZE;
+        canvas.height = BOARD_HEIGHT * CELL_SIZE;
+
+        // Display "Start Game" initially
+        drawBoard(); // Draw an empty board
+    </script>
+</body>
+</html>
