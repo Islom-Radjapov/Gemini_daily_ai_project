@@ -37,6 +37,7 @@
     "web_page::Interaktiv xarita sahifasi",
     "data_viz::Ustunli diagramma",
     "data_viz::Fraktal generatori",
-    "js_game::Tetris kloni"
+    "js_game::Tetris kloni",
+    "python_cli::Markdown dan HTML ga konvertor"
   ]
 }
