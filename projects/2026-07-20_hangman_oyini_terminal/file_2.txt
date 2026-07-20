@@ -1,0 +1,12 @@
+O'yin darhol boshlanadi. O'ynashni tugatgandan so'ng, yana o'ynashni xohlaysizmi yo'qmi deb so'raladi.
+
+## Xususiyatlar ro'yxati
+
+*   **Klassik Hangman o'yini:** Noma'lum so'zni topish uchun harflarni taxmin qiling.
+*   **Terminalga asoslangan interfeys:** To'liq terminal/konsolda ishlaydi.
+*   **ASCII Art:** Hangman figurasining har bir bosqichi uchun chiroyli ASCII art ko'rsatiladi.
+*   **Standart kutubxonalar:** Faqat Pythonning o'rnatilgan kutubxonalaridan (masalan, `random`, `os`) foydalanadi. Qo'shimcha o'rnatishlar shart emas.
+*   **Toza va tushunarli kod:** Yaxshi strukturalangan va oson tushuniladigan kod bazasi.
+*   **Xatolarni boshqarish:** Foydalanuvchi kiritishini tekshiradi (faqat harflar, bitta harf, avval taxmin qilinganmi).
+*   **O'yinni qayta o'ynash imkoniyati:** O'yin tugagandan so'ng, o'yinchi yana o'ynashni tanlashi mumkin.
+*   **Kengaytirilishi mumkin bo'lgan so'zlar ro'yxati:** `words.py` faylida so'zlar ro'yxatini osongina yangilash mumkin.

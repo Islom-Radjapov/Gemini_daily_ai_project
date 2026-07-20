@@ -38,6 +38,7 @@
     "data_viz::Ustunli diagramma",
     "data_viz::Fraktal generatori",
     "js_game::Tetris kloni",
-    "python_cli::Markdown dan HTML ga konvertor"
+    "python_cli::Markdown dan HTML ga konvertor",
+    "python_cli::Hangman o'yini (terminal)"
   ]
 }
