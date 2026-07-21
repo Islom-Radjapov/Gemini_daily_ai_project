@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Glitch Text Effect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* General body styling for a dark background and centered content */
+        body {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Press Start 2P', cursive; /* Using a pixelated font for retro glitch feel */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            background-color: #1a1a1a; /* Dark background */
+            color: #ffffff; /* Default text color */
+            overflow: hidden; /* Hide any overflow from glitch effects */
+        }
+
+        /* Container for the glitch text */
+        .glitch-container {
+            font-size: 5vw; /* Responsive font size */
+            position: relative;
+            cursor: pointer; /* Indicate interactivity (even if none) */
+            line-height: 1; /* Adjust line height for better effect */
+            user-select: none; /* Prevent text selection */
+        }
+
+        /* Base text styling */
+        .glitch-text {
+            position: relative;
+            color: #00ff00; /* Main text color (neon green) */
+            text-shadow: 
+                -2px -2px 0 #ff00ff, /* Magenta shadow */
+                2px 2px 0 #00ffff;   /* Cyan shadow */
+            z-index: 1; /* Ensure base text is visible below pseudo-elements */
+        }
+
+        /* Pseudo-element for the first glitch layer (::before) */
+        .glitch-text::before {
+            content: attr(data-text); /* Get text content from data-text attribute */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a; /* Background color to hide parts */
+            color: #ff00ff; /* Magenta color for this layer */
+            overflow: hidden;
+            z-index: 2; /* Layer above the base text */
+            animation: 
+                glitch-anim-1 2s linear infinite alternate-reverse, /* Primary glitch movement */
+                glitch-shadow-1 0.5s linear infinite; /* Quick shadow changes */
+        }
+
+        /* Pseudo-element for the second glitch layer (::after) */
+        .glitch-text::after {
+            content: attr(data-text); /* Get text content from data-text attribute */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a; /* Background color to hide parts */
+            color: #00ffff; /* Cyan color for this layer */
+            overflow: hidden;
+            z-index: 3; /* Layer above the first pseudo-element */
+            animation: 
+                glitch-anim-2 2s linear infinite alternate-reverse, /* Primary glitch movement, offset */
+                glitch-shadow-2 0.5s linear infinite; /* Quick shadow changes, offset */
+        }
+
+        /* Keyframes for the first glitch animation (::before) */
+        @keyframes glitch-anim-1 {
+            0% {
+                clip-path: inset(30% 0 70% 0);
+                transform: translateX(5px) translateY(-5px);
+            }
+            10% {
+                clip-path: inset(45% 0 55% 0);
+                transform: translateX(-10px) translateY(0px);
+            }
+            20% {
+                clip-path: inset(10% 0 80% 0);
+                transform: translateX(10px) translateY(5px);
+            }
+            30% {
+                clip-path: inset(60% 0 20% 0);
+                transform: translateX(-5px) translateY(-10px);
+            }
+            40% {
+                clip-path: inset(80% 0 10% 0);
+                transform: translateX(15px) translateY(0px);
+            }
+            50% {
+                clip-path: inset(20% 0 60% 0);
+                transform: translateX(-15px) translateY(10px);
+            }
+            60% {
+                clip-path: inset(70% 0 15% 0);
+                transform: translateX(5px) translateY(-5px);
+            }
+            70% {
+                clip-path: inset(5% 0 85% 0);
+                transform: translateX(-10px) translateY(5px);
+            }
+            80% {
+                clip-path: inset(40% 0 40% 0);
+                transform: translateX(10px) translateY(-10px);
+            }
+            90% {
+                clip-path: inset(25% 0 65% 0);
+                transform: translateX(-5px) translateY(0px);
+            }
+            100% {
+                clip-path: inset(0 0 100% 0); /* Briefly hide this layer */
+                transform: translateX(0px) translateY(0px);
+            }
+        }
+
+        /* Keyframes for the second glitch animation (::after) */
+        @keyframes glitch-anim-2 {
+            0% {
+                clip-path: inset(40% 0 40% 0);
+                transform: translateX(-5px) translateY(5px);
+            }
+            15% {
+                clip-path: inset(10% 0 70% 0);
+                transform: translateX(10px) translateY(-5px);
+            }
+            30% {
+                clip-path: inset(70% 0 10% 0);
+                transform: translateX(-10px) translateY(5px);
+            }
+            45% {
+                clip-path: inset(20% 0 60% 0);
+                transform: translateX(5px) translateY(-10px);
+            }
+            60% {
+                clip-path: inset(50% 0 30% 0);
+                transform: translateX(-15px) translateY(0px);
+            }
+            75% {
+                clip-path: inset(0 0 100% 0); /* Briefly hide this layer */
+                transform: translateX(15px) translateY(10px);
+            }
+            90% {
+                clip-path: inset(65% 0 25% 0);
+                transform: translateX(-5px) translateY(-5px);
+            }
+            100% {
+                clip-path: inset(30% 0 70% 0);
+                transform: translateX(0px) translateY(0px);
+            }
+        }
+
+        /* Keyframes for subtle, fast-flickering shadow effect for ::before */
+        @keyframes glitch-shadow-1 {
+            0% { text-shadow: -2px 0 0 #ff00ff; }
+            50% { text-shadow: 2px 0 0 #ff00ff; }
+            100% { text-shadow: -2px 0 0 #ff00ff; }
+        }
+
+        /* Keyframes for subtle, fast-flickering shadow effect for ::after */
+        @keyframes glitch-shadow-2 {
+            0% { text-shadow: 2px 0 0 #00ffff; }
+            50% { text-shadow: -2px 0 0 #00ffff; }
+            100% { text-shadow: 2px 0 0 #00ffff; }
+        }
+
+        /* Media queries for smaller screens */
+        @media (max-width: 768px) {
+            .glitch-container {
+                font-size: 8vw; /* Increase font size for better visibility on small screens */
+            }
+        }
+        @media (max-width: 480px) {
+            .glitch-container {
+                font-size: 10vw; /* Further increase font size */
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="glitch-container">
+        <!-- The data-text attribute holds the text content for pseudo-elements -->
+        <span class="glitch-text" data-text="GLITCH EFFECT">GLITCH EFFECT</span>
+    </div>
+</body>
+</html>
