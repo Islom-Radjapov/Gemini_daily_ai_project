@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valyuta Konvertori</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient to right, #6a11cb, #2575fc); /* Modern gradient background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Container for the whole application */
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* Heading style */
+        h1 {
+            color: #2575fc;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+
+        /* Converter box layout */
+        .converter-box {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Input group for labels and inputs */
+        .input-group {
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        /* Styling for amount input and currency select boxes */
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            -webkit-appearance: none; /* Remove default styling for selects */
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #f9f9f9;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #2575fc;
+            box-shadow: 0 0 8px rgba(37, 117, 252, 0.2);
+        }
+
+        /* Currency selector layout */
+        .currency-selectors {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .currency-selectors select {
+            flex: 1; /* Make select boxes take equal width */
+        }
+
+        .currency-selectors .icon {
+            font-size: 1.5em;
+            color: #6a11cb;
+            flex-shrink: 0;
+        }
+
+        /* Convert button style */
+        button {
+            background: linear-gradient(45deg, #6a11cb, #2575fc);
+            color: #ffffff;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.15em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            letter-spacing: 0.5px;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Result display box */
+        .result-box {
+            background-color: #eef4ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+            border: 1px solid #d0e0ff;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .result-box p {
+            margin: 5px 0;
+            color: #444;
+            font-size: 1em;
+        }
+
+        .result-box .large-text {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #2575fc;
+            word-break: break-all; /* Ensures long numbers fit */
+        }
+
+        .result-box .small-text {
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 10px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 500px) {
+            .container {
+                padding: 20px;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            input[type="number"],
+            select {
+                padding: 10px 12px;
+                font-size: 1em;
+            }
+
+            .currency-selectors {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .currency-selectors .icon {
+                transform: rotate(90deg); /* Rotate arrow for vertical layout */
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+
+            .result-box .large-text {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Valyuta Konvertori</h1>
+        <div class="converter-box">
+            <div class="input-group">
+                <label for="amount">Miqdor:</label>
+                <input type="number" id="amount" value="1.00" min="0.01" step="0.01">
+            </div>
+            <div class="currency-selectors">
+                <select id="fromCurrency"></select>
+                <span class="icon">➡️</span>
+                <select id="toCurrency"></select>
+            </div>
+            <button id="convertBtn">Konvertatsiya qilish</button>
+            <div class="result-box">
+                <p>Natija:</p>
+                <p id="resultAmount" class="large-text">0.00</p>
+                <p id="exchangeRate" class="small-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const amountInput = document.getElementById('amount');
+        const fromCurrencySelect = document.getElementById('fromCurrency');
+        const toCurrencySelect = document.getElementById('toCurrency');
+        const convertButton = document.getElementById('convertBtn');
+        const resultAmountParagraph = document.getElementById('resultAmount');
+        const exchangeRateParagraph = document.getElementById('exchangeRate');
+
+        // Hardcoded currency data for demonstration purposes
+        // In a real-world scenario, this would come from an API
+        const currencies = {
+            'USD': 'AQSH Dollari',
+            'EUR': 'Yevro',
+            'GBP': 'Britaniya Funtt Sterligi',
+            'JPY': 'Yaponiya Yeni',
+            'UZS': 'O\'zbekiston So\'mi',
+            'RUB': 'Rossiya Rubli',
+            'KZT': 'Qozog\'iston Tengesi',
+            'CNY': 'Xitoy Yuani'
+        };
+
+        // Hardcoded exchange rates relative to 1 USD
+        // These rates are static and for demonstration only.
+        // They do not reflect real-time market rates.
+        const exchangeRates = {
+            'USD': 1.00,
+            'EUR': 0.92,
+            'GBP': 0.79,
+            'JPY': 157.10,
+            'UZS': 12690.00,
+            'RUB': 89.50,
+            'KZT': 447.00,
+            'CNY': 7.25
+        };
+
+        /**
+         * Populates the currency select dropdowns with options.
+         */
+        function populateCurrencies() {
+            // Clear existing options
+            fromCurrencySelect.innerHTML = '';
+            toCurrencySelect.innerHTML = '';
+
+            for (const code in currencies) {
+                const optionFrom = document.createElement('option');
+                optionFrom.value = code;
+                optionFrom.textContent = `${code} - ${currencies[code]}`;
+                fromCurrencySelect.appendChild(optionFrom);
+
+                const optionTo = document.createElement('option');
+                optionTo.value = code;
+                optionTo.textContent = `${code} - ${currencies[code]}`;
+                toCurrencySelect.appendChild(optionTo);
+            }
+
+            // Set default selections
+            fromCurrencySelect.value = 'USD';
+            toCurrencySelect.value = 'UZS';
+        }
+
+        /**
+         * Performs the currency conversion based on current inputs.
+         */
+        function convertCurrency() {
+            const amount = parseFloat(amountInput.value);
+            const fromCurrency = fromCurrencySelect.value;
+            const toCurrency = toCurrencySelect.value;
+
+            // Input validation
+            if (isNaN(amount) || amount <= 0) {
+                resultAmountParagraph.textContent = 'Xato miqdor!';
+                exchangeRateParagraph.textContent = 'Iltimos, musbat son kiriting.';
+                return;
+            }
+
+            // Handle same currency conversion
+            if (fromCurrency === toCurrency) {
+                resultAmountParagraph.textContent = amount.toFixed(2);
+                exchangeRateParagraph.textContent = `1 ${fromCurrency} = 1 ${toCurrency}`;
+                return;
+            }
+
+            // Get exchange rates relative to a common base (USD in this case)
+            const rateFrom = exchangeRates[fromCurrency];
+            const rateTo = exchangeRates[toCurrency];
+
+            if (!rateFrom || !rateTo) {
+                resultAmountParagraph.textContent = 'Kurs topilmadi!';
+                exchangeRateParagraph.textContent = 'Tanlangan valyutalar uchun kurs mavjud emas.';
+                return;
+            }
+
+            // Conversion logic: convert 'from' currency to USD, then from USD to 'to' currency
+            const amountInUsd = amount / rateFrom;
+            const convertedAmount = amountInUsd * rateTo;
+
+            // Calculate the direct exchange rate for display
+            const directRate = rateTo / rateFrom;
+
+            resultAmountParagraph.textContent = convertedAmount.toFixed(2); // Display with 2 decimal places
+            exchangeRateParagraph.textContent = `1 ${fromCurrency} = ${directRate.toFixed(4)} ${toCurrency}`;
+        }
+
+        // Add event listeners
+        convertButton.addEventListener('click', convertCurrency);
+        fromCurrencySelect.addEventListener('change', convertCurrency);
+        toCurrencySelect.addEventListener('change', convertCurrency);
+        amountInput.addEventListener('input', convertCurrency); // Convert on amount change
+
+        // Initialize the converter on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            populateCurrencies();
+            convertCurrency(); // Perform initial conversion
+        });
+    </script>
+</body>
+</html>
