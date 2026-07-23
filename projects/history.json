@@ -41,6 +41,7 @@
     "python_cli::Markdown dan HTML ga konvertor",
     "python_cli::Hangman o'yini (terminal)",
     "css_animation::Glitch text effekti",
-    "calculator::Valyuta konvertori"
+    "calculator::Valyuta konvertori",
+    "web_page::Fotosuratlar galereyasi"
   ]
 }
