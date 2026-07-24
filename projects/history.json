@@ -42,6 +42,7 @@
     "python_cli::Hangman o'yini (terminal)",
     "css_animation::Glitch text effekti",
     "calculator::Valyuta konvertori",
-    "web_page::Fotosuratlar galereyasi"
+    "web_page::Fotosuratlar galereyasi",
+    "web_page::Countdown timer sahifa"
   ]
 }

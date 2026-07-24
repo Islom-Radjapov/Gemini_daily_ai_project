@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Countdown Timer</title>
+    <style>
+        /* Global styles and resets */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #2c3e50; /* Dark blue background */
+            color: #ecf0f1; /* Light text color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Main container for the timer */
+        .container {
+            background-color: #34495e; /* Slightly lighter dark blue */
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            border: 1px solid #4a6681;
+        }
+
+        /* Heading style */
+        h1 {
+            color: #f1c40f; /* Yellow accent for heading */
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+        }
+
+        /* Input group for date and time */
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .input-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 150px; /* Minimum width for inputs */
+            flex-grow: 1;
+        }
+
+        .input-item label {
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #bdc3c7; /* Lighter grey for labels */
+        }
+
+        .input-group input[type="date"],
+        .input-group input[type="time"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #4a6681;
+            border-radius: 8px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            font-size: 1.1em;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-group input[type="date"]:focus,
+        .input-group input[type="time"]:focus {
+            border-color: #f1c40f;
+            box-shadow: 0 0 8px rgba(241, 196, 15, 0.4);
+        }
+
+        /* Button styles */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button#set_timer_button {
+            background-color: #27ae60; /* Green for Set */
+            color: white;
+        }
+
+        button#set_timer_button:hover:not(:disabled) {
+            background-color: #229954;
+            transform: translateY(-2px);
+        }
+        
+        button#set_timer_button:disabled {
+            background-color: #7f8c8d; /* Grey for disabled */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        button#reset_timer_button {
+            background-color: #e74c3c; /* Red for Reset */
+            color: white;
+        }
+
+        button#reset_timer_button:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        /* Countdown display */
+        .countdown-display {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+            gap: 20px;
+            margin-top: 30px;
+            background-color: #2c3e50;
+            padding: 25px 15px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .time-unit {
+            background-color: #3f5e7a; /* Darker blue for units */
+            padding: 15px 20px;
+            border-radius: 8px;
+            min-width: 90px;
+            flex-basis: 120px; /* Base width, allows flex-grow/shrink */
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+
+        .time-unit:hover {
+            transform: translateY(-3px);
+        }
+
+        .time-value {
+            display: block;
+            font-size: 3em;
+            font-weight: bold;
+            color: #ecf0f1;
+            line-height: 1; /* Adjust line height to prevent extra space */
+            margin-bottom: 5px;
+        }
+
+        .time-label {
+            display: block;
+            font-size: 0.9em;
+            color: #bdc3c7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Message area for 'Time's Up!' or errors */
+        #message {
+            margin-top: 25px;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #e74c3c; /* Red for messages */
+            min-height: 25px; /* Reserve space to prevent layout shift */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .input-item {
+                width: 100%;
+            }
+
+            .button-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .countdown-display {
+                gap: 15px;
+                padding: 20px 10px;
+            }
+
+            .time-unit {
+                min-width: unset; /* Remove min-width on small screens */
+                flex-basis: 45%; /* Two columns */
+                padding: 12px 15px;
+            }
+
+            .time-value {
+                font-size: 2.5em;
+            }
+
+            .time-label {
+                font-size: 0.8em;
+            }
+
+            #message {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Universal Countdown Timer</h1>
+
+        <div class="input-group">
+            <div class="input-item">
+                <label for="target_date_input">Target Date:</label>
+                <input type="date" id="target_date_input">
+            </div>
+            <div class="input-item">
+                <label for="target_time_input">Target Time:</label>
+                <input type="time" id="target_time_input">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="set_timer_button" disabled>Set Countdown</button>
+            <button id="reset_timer_button">Reset Timer</button>
+        </div>
+
+        <div id="message"></div>
+
+        <div class="countdown-display">
+            <div class="time-unit">
+                <span id="days_value" class="time-value">00</span>
+                <span class="time-label">Days</span>
+            </div>
+            <div class="time-unit">
+                <span id="hours_value" class="time-value">00</span>
+                <span class="time-label">Hours</span>
+            </div>
+            <div class="time-unit">
+                <span id="minutes_value" class="time-value">00</span>
+                <span class="time-label">Minutes</span>
+            </div>
+            <div class="time-unit">
+                <span id="seconds_value" class="time-value">00</span>
+                <span class="time-label">Seconds</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM element references
+        const targetDateInput = document.getElementById('target_date_input');
+        const targetTimeInput = document.getElementById('target_time_input');
+        const setTimerButton = document.getElementById('set_timer_button');
+        const resetTimerButton = document.getElementById('reset_timer_button');
+        const messageDisplay = document.getElementById('message');
+
+        const daysValue = document.getElementById('days_value');
+        const hoursValue = document.getElementById('hours_value');
+        const minutesValue = document.getElementById('minutes_value');
+        const secondsValue = document.getElementById('seconds_value');
+
+        // Global variables for countdown logic
+        let countdownInterval;
+        let targetDate; // This will store the Date object for the target time
+
+        // Constants for localStorage keys
+        const LOCAL_STORAGE_TARGET_DATE_KEY = 'countdown_target_date';
+
+        /**
+         * Adds a leading zero to numbers less than 10.
+         * @param {number} num - The number to format.
+         * @returns {string} - The formatted number as a string.
+         */
+        function formatNumber(num) {
+            return num < 10 ? '0' + num : num;
+        }
+
+        /**
+         * Updates the countdown display based on the targetDate.
+         * If the countdown reaches zero, it clears the interval and shows a message.
+         */
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetDate.getTime() - now;
+
+            if (distance < 0) {
+                // Countdown finished
+                clearInterval(countdownInterval);
+                countdownInterval = null; // Clear the interval reference
+                messageDisplay.style.color = '#27ae60'; // Green for completion message
+                messageDisplay.textContent = "Time's Up! The event has arrived!";
+                updateDisplay(0, 0, 0, 0); // Set display to 00
+                localStorage.removeItem(LOCAL_STORAGE_TARGET_DATE_KEY); // Clear saved date
+                return;
+            }
+
+            // Calculate time units
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Update the display elements
+            updateDisplay(days, hours, minutes, seconds);
+
+            // Clear any previous message if timer is running
+            messageDisplay.textContent = '';
+        }
+
+        /**
+         * Updates the text content of the countdown display elements.
+         * @param {number} days - Number of days.
+         * @param {number} hours - Number of hours.
+         * @param {number} minutes - Number of minutes.
+         * @param {number} seconds - Number of seconds.
+         */
+        function updateDisplay(days, hours, minutes, seconds) {
+            daysValue.textContent = formatNumber(days);
+            hoursValue.textContent = formatNumber(hours);
+            minutesValue.textContent = formatNumber(minutes);
+            secondsValue.textContent = formatNumber(seconds);
+        }
+
+        /**
+         * Sets up and starts the countdown timer based on user input.
+         * Stores the target date in local storage.
+         */
+        function setCountdown() {
+            const dateValue = targetDateInput.value;
+            const timeValue = targetTimeInput.value;
+
+            if (!dateValue || !timeValue) {
+                messageDisplay.style.color = '#e74c3c';
+                messageDisplay.textContent = 'Please select both date and time.';
+                return;
+            }
+
+            // Combine date and time to create a Date object
+            const combinedDateTimeString = `${dateValue}T${timeValue}:00`; // YYYY-MM-DDTHH:MM:SS format
+            const newTargetDate = new Date(combinedDateTimeString);
+
+            // Validate if the selected date/time is in the future
+            if (newTargetDate.getTime() <= new Date().getTime()) {
+                messageDisplay.style.color = '#e74c3c';
+                messageDisplay.textContent = 'Please select a future date and time.';
+                return;
+            }
+
+            // Clear any existing interval before setting a new one
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            targetDate = newTargetDate;
+            localStorage.setItem(LOCAL_STORAGE_TARGET_DATE_KEY, targetDate.toISOString()); // Store as ISO string
+
+            // Start the countdown, update immediately and then every second
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+
+            messageDisplay.textContent = ''; // Clear any previous messages
+        }
+
+        /**
+         * Resets the countdown timer, clears local storage, and resets display elements.
+         */
+        function resetCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            targetDate = null; // Clear target date
+
+            localStorage.removeItem(LOCAL_STORAGE_TARGET_DATE_KEY);
+
+            // Reset display values
+            updateDisplay(0, 0, 0, 0);
+
+            // Reset input fields to default (current date + 7 days, midnight)
+            setDefaultInputValues();
+
+            messageDisplay.textContent = ''; // Clear message
+            setTimerButton.disabled = true; // Disable until valid input
+        }
+
+        /**
+         * Sets default values for date and time inputs.
+         * Default date is 7 days from now, default time is 00:00.
+         */
+        function setDefaultInputValues() {
+            const now = new Date();
+            const sevenDaysLater = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)); // Add 7 days in milliseconds
+
+            // Format date to YYYY-MM-DD
+            const year = sevenDaysLater.getFullYear();
+            const month = formatNumber(sevenDaysLater.getMonth() + 1); // Month is 0-indexed
+            const day = formatNumber(sevenDaysLater.getDate());
+
+            targetDateInput.value = `${year}-${month}-${day}`;
+            targetTimeInput.value = '00:00'; // Default to midnight
+        }
+
+        /**
+         * Validates the inputs and enables/disables the set timer button.
+         */
+        function validateInputs() {
+            const dateValue = targetDateInput.value;
+            const timeValue = targetTimeInput.value;
+
+            if (dateValue && timeValue) {
+                const combinedDateTimeString = `${dateValue}T${timeValue}:00`;
+                const selectedDate = new Date(combinedDateTimeString);
+                const now = new Date();
+
+                // Ensure the selected date is in the future
+                if (selectedDate.getTime() > now.getTime()) {
+                    setTimerButton.disabled = false;
+                    messageDisplay.textContent = ''; // Clear messages if valid
+                    return;
+                }
+            }
+            setTimerButton.disabled = true;
+            if (dateValue && timeValue) { // If inputs are filled but date is past
+                messageDisplay.style.color = '#e74c3c';
+                messageDisplay.textContent = 'Please select a future date and time.';
+            } else {
+                messageDisplay.textContent = ''; // No message if inputs are empty
+            }
+        }
+
+        /**
+         * Initializes the timer on page load.
+         * Checks local storage for a previously saved target date.
+         */
+        function initialize() {
+            const savedTargetDateString = localStorage.getItem(LOCAL_STORAGE_TARGET_DATE_KEY);
+
+            if (savedTargetDateString) {
+                const parsedDate = new Date(savedTargetDateString);
+                // Check if the saved date is still in the future
+                if (parsedDate.getTime() > new Date().getTime()) {
+                    targetDate = parsedDate;
+
+                    // Set input fields to the loaded date/time for user visibility
+                    const year = targetDate.getFullYear();
+                    const month = formatNumber(targetDate.getMonth() + 1);
+                    const day = formatNumber(targetDate.getDate());
+                    targetDateInput.value = `${year}-${month}-${day}`;
+
+                    const hours = formatNumber(targetDate.getHours());
+                    const minutes = formatNumber(targetDate.getMinutes());
+                    targetTimeInput.value = `${hours}:${minutes}`;
+
+                    // Start the countdown
+                    setCountdown(); // This will re-validate and start the timer
+                    setTimerButton.disabled = false; // Enable button as inputs are filled and valid
+                } else {
+                    // If saved date is in the past, reset it
+                    localStorage.removeItem(LOCAL_STORAGE_TARGET_DATE_KEY);
+                    setDefaultInputValues();
+                    updateDisplay(0,0,0,0);
+                    messageDisplay.style.color = '#e74c3c';
+                    messageDisplay.textContent = "Previous timer was in the past. Set a new one!";
+                }
+            } else {
+                // No saved date, set default input values
+                setDefaultInputValues();
+                updateDisplay(0,0,0,0);
+            }
+            validateInputs(); // Ensure button state is correct initially
+        }
+
+        // Event Listeners
+        setTimerButton.addEventListener('click', setCountdown);
+        resetTimerButton.addEventListener('click', resetCountdown);
+        targetDateInput.addEventListener('change', validateInputs);
+        targetTimeInput.addEventListener('change', validateInputs);
+
+        // Initialize the timer when the page loads
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
