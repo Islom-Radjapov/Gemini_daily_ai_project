@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Pie Chart Visualization</title>
+    <!-- Inline CSS for styling the page and chart elements -->
+    <style>
+        /* Global styles for body */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top to prevent jumping when content grows */
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Container for the entire application */
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 30px; /* Add some space at the bottom */
+        }
+
+        /* Styling for headings */
+        h1, h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        h2 {
+            font-size: 1.6em;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        /* Chart specific styles */
+        .chart-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        /* Canvas element styling */
+        #pieChart {
+            background-color: #ffffff;
+            border-radius: 8px;
+            max-width: 100%; /* Ensure canvas scales down on smaller screens */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        /* Tooltip styles for displaying slice information on hover */
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            pointer-events: none; /* Allows mouse events to pass through to elements below */
+            display: none; /* Hidden by default */
+            z-index: 1000; /* Ensure tooltip is on top */
+            font-size: 0.9em;
+            text-align: left;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            line-height: 1.4;
+        }
+
+        .tooltip strong {
+            font-size: 1.1em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Legend styles for showing color-category mapping */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px 25px; /* Gap between legend items */
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 1em;
+            color: #555;
+        }
+
+        .color-swatch {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            margin-right: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Data input section styles */
+        .data-input-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+
+        textarea#rawData {
+            width: calc(100% - 20px); /* Adjust for padding */
+            max-width: 500px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Monaco', 'Consolas', monospace; /* Modern monospace font */
+            font-size: 0.9em;
+            resize: vertical; /* Allow vertical resizing */
+            margin-bottom: 15px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: border-color 0.3s ease;
+        }
+
+        textarea#rawData:focus {
+            outline: none;
+            border-color: #42A5F5; /* Highlight on focus */
+            box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.2);
+        }
+
+        button {
+            background-color: #4CAF50; /* A pleasant green color */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px); /* Lift effect on hover */
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-format-hint {
+            font-size: 0.85em;
+            color: #777;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+
+        .error-message {
+            color: #EF5350; /* Red color for error messages */
+            font-size: 0.9em;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            h2 {
+                font-size: 1.4em;
+            }
+            .legend {
+                gap: 10px 20px;
+            }
+            textarea {
+                width: calc(100% - 10px);
+                padding: 10px;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .legend {
+                flex-direction: column;
+                align-items: center;
+            }
+            .legend-item {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sales Distribution by Category</h1>
+        <div class="chart-container">
+            <!-- Canvas for drawing the pie chart. Fixed width/height for drawing consistency. -->
+            <canvas id="pieChart" width="600" height="400"></canvas>
+            <!-- Tooltip element, positioned absolutely over the canvas -->
+            <div id="tooltip" class="tooltip"></div>
+        </div>
+        <!-- Legend for the pie chart data -->
+        <div id="legend" class="legend"></div>
+
+        <!-- Section for user to customize chart data -->
+        <div class="data-input-section">
+            <h2>Customize Data</h2>
+            <textarea id="rawData" rows="10" cols="50">
+[
+    {"label": "Electronics", "value": 300},
+    {"label": "Clothing", "value": 200},
+    {"label": "Home Goods", "value": 150},
+    {"label": "Books", "value": 100},
+    {"label": "Food", "value": 250}
+]
+            </textarea>
+            <button onclick="updateChart()">Update Chart</button>
+            <p class="data-format-hint">Enter JSON array of objects: `[{"label": "Category", "value": 123}, ...]`</p>
+        </div>
+    </div>
+
+    <!-- Inline JavaScript for chart logic and interactivity -->
+    <script>
+        // Global variables for canvas and chart properties
+        let canvas, ctx, centerX, centerY, radius;
+        let pieSlices = []; // To store slice information for tooltip interaction
+        let tooltip; // Reference to the tooltip DOM element
+
+        // Initial sample data for the pie chart
+        let chartData = [
+            {"label": "Electronics", "value": 300},
+            {"label": "Clothing", "value": 200},
+            {"label": "Home Goods", "value": 150},
+            {"label": "Books", "value": 100},
+            {"label": "Food", "value": 250}
+        ];
+
+        // Predefined color palette for a professional and consistent look
+        const colorPalette = [
+            '#42A5F5', '#66BB6A', '#FFCA28', '#EF5350', '#AB47BC',
+            '#26A69A', '#FFA726', '#78909C', '#5C6BC0', '#8D6E63'
+        ];
+
+        /**
+         * Initializes the chart: gets canvas context, calculates dimensions,
+         * draws the initial chart, and sets up event listeners.
+         */
+        function initializeChart() {
+            canvas = document.getElementById('pieChart');
+            ctx = canvas.getContext('2d');
+            tooltip = document.getElementById('tooltip');
+
+            // Calculate center and radius based on canvas dimensions, with some padding
+            const minDim = Math.min(canvas.width, canvas.height);
+            radius = minDim / 2 - 40; // Subtract padding for visual spacing
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+
+            drawPieChart(); // Draw the initial chart
+            setupCanvasEvents(); // Set up mouse events for interactivity
+        }
+
+        /**
+         * Draws the pie chart on the canvas based on the current chartData.
+         */
+        function drawPieChart() {
+            // Clear the entire canvas before drawing new slices
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            pieSlices = []; // Reset slice info for new drawing
+
+            // Calculate the total sum of all values in the chart data
+            const totalValue = chartData.reduce((sum, item) => sum + item.value, 0);
+
+            let currentAngle = 0; // Starting angle for the first slice (3 o'clock position)
+
+            // Iterate over each data item to draw its corresponding slice
+            chartData.forEach((data, index) => {
+                // Calculate the angle proportion for the current slice
+                const sliceAngle = (data.value / totalValue) * 2 * Math.PI;
+                // Assign a color from the predefined palette, cycling if more data than colors
+                const color = colorPalette[index % colorPalette.length];
+
+                // Draw the arc for the pie slice
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY); // Move to the center of the pie
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle); // Draw arc
+                ctx.closePath(); // Close the path to form a slice shape
+                ctx.fillStyle = color; // Set fill color
+                ctx.fill(); // Fill the slice
+                ctx.strokeStyle = '#fff'; // White border between slices for better separation
+                ctx.lineWidth = 1.5;
+                ctx.stroke(); // Draw the border
+
+                // Store slice information for later tooltip interaction
+                pieSlices.push({
+                    startAngle: currentAngle,
+                    endAngle: currentAngle + sliceAngle,
+                    color: color,
+                    data: data,
+                    percentage: (data.value / totalValue * 100).toFixed(1) // Calculate percentage
+                });
+
+                // Update the current angle for the next slice
+                currentAngle += sliceAngle;
+            });
+
+            drawLegend(); // Redraw the legend after updating the chart
+        }
+
+        /**
+         * Draws or updates the legend based on the current chartData.
+         */
+        function drawLegend() {
+            const legendDiv = document.getElementById('legend');
+            legendDiv.innerHTML = ''; // Clear previous legend items
+
+            // Create a legend item for each data entry
+            chartData.forEach((data, index) => {
+                const color = colorPalette[index % colorPalette.length]; // Get corresponding color
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+
+                const colorSwatch = document.createElement('span');
+                colorSwatch.className = 'color-swatch';
+                colorSwatch.style.backgroundColor = color; // Set swatch color
+
+                const label = document.createElement('span');
+                label.textContent = data.label; // Set label text
+
+                legendItem.appendChild(colorSwatch);
+                legendItem.appendChild(label);
+                legendDiv.appendChild(legendItem);
+            });
+        }
+
+        /**
+         * Updates the chart data from the textarea and redraws the chart.
+         * Handles JSON parsing and basic data validation.
+         */
+        function updateChart() {
+            const rawDataText = document.getElementById('rawData').value;
+            try {
+                const newData = JSON.parse(rawDataText); // Attempt to parse JSON
+                // Basic validation: ensure it's an array of objects with 'label' and 'value'
+                if (Array.isArray(newData) && newData.every(item => typeof item === 'object' && 'label' in item && 'value' in item && typeof item.value === 'number')) {
+                    chartData = newData; // Update global chart data
+                    drawPieChart(); // Redraw chart with new data
+                    document.querySelector('.data-input-section p.error-message')?.remove(); // Remove old error message if successful
+                } else {
+                    throw new Error("Invalid data format. Each item must be an object with 'label' (string) and 'value' (number) properties.");
+                }
+            } catch (e) {
+                console.error("Error parsing JSON or invalid data:", e);
+                // Display error message to the user
+                let errorMessage = document.querySelector('.data-input-section p.error-message');
+                if (!errorMessage) {
+                    errorMessage = document.createElement('p');
+                    errorMessage.className = 'error-message';
+                    document.querySelector('.data-input-section').appendChild(errorMessage);
+                }
+                errorMessage.textContent = "Error: " + e.message + " Please check your JSON format.";
+            }
+        }
+
+        /**
+         * Sets up event listeners for mouse interactions on the canvas.
+         */
+        function setupCanvasEvents() {
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseout', handleMouseOut);
+        }
+
+        /**
+         * Handles mouse movement over the canvas to display tooltips.
+         * @param {MouseEvent} event - The mouse event object.
+         */
+        function handleMouseMove(event) {
+            const rect = canvas.getBoundingClientRect();
+            // Calculate mouse coordinates relative to the canvas
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // Calculate distance from the center of the pie chart
+            const dx = mouseX - centerX;
+            const dy = mouseY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Check if the mouse is within the radius of the pie chart
+            if (distance <= radius) {
+                // Calculate the angle of the mouse relative to the chart center
+                let angle = Math.atan2(dy, dx);
+                // Normalize angle to be between 0 and 2*PI (clockwise from 3 o'clock)
+                if (angle < 0) {
+                    angle += 2 * Math.PI;
+                }
+
+                // Find which slice the mouse is currently hovering over
+                const hoveredSlice = pieSlices.find(slice => angle >= slice.startAngle && angle < slice.endAngle);
+
+                if (hoveredSlice) {
+                    // Position and display the tooltip
+                    tooltip.style.left = `${event.pageX + 10}px`;
+                    tooltip.style.top = `${event.pageY + 10}px`;
+                    tooltip.innerHTML = `
+                        <strong>${hoveredSlice.data.label}</strong><br>
+                        Value: ${hoveredSlice.data.value}<br>
+                        Percentage: ${hoveredSlice.percentage}%
+                    `;
+                    tooltip.style.display = 'block';
+                } else {
+                    tooltip.style.display = 'none'; // Hide if not hovering over a slice
+                }
+            } else {
+                tooltip.style.display = 'none'; // Hide if mouse is outside the pie chart
+            }
+        }
+
+        /**
+         * Handles mouse leaving the canvas area, hiding the tooltip.
+         */
+        function handleMouseOut() {
+            tooltip.style.display = 'none';
+        }
+
+        // Initialize the chart when the DOM is fully loaded
+        window.addEventListener('DOMContentLoaded', initializeChart);
+    </script>
+</body>
+</html>
