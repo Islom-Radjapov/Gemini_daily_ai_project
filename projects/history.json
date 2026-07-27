@@ -44,6 +44,7 @@
     "calculator::Valyuta konvertori",
     "web_page::Fotosuratlar galereyasi",
     "web_page::Countdown timer sahifa",
-    "data_viz::Doiraviy diagramma"
+    "data_viz::Doiraviy diagramma",
+    "js_game::Color match o'yini"
   ]
 }

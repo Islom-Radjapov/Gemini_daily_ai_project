@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Match Game</title>
+    <style>
+        /* General body styling for centering and background */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Container for the game elements (canvas and buttons) */
+        #game-container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            position: relative; /* Allows positioning child elements relative to this container */
+        }
+
+        /* Canvas styling */
+        canvas {
+            border: 2px solid #ddd;
+            display: block; /* Removes extra space below the canvas */
+            margin: 0 auto 20px auto; /* Centers the canvas and adds space below */
+            background-color: #e0e0e0;
+            border-radius: 8px;
+        }
+
+        /* Styling for all game buttons */
+        .game-button {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin: 10px 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions for hover/active states */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            outline: none; /* Remove default focus outline */
+        }
+
+        /* Hover effect for buttons */
+        .game-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        /* Active (click) effect for buttons */
+        .game-button:active {
+            transform: translateY(0); /* Return to original position */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Smaller shadow */
+        }
+
+        /* Specific styling for the restart button */
+        #restartButton {
+            background-color: #008CBA; /* Blue */
+        }
+
+        /* Hover effect for restart button */
+        #restartButton:hover {
+            background-color: #007bb5;
+        }
+
+        /* Styling for the main game title */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2.2em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05); /* Soft text shadow */
+        }
+    </style>
+</head>
+<body>
+    <h1>Color Match Game</h1>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <button id="startButton" class="game-button">Start Game</button>
+        <button id="restartButton" class="game-button" style="display:none;">Play Again</button>
+    </div>
+
+    <script>
+        // --- DOM Elements and Canvas Setup ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+
+        // --- Game Constants ---
+        const CANVAS_WIDTH = 600;
+        const CANVAS_HEIGHT = 450;
+        const GAME_DURATION = 30; // Game duration in seconds
+        const NUM_OPTIONS = 4;    // Number of color options displayed at the bottom
+        const OPTION_BUTTON_HEIGHT = 80;
+        const OPTION_BUTTON_MARGIN = 20; // Margin between buttons and canvas edges
+        const TARGET_COLOR_HEIGHT = 100;
+        const TEXT_COLOR = '#333'; // Default text color for score and timer
+
+        // Set canvas dimensions
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+
+        // --- Game State Variables ---
+        let score = 0;
+        let timeLeft = GAME_DURATION;
+        let gameStarted = false;
+        let gameOverFlag = false;
+        let targetColor = ''; // The color the player needs to match
+        let optionButtons = []; // Array of objects storing color option data: { color, x, y, width, height }
+        let correctOptionColor = ''; // The actual color value of the correct option
+        let gameInterval = null; // Stores the setInterval ID for the game timer
+        let feedbackText = ''; // Text displayed for "Correct!" or "Wrong!" feedback
+        let feedbackTimer = null; // Stores the setTimeout ID to clear feedback text
+
+        // --- Utility Functions ---
+
+        /**
+         * Generates a random hexadecimal color string.
+         * @returns {string} A random hex color (e.g., "#RRGGBB").
+         */
+        function getRandomColor() {
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            // Convert RGB to hex and pad with leading zeros if necessary
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+        }
+
+        /**
+         * Shuffles an array in place using the Fisher-Yates (Knuth) algorithm.
+         * @param {Array} array The array to shuffle.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                // Swap elements
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /**
+         * Checks if a given click coordinate falls within a specified rectangle area.
+         * @param {number} clickX - X coordinate of the click relative to the canvas.
+         * @param {number} clickY - Y coordinate of the click relative to the canvas.
+         * @param {number} rectX - X coordinate of the rectangle's top-left corner.
+         * @param {number} rectY - Y coordinate of the rectangle's top-left corner.
+         * @param {number} rectWidth - Width of the rectangle.
+         * @param {number} rectHeight - Height of the rectangle.
+         * @returns {boolean} True if the click is inside the rectangle, false otherwise.
+         */
+        function isClickInsideRect(clickX, clickY, rectX, rectY, rectWidth, rectHeight) {
+            return clickX >= rectX && clickX <= rectX + rectWidth &&
+                   clickY >= rectY && clickY <= rectY + rectHeight;
+        }
+
+        // --- Drawing Functions ---
+
+        /** Clears the entire canvas, preparing for a new frame. */
+        function clearCanvas() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
+
+        /** Draws the target color rectangle at the top of the canvas. */
+        function drawTargetColor() {
+            if (!targetColor) return;
+
+            const targetX = CANVAS_WIDTH / 4;
+            const targetY = 30;
+            const targetWidth = CANVAS_WIDTH / 2;
+
+            ctx.fillStyle = targetColor;
+            ctx.fillRect(targetX, targetY, targetWidth, TARGET_COLOR_HEIGHT);
+            ctx.strokeStyle = '#555'; // Border color for the target rectangle
+            ctx.lineWidth = 3;
+            ctx.strokeRect(targetX, targetY, targetWidth, TARGET_COLOR_HEIGHT);
+
+            ctx.fillStyle = '#fff'; // Text color for the instruction
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('MATCH THIS COLOR', CANVAS_WIDTH / 2, targetY + TARGET_COLOR_HEIGHT / 2);
+        }
+
+        /** Draws all generated color option buttons at the bottom of the canvas. */
+        function drawOptionButtons() {
+            if (optionButtons.length === 0) return;
+
+            optionButtons.forEach(button => {
+                ctx.fillStyle = button.color;
+                ctx.fillRect(button.x, button.y, button.width, button.height);
+                ctx.strokeStyle = '#555'; // Border color for option buttons
+                ctx.lineWidth = 2;
+                ctx.strokeRect(button.x, button.y, button.width, button.height);
+            });
+        }
+
+        /** Draws the current score on the top-left of the canvas. */
+        function drawScore() {
+            ctx.fillStyle = TEXT_COLOR;
+            ctx.font = 'bold 22px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText(`Score: ${score}`, 20, 10);
+        }
+
+        /** Draws the remaining time on the top-right of the canvas. */
+        function drawTimer() {
+            ctx.fillStyle = TEXT_COLOR;
+            ctx.font = 'bold 22px Arial';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'top';
+            ctx.fillText(`Time: ${timeLeft}s`, CANVAS_WIDTH - 20, 10);
+        }
+
+        /** Draws feedback text (e.g., "Correct!", "Wrong!") in the center of the canvas. */
+        function drawFeedback() {
+            if (!feedbackText) return;
+
+            ctx.save(); // Save current canvas state to apply temporary styles
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Set feedback color based on correctness
+            if (feedbackText === 'Correct!') {
+                ctx.fillStyle = 'green';
+            } else {
+                ctx.fillStyle = 'red';
+            }
+            ctx.fillText(feedbackText, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+            ctx.restore(); // Restore canvas state after drawing feedback
+        }
+
+        /** Combines all drawing functions for the active game screen. */
+        function drawGameScreen() {
+            clearCanvas();
+            drawTargetColor();
+            drawOptionButtons();
+            drawScore();
+            drawTimer();
+            drawFeedback(); // Draw feedback if it's currently set
+        }
+
+        /** Draws the initial start screen with game instructions. */
+        function drawStartScreen() {
+            clearCanvas();
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Color Match Game', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3);
+
+            ctx.font = '20px Arial';
+            ctx.fillText('Click the color that matches the target color.', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+            ctx.fillText(`Score as many points as you can in ${GAME_DURATION} seconds!`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
+        }
+
+        /** Draws the game over screen, displaying the final score. */
+        function drawGameOverScreen() {
+            clearCanvas();
+            ctx.fillStyle = '#c0392b'; // Red color for game over text
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GAME OVER!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3);
+
+            ctx.fillStyle = TEXT_COLOR;
+            ctx.font = 'bold 36px Arial';
+            ctx.fillText(`Final Score: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+        }
+
+        // --- Game Logic Functions ---
+
+        /** Generates a new round of colors: a target color and multiple distinct option colors. */
+        function generateGameRound() {
+            optionButtons = []; // Clear previous options
+            const colorsPool = []; // Temporary array to hold all generated colors
+
+            // Generate a distinct target color
+            targetColor = getRandomColor();
+            colorsPool.push(targetColor);
+
+            // Generate other distinct random colors until we have enough options
+            while (colorsPool.length < NUM_OPTIONS) {
+                let newColor = getRandomColor();
+                // Ensure new color is not a duplicate
+                if (!colorsPool.includes(newColor)) {
+                    colorsPool.push(newColor);
+                }
+            }
+
+            shuffleArray(colorsPool); // Randomize the order of colors for options
+
+            // Calculate dimensions and positions for the option buttons
+            const totalMarginWidth = (NUM_OPTIONS + 1) * OPTION_BUTTON_MARGIN;
+            const buttonWidth = (CANVAS_WIDTH - totalMarginWidth) / NUM_OPTIONS;
+            const startY = CANVAS_HEIGHT - OPTION_BUTTON_HEIGHT - OPTION_BUTTON_MARGIN;
+
+            colorsPool.forEach((color, index) => {
+                const x = OPTION_BUTTON_MARGIN + index * (buttonWidth + OPTION_BUTTON_MARGIN);
+                optionButtons.push({
+                    color: color,
+                    x: x,
+                    y: startY,
+                    width: buttonWidth,
+                    height: OPTION_BUTTON_HEIGHT
+                });
+
+                // Identify and store the correct option color for comparison
+                if (color === targetColor) {
+                    correctOptionColor = color;
+                }
+            });
+        }
+
+        /** Handles click events on the canvas, specifically for option buttons. */
+        function handleCanvasClick(event) {
+            if (!gameStarted || gameOverFlag) return; // Only process clicks if game is active
+
+            // Get canvas position relative to the viewport to calculate accurate click coordinates
+            const rect = canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+            // Check if any option button was clicked
+            for (let i = 0; i < optionButtons.length; i++) {
+                const button = optionButtons[i];
+                if (isClickInsideRect(clickX, clickY, button.x, button.y, button.width, button.height)) {
+                    // An option button was clicked
+                    if (button.color === correctOptionColor) {
+                        score++;
+                        feedbackText = 'Correct!';
+                    } else {
+                        // score--; // Optional: uncomment to penalize for wrong answers
+                        feedbackText = 'Wrong!';
+                    }
+
+                    // Clear any previous feedback timer to prevent premature clearing
+                    if (feedbackTimer) {
+                        clearTimeout(feedbackTimer);
+                    }
+                    // Set a new timer to clear the feedback text after a short delay
+                    feedbackTimer = setTimeout(() => {
+                        feedbackText = '';
+                        drawGameScreen(); // Redraw without feedback after it disappears
+                    }, 700); // Display feedback for 0.7 seconds
+
+                    generateGameRound(); // Prepare new colors for the next round
+                    drawGameScreen();    // Update display immediately with new round and feedback
+                    return; // Exit function after handling a click
+                }
+            }
+        }
+
+        /** Updates the game timer every second and checks for game over condition. */
+        function updateGameTime() {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                endGame(); // Call endGame when time runs out
+            }
+            drawGameScreen(); // Redraw to update the displayed timer
+        }
+
+        /** Initializes all game state variables and starts the game. */
+        function startGame() {
+            score = 0;
+            timeLeft = GAME_DURATION;
+            gameStarted = true;
+            gameOverFlag = false;
+            feedbackText = ''; // Clear any previous feedback text
+
+            startButton.style.display = 'none'; // Hide the start button
+            restartButton.style.display = 'none'; // Ensure restart button is hidden at game start
+
+            generateGameRound(); // Generate the first set of colors
+            drawGameScreen();    // Draw the initial game state
+
+            // Start the game timer interval
+            if (gameInterval) clearInterval(gameInterval); // Clear any existing timer
+            gameInterval = setInterval(updateGameTime, 1000); // Update `timeLeft` every 1000ms (1 second)
+        }
+
+        /** Ends the game, stops the timer, and displays the game over screen. */
+        function endGame() {
+            gameStarted = false;
+            gameOverFlag = true;
+            clearInterval(gameInterval); // Stop the game timer
+            if (feedbackTimer) clearTimeout(feedbackTimer); // Clear any pending feedback timer
+            feedbackText = ''; // Ensure feedback is cleared when game ends
+
+            drawGameOverScreen(); // Display the final score and game over message
+            restartButton.style.display = 'inline-block'; // Show the "Play Again" button
+        }
+
+        /** Resets the game and starts a new session. */
+        function restartGame() {
+            // The `startGame` function handles all necessary resets and re-initialization
+            startGame();
+        }
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', restartGame);
+        canvas.addEventListener('click', handleCanvasClick);
+
+        // --- Initial Setup ---
+        // When the window loads, draw the initial start screen
+        window.onload = () => {
+            drawStartScreen();
+        };
+
+    </script>
+</body>
+</html>
