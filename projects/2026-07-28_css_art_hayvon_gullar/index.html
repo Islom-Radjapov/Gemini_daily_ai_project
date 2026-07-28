@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blooming CSS Flower Art</title>
+    <style>
+        /* General Reset & Body Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #f0f8ff, #e6e6fa); /* Light sky-like background */
+            overflow: hidden; /* Hide anything outside the viewport that might cause scrollbars */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            perspective: 1000px; /* For potential 3D effects if needed, currently not used extensively */
+        }
+
+        /* Main container for the flower. This div will sway. */
+        .flower-container {
+            position: relative;
+            width: 300px; /* Base width for the flower's interactive area */
+            height: 500px; /* Base height for the flower's interactive area */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: bottom center; /* Pivot point for the swaying animation */
+            animation: sway 10s ease-in-out infinite alternate; /* Continuous swaying */
+        }
+
+        /* Stem of the flower */
+        .stem {
+            width: 20px;
+            height: 300px;
+            background-color: #228B22; /* Forest Green */
+            border-radius: 10px;
+            position: absolute;
+            bottom: 0; /* Anchored to the bottom of the flower container */
+            z-index: 1; /* Ensures the stem is behind the petals and leaves */
+        }
+
+        /* General styling for leaves */
+        .leaf {
+            position: absolute;
+            width: 80px;
+            height: 40px;
+            background-color: #3CB371; /* Medium Sea Green */
+            border-radius: 0 50% 50% 50%; /* Oval shape, flat on one side for attachment */
+            transform-origin: 0% 50%; /* Pivot from the left edge for rotation */
+            z-index: 2; /* Ensures leaves are in front of the stem but behind petals */
+            animation: leaf-sway 5s ease-in-out infinite alternate;
+        }
+
+        /* Specific positioning for the left leaf */
+        .leaf-left {
+            top: 250px; /* Vertical position on the stem */
+            left: -40px; /* Horizontal offset from stem center */
+            transform: rotate(-45deg); /* Initial rotation */
+            animation-delay: 0.5s; /* Stagger animation start */
+        }
+
+        /* Specific positioning for the right leaf */
+        .leaf-right {
+            top: 300px; /* Vertical position on the stem */
+            right: -40px; /* Horizontal offset from stem center */
+            transform: rotate(135deg); /* Initial rotation, flipped horizontally */
+            animation: leaf-sway-right 5s ease-in-out infinite alternate; /* Different sway animation */
+            animation-delay: 1s; /* Stagger animation start */
+        }
+
+        /* Petals Wrapper - this div acts as the container for all petals and the flower center */
+        .petals-wrapper {
+            position: absolute;
+            bottom: 280px; /* Positioned above the stem */
+            width: 200px; /* Defines the area for petal arrangement */
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3; /* Petals are in front of leaves and stem */
+        }
+
+        /* Petal Holder - an invisible div that rotates around the center of the flower head */
+        /* Each petal will be a child of a petal-holder, allowing individual rotation and positioning */
+        .petal-holder {
+            position: absolute;
+            width: 0;
+            height: 0; /* Acts as a pivot point for the petal */
+            top: 50%; /* Centered within petals-wrapper */
+            left: 50%;
+            transform-origin: 0 0; /* Ensures rotation around the center of the petals-wrapper */
+        }
+
+        /* Setting individual rotations and animation delays for 8 petals */
+        .petal-holder:nth-child(1) { transform: rotate(0deg); --petal-delay: 0.1s; }
+        .petal-holder:nth-child(2) { transform: rotate(45deg); --petal-delay: 0.2s; }
+        .petal-holder:nth-child(3) { transform: rotate(90deg); --petal-delay: 0.3s; }
+        .petal-holder:nth-child(4) { transform: rotate(135deg); --petal-delay: 0.4s; }
+        .petal-holder:nth-child(5) { transform: rotate(180deg); --petal-delay: 0.5s; }
+        .petal-holder:nth-child(6) { transform: rotate(225deg); --petal-delay: 0.6s; }
+        .petal-holder:nth-child(7) { transform: rotate(270deg); --petal-delay: 0.7s; }
+        .petal-holder:nth-child(8) { transform: rotate(315deg); --petal-delay: 0.8s; }
+
+        /* Individual Petal Styling */
+        .petal {
+            position: absolute;
+            width: 80px;
+            height: 120px;
+            background-color: #FF69B4; /* Hot Pink */
+            border-radius: 50% 50% 0 0; /* Rounded top, flat bottom, creating a petal shape */
+            transform-origin: 50% 100%; /* Pivot point for scaling and vertical transformation (bottom center) */
+            /* Initial state for petals before the bloom animation */
+            opacity: 0;
+            transform: translateY(-20px) scale(0.1); /* Start slightly down and very small */
+            /* These top/left values position the petal relative to its petal-holder's pivot */
+            top: -100px; /* Moves the petal up from the center */
+            left: -40px; /* Centers the petal horizontally relative to its width */
+        }
+
+        /* Flower Center */
+        .flower-center {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: #FFD700; /* Gold */
+            border-radius: 50%; /* Perfect circle */
+            z-index: 4; /* Ensures the center is on top of all petals */
+            opacity: 0;
+            transform: scale(0.1); /* Start small */
+            animation: center-reveal 1s forwards ease-out 1.2s; /* Reveals after petals start blooming */
+        }
+
+        /* --- ANIMATION KEYFRAMES --- */
+
+        /* Sway animation for the entire flower container */
+        @keyframes sway {
+            0% { transform: rotate(-3deg); }
+            100% { transform: rotate(3deg); }
+        }
+
+        /* Sway animation for the left leaf */
+        @keyframes leaf-sway {
+            0% { transform: rotate(-45deg); }
+            100% { transform: rotate(-55deg); }
+        }
+
+        /* Sway animation for the right leaf (mirrored effect) */
+        @keyframes leaf-sway-right {
+            0% { transform: rotate(135deg); }
+            100% { transform: rotate(145deg); }
+        }
+
+        /* Bloom animation for individual petals */
+        @keyframes bloom {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.1); /* Petals start small and slightly lower */
+            }
+            70% {
+                opacity: 1;
+                transform: translateY(-105px) scale(1.1); /* Slightly overshoot for a bouncy, natural effect */
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(-100px) scale(1); /* Petals reach their final open position and size */
+            }
+        }
+
+        /* Reveal animation for the flower center */
+        @keyframes center-reveal {
+            0% { opacity: 0; transform: scale(0.1); }
+            70% { opacity: 1; transform: scale(1.2); } /* Slightly overshoot for a bouncy effect */
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* --- JAVASCRIPT TRIGGERED STYLES --- */
+
+        /* The 'animate-flower' class is added by JavaScript to trigger petal animations */
+        .animate-flower .petal {
+            animation: bloom 1.5s forwards ease-out; /* Apply bloom animation */
+            animation-delay: var(--petal-delay); /* Use CSS variable for staggered delays */
+        }
+    </style>
+</head>
+<body>
+    <div class="flower-container" id="flower-main">
+        <div class="stem"></div>
+        <div class="leaf leaf-left"></div>
+        <div class="leaf leaf-right"></div>
+        <div class="petals-wrapper">
+            <!-- 8 petal-holder divs, each containing one petal -->
+            <!-- The petal-holder rotates, and the petal itself blooms within that rotated context -->
+            <div class="petal-holder">
+                <div class="petal"></div>
+            </div>
+            <div class="petal-holder">
+                <div class="petal"></div>
+            </div>
+            <div class="petal-holder">
+                <div class="petal"></div>
+            </div>
+            <div class="petal-holder">
+                <div class="petal"></div>
+            </div>
+            <div class="petal-holder">
+                <div class="petal"></div>
+            </div>
+            <div class="petal-holder">
+                <div class="petal"></div>
+            </div>
+            <div class="petal-holder">
+                <div class="petal"></div>
+            </div>
+            <div class="petal-holder">
+                <div class="petal"></div>
+            </div>
+            <div class="flower-center"></div>
+        </div>
+    </div>
+
+    <script>
+        // Minimal JavaScript to trigger the main animation class
+        // This ensures all HTML and CSS are parsed before animations begin,
+        // providing a smoother visual experience.
+        document.addEventListener('DOMContentLoaded', () => {
+            const flowerMain = document.getElementById('flower-main');
+            if (flowerMain) {
+                // Add the class to trigger CSS animations after DOM is fully loaded.
+                // A small timeout is added to ensure CSS is rendered before triggering,
+                // which can sometimes prevent an initial flicker in some browsers.
+                setTimeout(() => {
+                    flowerMain.classList.add('animate-flower');
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
