@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>asteroid_game</title>
+    <!-- Pixel art font for a retro look -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* Hide scrollbars */
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            font-family: 'Press Start 2P', monospace; /* Default font */
+            color: white;
+        }
+        canvas {
+            background-color: black;
+            border: 2px solid #ccc; /* A subtle border for visibility */
+            display: block;
+            touch-action: none; /* Prevent browser touch gestures on canvas */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // Get the canvas and its 2D rendering context
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // --- GAME CONSTANTS ---
+        const SHIP_SIZE = 30; // Ship height in pixels
+        const SHIP_THRUST = 500; // Pixels per second acceleration
+        const SHIP_TURN_SPEED = 360; // Degrees per second
+        const SHIP_EXPLODE_DUR = 0.3; // Duration of ship explosion in seconds
+        const SHIP_INV_DUR = 3; // Duration of ship invulnerability in seconds
+        const SHIP_BLINK_DUR = 0.1; // Duration of ship blink during invulnerability in seconds
+        const ASTEROID_NUM = 3; // Initial number of asteroids
+        const ASTEROID_SPEED = 50; // Max starting speed of asteroids in pixels per second
+        const ASTEROID_SIZE = 100; // Starting radius of largest asteroid in pixels
+        const ASTEROID_VERT = 10; // Number of vertices on each asteroid
+        const ASTEROID_JAG = 0.4; // Jaggedness of the asteroids (0 = smooth, 1 = very jagged)
+        const BULLET_SPEED = 500; // Bullet speed in pixels per second
+        const BULLET_MAX = 10; // Max number of bullets on screen at once
+        const BULLET_LIFE = 0.5; // Bullet lifespan in seconds
+        const GAME_LIVES = 3; // Starting number of lives
+        const GAME_TEXT_FADE_TIME = 2.5; // Text fade time for level messages in seconds
+        const GAME_TEXT_SIZE = 40; // Text font size in pixels
+        const GAME_OVER_SCORE_BONUS = 1000; // Bonus points for completing a level
+
+        // --- GAME VARIABLES ---
+        let level; // Current game level
+        let lives; // Player lives remaining
+        let score; // Current score
+        let scoreHigh; // High score
+        let text; // Text message to display (e.g., Level 1, Game Over)
+        let textAlpha; // Transparency of the text message
+        let ship; // Player's spaceship object
+        let asteroids = []; // Array of asteroid objects
+        let bullets = []; // Array of bullet objects
+        let gameOver; // Boolean, true if game is over
+
+        // Key press tracking object
+        const keys = {
+            ArrowUp: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+            Space: false,
+        };
+
+        // Set up the canvas dimensions and handle resizing
+        function setupCanvas() {
+            canvas.width = window.innerWidth * 0.8;
+            canvas.height = window.innerHeight * 0.8;
+        }
+        setupCanvas(); // Initial setup
+        window.addEventListener('resize', setupCanvas); // Recalculate on window resize
+
+        // --- GAME OBJECT CLASSES ---
+
+        /**
+         * Represents the player's spaceship.
+         */
+        class Ship {
+            constructor() {
+                this.x = canvas.width / 2; // Initial X position
+                this.y = canvas.height / 2; // Initial Y position
+                this.radius = SHIP_SIZE / 2; // Collision radius
+                this.a = 90 / 180 * Math.PI; // Angle in radians (90 degrees pointing up)
+                this.rot = 0; // Rotation speed (radians per second)
+                this.thrusting = false; // Is thrust active?
+                this.xv = 0; // Velocity X
+                this.yv = 0; // Velocity Y
+                this.explodeTime = 0; // Countdown for explosion animation
+                this.invulnerabilityTime = 0; // Countdown for invulnerability
+                this.blinkOn = false; // For invulnerability blink effect
+                this.canShoot = true; // Prevents spamming bullets
+                this.bulletCooldown = 0.2; // Seconds between shots
+                this.bulletTimer = 0; // Timer for bullet cooldown
+                this.dead = false; // Is the ship dead?
+            }
+
+            /**
+             * Draws the spaceship on the canvas.
+             * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+             */
+            draw(ctx) {
+                // If invulnerable and blinking off, don't draw
+                if (this.blinkOn && this.invulnerabilityTime > 0) {
+                    return;
+                }
+
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = SHIP_SIZE / 20; // Line thickness
+                ctx.beginPath();
+                ctx.moveTo( // Nose of the ship
+                    this.x + this.radius * (4 / 3) * Math.cos(this.a),
+                    this.y - this.radius * (4 / 3) * Math.sin(this.a)
+                );
+                ctx.lineTo( // Rear left
+                    this.x - this.radius * ((2 / 3) * Math.cos(this.a) + Math.sin(this.a)),
+                    this.y + this.radius * ((2 / 3) * Math.sin(this.a) - Math.cos(this.a))
+                );
+                ctx.lineTo( // Rear right
+                    this.x - this.radius * ((2 / 3) * Math.cos(this.a) - Math.sin(this.a)),
+                    this.y + this.radius * ((2 / 3) * Math.sin(this.a) + Math.cos(this.a))
+                );
+                ctx.closePath();
+                ctx.stroke();
+
+                // Draw thrust flame if thrusting
+                if (this.thrusting) {
+                    ctx.fillStyle = "red";
+                    ctx.strokeStyle = "yellow";
+                    ctx.lineWidth = SHIP_SIZE / 10;
+                    ctx.beginPath();
+                    ctx.moveTo( // Rear left of flame
+                        this.x - this.radius * ((2 / 3) * Math.cos(this.a) + 0.5 * Math.sin(this.a)),
+                        this.y + this.radius * ((2 / 3) * Math.sin(this.a) - 0.5 * Math.cos(this.a))
+                    );
+                    ctx.lineTo( // Point of flame
+                        this.x - this.radius * (5 / 3) * Math.cos(this.a),
+                        this.y + this.radius * (5 / 3) * Math.sin(this.a)
+                    );
+                    ctx.lineTo( // Rear right of flame
+                        this.x - this.radius * ((2 / 3) * Math.cos(this.a) - 0.5 * Math.sin(this.a)),
+                        this.y + this.radius * ((2 / 3) * Math.sin(this.a) + 0.5 * Math.cos(this.a))
+                    );
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            }
+
+            /**
+             * Updates the spaceship's position and state.
+             * @param {number} dt - Delta time since last update in seconds.
+             */
+            update(dt) {
+                if (this.dead) return;
+
+                // Update invulnerability timer and blink state
+                if (this.invulnerabilityTime > 0) {
+                    this.invulnerabilityTime -= dt;
+                    this.blinkOn = this.invulnerabilityTime % (SHIP_BLINK_DUR * 2) < SHIP_BLINK_DUR;
+                }
+
+                // Rotate ship based on `rot` (radians per second)
+                this.a += this.rot * dt;
+
+                // Apply thrust if active
+                if (this.thrusting) {
+                    this.xv += SHIP_THRUST * Math.cos(this.a) * dt;
+                    this.yv -= SHIP_THRUST * Math.sin(this.a) * dt;
+                }
+
+                // Move ship based on velocity
+                this.x += this.xv * dt;
+                this.y += this.yv * dt;
+
+                // Apply friction to gradually slow down the ship
+                const friction = 0.7; // Coefficient (0.95 would be typical for frame-based, 0.7 for second-based)
+                this.xv *= friction ** dt; // Exponential decay over time
+                this.yv *= friction ** dt;
+
+                // Handle edge wrapping (teleport to other side of the screen)
+                if (this.x < 0 - this.radius) {
+                    this.x = canvas.width + this.radius;
+                } else if (this.x > canvas.width + this.radius) {
+                    this.x = 0 - this.radius;
+                }
+                if (this.y < 0 - this.radius) {
+                    this.y = canvas.height + this.radius;
+                } else if (this.y > canvas.height + this.radius) {
+                    this.y = 0 - this.radius;
+                }
+
+                // Handle bullet cooldown
+                if (!this.canShoot) {
+                    this.bulletTimer -= dt;
+                    if (this.bulletTimer <= 0) {
+                        this.canShoot = true;
+                    }
+                }
+            }
+
+            /**
+             * Resets the ship to its initial state (used after being hit).
+             */
+            reset() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                this.xv = 0;
+                this.yv = 0;
+                this.a = 90 / 180 * Math.PI; // Pointing up
+                this.rot = 0;
+                this.invulnerabilityTime = SHIP_INV_DUR; // Grant invulnerability on reset
+                this.dead = false; // Ship is no longer dead
+                this.explodeTime = 0; // Ensure explosion time is reset
+            }
+
+            /**
+             * Initiates the explosion animation for the ship.
+             */
+            explode() {
+                this.explodeTime = SHIP_EXPLODE_DUR;
+                this.dead = true; // Ship is considered dead during explosion
+            }
+
+            /**
+             * Draws the explosion effect for the ship.
+             * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+             */
+            drawExplosion(ctx) {
+                if (this.explodeTime > 0) {
+                    // Explosion visual scales with remaining explodeTime
+                    const alpha = this.explodeTime / SHIP_EXPLODE_DUR;
+                    ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`; // Red
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius * 1.7 * (1 - alpha), 0, Math.PI * 2, false);
+                    ctx.fill();
+
+                    ctx.fillStyle = `rgba(255, 165, 0, ${alpha})`; // Orange
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius * 1.2 * (1 - alpha), 0, Math.PI * 2, false);
+                    ctx.fill();
+
+                    ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`; // Yellow
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius * 0.7 * (1 - alpha), 0, Math.PI * 2, false);
+                    ctx.fill();
+                }
+            }
+        }
+
+        /**
+         * Represents an asteroid.
+         */
+        class Asteroid {
+            constructor(x, y, radius, level) {
+                this.x = x;
+                this.y = y;
+                // Random velocity in pixels per second
+                this.xv = Math.random() * ASTEROID_SPEED * (Math.random() < 0.5 ? 1 : -1);
+                this.yv = Math.random() * ASTEROID_SPEED * (Math.random() < 0.5 ? 1 : -1);
+                this.radius = radius;
+                this.a = Math.random() * Math.PI * 2; // Initial angle in radians
+                // Random rotation speed in radians per second (0.1 to 0.6 degrees per second)
+                this.rot = (Math.random() * 0.5 + 0.1) * (Math.random() < 0.5 ? 1 : -1) * Math.PI / 180;
+                this.vert = Math.floor(Math.random() * (ASTEROID_VERT + 1) + ASTEROID_VERT / 2); // Number of vertices
+                this.offs = []; // Vertex offsets for jaggedness
+                for (let i = 0; i < this.vert; i++) {
+                    this.offs.push(Math.random() * ASTEROID_JAG * 2 + 1 - ASTEROID_JAG);
+                }
+                this.level = level; // Size level of asteroid (3=large, 2=medium, 1=small)
+            }
+
+            /**
+             * Draws the asteroid on the canvas.
+             * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+             */
+            draw(ctx) {
+                ctx.strokeStyle = "slategrey";
+                ctx.lineWidth = SHIP_SIZE / 20;
+                ctx.beginPath();
+                for (let i = 0; i < this.vert; i++) {
+                    const angle = this.a + i * Math.PI * 2 / this.vert;
+                    const x = this.x + this.radius * this.offs[i] * Math.cos(angle);
+                    const y = this.y + this.radius * this.offs[i] * Math.sin(angle);
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            /**
+             * Updates the asteroid's position and state.
+             * @param {number} dt - Delta time since last update in seconds.
+             */
+            update(dt) {
+                this.x += this.xv * dt;
+                this.y += this.yv * dt;
+                this.a += this.rot * dt;
+
+                // Handle edge wrapping
+                if (this.x < 0 - this.radius) {
+                    this.x = canvas.width + this.radius;
+                } else if (this.x > canvas.width + this.radius) {
+                    this.x = 0 - this.radius;
+                }
+                if (this.y < 0 - this.radius) {
+                    this.y = canvas.height + this.radius;
+                } else if (this.y > canvas.height + this.radius) {
+                    this.y = 0 - this.radius;
+                }
+            }
+        }
+
+        /**
+         * Represents a bullet fired by the spaceship.
+         */
+        class Bullet {
+            constructor(x, y, angle) {
+                this.x = x;
+                this.y = y;
+                // Bullet velocity based on speed and ship's angle (pixels per second)
+                this.xv = BULLET_SPEED * Math.cos(angle);
+                this.yv = -BULLET_SPEED * Math.sin(angle); // Y-axis is inverted
+                this.life = BULLET_LIFE; // Lifespan in seconds
+                this.radius = SHIP_SIZE / 15; // Small radius for collision
+            }
+
+            /**
+             * Draws the bullet on the canvas.
+             * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+             */
+            draw(ctx) {
+                ctx.fillStyle = "lime";
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                ctx.fill();
+            }
+
+            /**
+             * Updates the bullet's position and state.
+             * @param {number} dt - Delta time since last update in seconds.
+             */
+            update(dt) {
+                this.x += this.xv * dt;
+                this.y += this.yv * dt;
+
+                // Bullets disappear if they go off-screen
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.life = 0; // Mark for removal
+                }
+
+                // Decrease lifespan
+                this.life -= dt;
+            }
+        }
+
+
+        // --- GAME FUNCTIONS ---
+
+        /**
+         * Generates a new set of asteroids for a level.
+         */
+        function createAsteroids() {
+            asteroids = [];
+            let x, y;
+            // Number of asteroids increases with level
+            for (let i = 0; i < ASTEROID_NUM + level * 2; i++) {
+                // Generate random position, ensuring it's not too close to the ship
+                do {
+                    x = Math.floor(Math.random() * canvas.width);
+                    y = Math.floor(Math.random() * canvas.height);
+                } while (distBetweenPoints(ship.x, ship.y, x, y) < ASTEROID_SIZE * 2 + ship.radius);
+
+                asteroids.push(new Asteroid(x, y, ASTEROID_SIZE, 3)); // Level 3 is the largest asteroid
+            }
+        }
+
+        /**
+         * Initializes a new game.
+         */
+        function newGame() {
+            level = 0;
+            lives = GAME_LIVES;
+            score = 0;
+            gameOver = false;
+            // Load high score from local storage if available
+            scoreHigh = localStorage.getItem("asteroid_high_score") || 0;
+            ship = new Ship(); // Create a new spaceship
+            newLevel(); // Start the first level
+        }
+
+        /**
+         * Starts a new level.
+         */
+        function newLevel() {
+            level++;
+            text = `Level ${level}`;
+            textAlpha = 1.0; // Make text fully opaque
+            createAsteroids(); // Populate new asteroids for the level
+        }
+
+        /**
+         * Handles the player's spaceship being hit by an asteroid.
+         */
+        function playerHit() {
+            if (ship.invulnerabilityTime > 0) {
+                return; // Player is currently invulnerable
+            }
+
+            ship.explode(); // Start explosion animation
+            lives--; // Lose a life
+
+            if (lives === 0) {
+                gameOver = true;
+                text = "Game Over!";
+                textAlpha = 1.0;
+            } else {
+                // Wait for explosion to finish before resetting ship
+                setTimeout(() => {
+                    ship.reset();
+                }, SHIP_EXPLODE_DUR * 1000); // Convert seconds to milliseconds
+            }
+        }
+
+        /**
+         * Fires a bullet from the ship.
+         */
+        function shootBullet() {
+            // Only shoot if able to shoot, ship is not dead, and max bullets not reached
+            if (ship.canShoot && !ship.dead && bullets.length < BULLET_MAX) {
+                bullets.push(new Bullet(ship.x, ship.y, ship.a));
+                ship.canShoot = false; // Start cooldown
+                ship.bulletTimer = ship.bulletCooldown;
+            }
+        }
+
+        /**
+         * Calculates the distance between two points.
+         * @param {number} x1
+         * @param {number} y1
+         * @param {number} x2
+         * @param {number} y2
+         * @returns {number} The distance.
+         */
+        function distBetweenPoints(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        }
+
+        // --- GAME LOOP ---
+        let lastTime = 0; // Timestamp of the last frame
+
+        /**
+         * Main game loop, called repeatedly using requestAnimationFrame.
+         * @param {number} currentTime - The current time in milliseconds provided by requestAnimationFrame.
+         */
+        function gameLoop(currentTime) {
+            const dt = (currentTime - lastTime) / 1000; // Delta time in seconds
+            lastTime = currentTime;
+
+            update(dt); // Update game logic
+            draw();      // Draw everything on canvas
+
+            requestAnimationFrame(gameLoop); // Request next frame
+        }
+
+        /**
+         * Updates all game objects and handles game logic.
+         * @param {number} dt - Delta time since last update in seconds.
+         */
+        function update(dt) {
+            if (gameOver) {
+                // If game over, check for restart input
+                if (keys['Space']) {
+                    newGame(); // Start a new game
+                }
+                return; // Stop further updates
+            }
+
+            // Check for level completion (no asteroids left)
+            if (asteroids.length === 0) {
+                score += GAME_OVER_SCORE_BONUS * level; // Bonus for clearing level
+                newLevel(); // Advance to next level
+            }
+
+            // Update ship state based on input
+            if (!ship.dead) {
+                // Handle rotation
+                ship.rot = 0; // Reset rotation speed
+                if (keys['ArrowLeft']) {
+                    ship.rot = SHIP_TURN_SPEED * Math.PI / 180; // Radians per second
+                } else if (keys['ArrowRight']) {
+                    ship.rot = -SHIP_TURN_SPEED * Math.PI / 180; // Radians per second
+                }
+
+                // Handle thrust
+                ship.thrusting = keys['ArrowUp'];
+
+                // Handle shooting
+                if (keys['Space']) {
+                    shootBullet();
+                }
+            }
+
+            // Update all game objects
+            ship.update(dt);
+            asteroids.forEach(a => a.update(dt));
+            bullets.forEach(b => b.update(dt));
+
+            // Remove expired bullets (life <= 0)
+            bullets = bullets.filter(b => b.life > 0);
+
+            // Check for bullet-asteroid collisions
+            for (let i = asteroids.length - 1; i >= 0; i--) { // Iterate backwards for safe removal
+                const asteroid = asteroids[i];
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const bullet = bullets[j];
+
+                    if (distBetweenPoints(asteroid.x, asteroid.y, bullet.x, bullet.y) < asteroid.radius + bullet.radius) {
+                        // Collision detected!
+                        bullets.splice(j, 1); // Remove bullet
+
+                        // Score based on asteroid size
+                        score += (ASTEROID_SIZE / asteroid.radius) * 100;
+
+                        // Break asteroid into smaller ones if it's not the smallest level
+                        if (asteroid.level > 1) {
+                            const newRadius = asteroid.radius * 0.5; // Half the size
+                            // Create two new asteroids at the collision point
+                            asteroids.push(new Asteroid(asteroid.x, asteroid.y, newRadius, asteroid.level - 1));
+                            asteroids.push(new Asteroid(asteroid.x, asteroid.y, newRadius, asteroid.level - 1));
+                        }
+
+                        asteroids.splice(i, 1); // Remove current asteroid
+                        break; // Move to the next asteroid, as this one is destroyed
+                    }
+                }
+            }
+
+            // Check for ship-asteroid collisions
+            // Only if ship is not dead and not invulnerable
+            if (!ship.dead && ship.invulnerabilityTime <= 0) {
+                for (let i = 0; i < asteroids.length; i++) {
+                    const asteroid = asteroids[i];
+                    if (distBetweenPoints(ship.x, ship.y, asteroid.x, asteroid.y) < ship.radius + asteroid.radius) {
+                        playerHit(); // Ship was hit
+                        break; // Ship can only be hit once per update cycle
+                    }
+                }
+            }
+
+            // Update high score and save to local storage
+            if (score > scoreHigh) {
+                scoreHigh = score;
+                localStorage.setItem("asteroid_high_score", scoreHigh);
+            }
+        }
+
+        /**
+         * Draws all game objects on the canvas.
+         */
+        function draw() {
+            // Clear the canvas and fill with black background
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw asteroids
+            asteroids.forEach(a => a.draw(ctx));
+
+            // Draw ship or its explosion
+            if (!ship.dead) {
+                ship.draw(ctx);
+            } else {
+                ship.drawExplosion(ctx);
+            }
+
+            // Draw bullets
+            bullets.forEach(b => b.draw(ctx));
+
+            // Draw game text (level, game over)
+            if (textAlpha >= 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
+                ctx.font = `small-caps ${GAME_TEXT_SIZE}px 'Press Start 2P', monospace`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(text, canvas.width / 2, canvas.height * 0.75);
+                textAlpha -= (1.0 / GAME_TEXT_FADE_TIME) * (lastTime - performance.now()) / 1000 * -1; // Fade out over time, correct dt usage
+            } else if (gameOver) {
+                 // Display restart message after "Game Over" text has faded
+                 ctx.fillStyle = "rgba(255, 255, 255, 1)";
+                 ctx.font = `small-caps ${GAME_TEXT_SIZE * 0.75}px 'Press Start 2P', monospace`;
+                 ctx.textAlign = "center";
+                 ctx.textBaseline = "middle";
+                 ctx.fillText("Press SPACE to Play Again", canvas.width / 2, canvas.height * 0.75 + GAME_TEXT_SIZE);
+            }
+
+
+            // Draw score
+            ctx.fillStyle = "white";
+            ctx.font = `20px 'Press Start 2P', monospace`;
+            ctx.textAlign = "right";
+            ctx.textBaseline = "top";
+            ctx.fillText(`SCORE: ${score}`, canvas.width - 20, 20);
+
+            // Draw high score
+            ctx.textAlign = "center";
+            ctx.fillText(`HIGH: ${scoreHigh}`, canvas.width / 2, 20);
+
+            // Draw lives icons
+            let lifeColour;
+            for (let i = 0; i < lives; i++) {
+                // Blink the last life icon if player is invulnerable
+                lifeColour = (i === lives - 1 && ship.invulnerabilityTime > 0 && ship.blinkOn) ? "rgba(255, 255, 255, 0)" : "white";
+                drawShipIcon(ctx, 20 + i * SHIP_SIZE * 1.2, 40, 90 / 180 * Math.PI, SHIP_SIZE * 0.7, lifeColour);
+            }
+        }
+
+        /**
+         * Helper function to draw a static ship icon (for lives display).
+         * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+         * @param {number} x - X-coordinate.
+         * @param {number} y - Y-coordinate.
+         * @param {number} a - Angle in radians.
+         * @param {number} size - Size of the ship.
+         * @param {string} color - Color of the ship.
+         */
+        function drawShipIcon(ctx, x, y, a, size, color) {
+            const radius = size / 2;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = size / 20;
+            ctx.beginPath();
+            ctx.moveTo(
+                x + radius * (4 / 3) * Math.cos(a),
+                y - radius * (4 / 3) * Math.sin(a)
+            );
+            ctx.lineTo(
+                x - radius * ((2 / 3) * Math.cos(a) + Math.sin(a)),
+                y + radius * ((2 / 3) * Math.sin(a) - Math.cos(a))
+            );
+            ctx.lineTo(
+                x - radius * ((2 / 3) * Math.cos(a) - Math.sin(a)),
+                y + radius * ((2 / 3) * Math.sin(a) + Math.cos(a))
+            );
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        // --- EVENT HANDLERS ---
+        document.addEventListener("keydown", (e) => {
+            if (e.key in keys) {
+                keys[e.key] = true;
+                e.preventDefault(); // Prevent default browser actions for arrow keys/space
+            }
+        });
+
+        document.addEventListener("keyup", (e) => {
+            if (e.key in keys) {
+                keys[e.key] = false;
+            }
+        });
+
+        // --- START THE GAME ---
+        // Initialize and start the game loop after the page and (ideally) font loads.
+        // A small delay ensures canvas is properly sized and font is ready.
+        setTimeout(() => {
+            newGame();
+            requestAnimationFrame(gameLoop);
+        }, 100); // Start after 100ms
+    </script>
+</body>
+</html>

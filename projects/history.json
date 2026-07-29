@@ -46,6 +46,7 @@
     "web_page::Countdown timer sahifa",
     "data_viz::Doiraviy diagramma",
     "js_game::Color match o'yini",
-    "css_animation::CSS art (hayvon, gullar)"
+    "css_animation::CSS art (hayvon, gullar)",
+    "js_game::Asteroid o'yini"
   ]
 }
