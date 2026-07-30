@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perlin Noise Landscape</title>
+    <style>
+        /* Basic body styling to remove margins and scrollbars for a full-screen canvas */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000; /* Black background for visual depth */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #eee; /* Light text color for contrast */
+            user-select: none; /* Prevent text selection */
+        }
+        /* Canvas element should fill the entire screen */
+        canvas {
+            display: block; /* Remove extra space below canvas */
+        }
+        /* Styling for the controls information overlay */
+        #controls-info {
+            position: absolute;
+            bottom: 15px; /* Position at the bottom of the screen */
+            left: 15px; /* Position at the left of the screen */
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent dark background */
+            padding: 15px 20px;
+            border-radius: 8px; /* Slightly rounded corners */
+            font-size: 0.9em;
+            line-height: 1.6;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+        }
+        #controls-info h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #fff;
+            font-size: 1.2em;
+        }
+        #controls-info p {
+            margin: 0 0 5px 0; /* Space between control instructions */
+        }
+        #controls-info p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="perlinCanvas"></canvas>
+    <div id="controls-info">
+        <h3>Controls</h3>
+        <p><strong>W / Arrow Up</strong>: Move Forward</p>
+        <p><strong>S / Arrow Down</strong>: Move Backward</p>
+        <p><strong>A / Arrow Left</strong>: Move Left</p>
+        <p><strong>D / Arrow Right</strong>: Move Right</p>
+        <p><strong>+ / -</strong>: Adjust Scale (Zoom In / Out)</p>
+    </div>
+
+    <script>
+        // --- Utility Functions ---
+
+        /**
+         * Performs linear interpolation (lerp) between two values.
+         * @param {number} t - The interpolation factor, typically between 0.0 and 1.0.
+         * @param {number} a - The start value.
+         * @param {number} b - The end value.
+         * @returns {number} The interpolated value.
+         */
+        function lerp(t, a, b) {
+            return a + t * (b - a);
+        }
+
+        // --- Perlin Noise Implementation ---
+        // This is a classic 3D Perlin Noise implementation, adapted for direct inclusion.
+        // It provides coherent noise values, essential for generating natural-looking landscapes.
+        const Perlin = (function() {
+            // Permutation array initialized with values 0-255
+            const P = [];
+            for (let i = 0; i < 256; i++) { P[i] = i; }
+
+            // Fisher-Yates shuffle algorithm to randomize the permutation array
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+            shuffle(P); // Randomize permutations for varied landscapes on each load
+
+            // Duplicated permutation array to avoid modulo operations in noise calculation
+            const p = new Array(512);
+            for (let i = 0; i < 256; i++) {
+                p[i] = p[i + 256] = P[i];
+            }
+
+            /**
+             * Easing function used in Perlin noise (6t^5 - 15t^4 + 10t^3).
+             * This smooths out the interpolation, removing discontinuities and making the noise look more natural.
+             * @param {number} t - Input value between 0.0 and 1.0.
+             * @returns {number} Smoothed value.
+             */
+            function fade(t) {
+                return t * t * t * (t * (t * 6 - 15) + 10);
+            }
+
+            /**
+             * Computes the dot product of a randomly selected gradient vector and the distance vector.
+             * The gradient vectors are chosen based on the hash value derived from the permutation table.
+             * @param {number} hash - Hash value (0-255) from the permutation table.
+             * @param {number} x - Relative x coordinate (distance from grid point).
+             * @param {number} y - Relative y coordinate.
+             * @param {number} z - Relative z coordinate.
+             * @returns {number} The dot product.
+             */
+            function grad(hash, x, y, z) {
+                // Convert lower 4 bits of hash code into one of 12 gradient directions (vectors to corners or midpoints).
+                const h = hash & 15;
+                const u = h < 8 ? x : y; // Select u based on h
+                const v = h < 4 ? y : h === 12 || h === 14 ? x : z; // Select v based on h
+                return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v); // Calculate dot product
+            }
+
+            /**
+             * Generates 3D Perlin noise for given (x, y, z) coordinates.
+             * The output is a value between -1 and 1.
+             * @param {number} x - X coordinate in noise space.
+             * @param {number} y - Y coordinate in noise space.
+             * @param {number} z - Z coordinate in noise space (often used for time or a third spatial dimension).
+             * @returns {number} Perlin noise value.
+             */
+            function noise(x, y, z) {
+                // Find unit cube coordinates of the point
+                const X = Math.floor(x) & 255;
+                const Y = Math.floor(y) & 255;
+                const Z = Math.floor(z) & 255;
+
+                // Relative coordinates within the unit cube (fractional part)
+                x -= Math.floor(x);
+                y -= Math.floor(y);
+                z -= Math.floor(z);
+
+                // Compute fade curves for each of x, y, z
+                const u = fade(x);
+                const v = fade(y);
+                const w = fade(z);
+
+                // Hash coordinates of the 8 cube corners
+                // p[index] gives the permutation value at that index.
+                const A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z;
+                const B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;
+
+                // Interpolate along x, then y, then z
+                // This combines the 8 gradient contributions, weighted by distance and smoothed by fade function.
+                return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z),
+                                             grad(p[BA], x - 1, y, z)),
+                                     lerp(u, grad(p[AB], x, y - 1, z),
+                                             grad(p[BB], x - 1, y - 1, z))),
+                             lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1),
+                                             grad(p[BA + 1], x - 1, y, z - 1)),
+                                     lerp(u, grad(p[AB + 1], x, y - 1, z - 1),
+                                             grad(p[BB + 1], x - 1, y - 1, z - 1))));
+            }
+
+            return { noise: noise };
+        })();
+
+        // --- Canvas Setup ---
+        const canvas = document.getElementById('perlinCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set initial canvas dimensions to fill the window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // --- Landscape Parameters ---
+        let xOffset = 0;        // X-axis offset for Perlin noise, controls horizontal camera pan
+        let yOffset = 0;        // Y-axis offset for Perlin noise, controls vertical camera pan (forward/backward)
+        let zOffset = 0;        // Z-axis offset for Perlin noise, acts as a 'time' dimension for animation
+        let noiseScale = 0.05;  // Frequency/scale of the Perlin noise, controls the "zoom" level
+        const animationSpeed = 0.0005; // Speed at which the landscape automatically scrolls forward in time
+        const moveSpeed = 0.05; // Speed for keyboard-controlled panning
+        const zoomSpeed = 0.001; // Speed for keyboard-controlled scaling
+
+        /**
+         * Determines the color for a specific point on the landscape based on its normalized height and depth.
+         * This function creates a gradient from deep water to snow-capped mountains and applies a darkening effect for perspective.
+         * @param {number} normalizedHeight - Height value from Perlin noise, normalized to a range of -1 to 1.
+         * @param {number} depthFactor - Factor representing distance from the viewer (0 for furthest, 1 for closest).
+         * @returns {string} An RGB color string (e.g., "rgb(10, 20, 30)").
+         */
+        function getColorForHeight(normalizedHeight, depthFactor) {
+            // Map the Perlin noise output (-1 to 1) to a 0 to 1 range for easier color mapping
+            const h = (normalizedHeight + 1) / 2;
+
+            // Define color stops with corresponding normalized height thresholds and RGB values.
+            // These define the landscape's color palette (e.g., water, sand, grass, rock, snow).
+            const colorStops = [
+                [0.0, {r: 10, g: 10, b: 60}],   // Deep water (dark blue)
+                [0.4, {r: 20, g: 80, b: 120}],  // Shallow water (lighter blue)
+                [0.5, {r: 180, g: 170, b: 100}], // Sand (light brown/yellow)
+                [0.6, {r: 80, g: 150, b: 70}],  // Grass (green)
+                [0.8, {r: 120, g: 100, b: 90}], // Rock (grayish brown)
+                [1.0, {r: 240, g: 240, b: 240}] // Snow (white)
+            ];
+
+            let prevStop = colorStops[0];
+            let nextStop = colorStops[colorStops.length - 1];
+
+            // Find the two closest color stops based on the current height 'h' for interpolation
+            for (let i = 0; i < colorStops.length; i++) {
+                if (h >= colorStops[i][0]) {
+                    prevStop = colorStops[i];
+                } else {
+                    nextStop = colorStops[i];
+                    break;
+                }
+            }
+
+            // Interpolate RGB values between the identified previous and next color stops
+            const range = nextStop[0] - prevStop[0];
+            const t = range === 0 ? 0 : (h - prevStop[0]) / range; // Interpolation factor (0 to 1)
+
+            let r = Math.round(lerp(t, prevStop[1].r, nextStop[1].r));
+            let g = Math.round(lerp(t, prevStop[1].g, nextStop[1].g));
+            let b = Math.round(lerp(t, prevStop[1].b, nextStop[1].b));
+
+            // Apply depth darkening: lines further away appear darker to enhance the sense of perspective.
+            const darkFactor = 1 - depthFactor * 0.7; // 0.7 is a strength factor for the darkening effect
+            r = Math.round(r * darkFactor);
+            g = Math.round(g * darkFactor);
+            b = Math.round(b * darkFactor);
+
+            // Ensure color components are within the valid 0-255 range
+            r = Math.max(0, Math.min(255, r));
+            g = Math.max(0, Math.min(255, g));
+            b = Math.max(0, Math.min(255, b));
+
+            return `rgb(${r},${g},${b})`;
+        }
+
+        /**
+         * Draws the Perlin noise landscape on the canvas.
+         * The landscape is rendered as a series of horizontal lines, creating a pseudo-3D perspective effect.
+         */
+        function drawLandscape() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas before drawing a new frame
+
+            const horizon = canvas.height * 0.35; // Defines the "far" point of the landscape (where lines converge)
+            const lineCount = 80;                 // Number of horizontal lines to draw, affects detail and performance
+            // Calculate vertical spacing between lines on the canvas to fill the area from horizon to bottom
+            const lineSpacing = (canvas.height - horizon) / lineCount;
+
+            // Draw lines from back to front (bottom to top on canvas) to ensure correct visual layering/occlusion.
+            for (let i = lineCount - 1; i >= 0; i--) {
+                const lineYCanvas = horizon + i * lineSpacing; // Y position of the current line on the canvas
+                // Map canvas Y to Perlin noise Y with a scale factor for depth effect.
+                const lineYNoise = yOffset + i * 0.05;
+
+                // Depth factor for perspective effects (e.g., darkening, height scaling, line thickness)
+                // 0 for lines furthest away (closest to horizon), 1 for lines closest to the viewer.
+                const depthFactor = i / lineCount;
+
+                ctx.beginPath();
+                // Adjust line width: closer lines are slightly thicker, enhancing perspective.
+                ctx.lineWidth = 1.5 - depthFactor;
+
+                // Calculate height for the first point of the line.
+                // Perlin noise returns values between -1 and 1. We scale it for visual impact.
+                // The `(1 - depthFactor * 0.7)` term reduces height amplitude for distant lines, also for perspective.
+                let height = Perlin.noise(0 * noiseScale + xOffset, lineYNoise, zOffset) * 120 * (1 - depthFactor * 0.7);
+                let drawY = lineYCanvas - height; // Subtract height to make higher noise values appear higher on screen.
+
+                // Set the stroke color for the current line based on its height and depth
+                ctx.strokeStyle = getColorForHeight(Perlin.noise(0 * noiseScale + xOffset, lineYNoise, zOffset), depthFactor);
+                ctx.moveTo(0, drawY); // Start drawing the line from the left edge of the canvas
+
+                // Draw the line segment by segment across the canvas width
+                // `x += 5` is a performance optimization; smaller steps would increase detail but decrease speed.
+                for (let x = 0; x < canvas.width; x += 5) {
+                    height = Perlin.noise(x * noiseScale + xOffset, lineYNoise, zOffset) * 120 * (1 - depthFactor * 0.7);
+                    drawY = lineYCanvas - height;
+                    ctx.lineTo(x, drawY); // Add a line segment to the current path
+                }
+                ctx.stroke(); // Render the drawn path
+            }
+        }
+
+        /**
+         * The main animation loop.
+         * This function updates the landscape parameters (time/movement) and redraws the scene in a continuous loop.
+         */
+        let animationFrameId; // Stores the ID returned by requestAnimationFrame for potential cancellation
+        function animate() {
+            // Automatically advance the 'time' dimension (z-offset) for continuous animation
+            zOffset += animationSpeed;
+            // Automatically move the camera forward slightly slower than time to give a flowing effect
+            yOffset += animationSpeed * 0.8;
+
+            drawLandscape(); // Redraw the landscape with updated parameters
+            animationFrameId = requestAnimationFrame(animate); // Request the next animation frame
+        }
+
+        // --- Event Listeners ---
+
+        // Handle window resizing to keep the canvas full screen and redraw the landscape
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawLandscape(); // Redraw immediately after a resize event
+        });
+
+        // Handle keyboard inputs for interactive control of the landscape
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'w':
+                case 'W':
+                case 'ArrowUp':
+                    yOffset += moveSpeed; // Move camera forward (increase yOffset)
+                    break;
+                case 's':
+                case 'S':
+                case 'ArrowDown':
+                    yOffset -= moveSpeed; // Move camera backward (decrease yOffset)
+                    break;
+                case 'a':
+                case 'A':
+                case 'ArrowLeft':
+                    xOffset -= moveSpeed; // Move camera left (decrease xOffset)
+                    break;
+                case 'd':
+                case 'D':
+                case 'ArrowRight':
+                    xOffset += moveSpeed; // Move camera right (increase xOffset)
+                    break;
+                case '+':
+                case '=': // Zoom in (increase noise frequency, revealing finer details)
+                    noiseScale += zoomSpeed;
+                    if (noiseScale > 0.3) noiseScale = 0.3; // Cap maximum zoom to prevent excessive detail/aliasing
+                    break;
+                case '-':
+                case '_': // Zoom out (decrease noise frequency, showing broader features)
+                    noiseScale -= zoomSpeed;
+                    if (noiseScale < 0.005) noiseScale = 0.005; // Cap minimum zoom to prevent excessively blurry/large features
+                    break;
+            }
+        });
+
+        // Start the animation loop when the script finishes loading
+        animate();
+    </script>
+</body>
+</html>

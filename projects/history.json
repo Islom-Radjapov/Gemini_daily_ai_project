@@ -47,6 +47,7 @@
     "data_viz::Doiraviy diagramma",
     "js_game::Color match o'yini",
     "css_animation::CSS art (hayvon, gullar)",
-    "js_game::Asteroid o'yini"
+    "js_game::Asteroid o'yini",
+    "interactive_art::Perlin noise landshaft"
   ]
 }
