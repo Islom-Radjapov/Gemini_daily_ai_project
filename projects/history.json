@@ -48,6 +48,7 @@
     "js_game::Color match o'yini",
     "css_animation::CSS art (hayvon, gullar)",
     "js_game::Asteroid o'yini",
-    "interactive_art::Perlin noise landshaft"
+    "interactive_art::Perlin noise landshaft",
+    "js_game::Maze o'yini"
   ]
 }

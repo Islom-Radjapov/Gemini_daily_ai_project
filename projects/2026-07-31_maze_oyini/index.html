@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Game</title>
+    <style>
+        /* Basic styling for the body and game container */
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #2c3e50; /* Darker blue background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ecf0f1; /* Light grey text */
+            overflow: hidden; /* Prevent scrollbars if content slightly exceeds viewport */
+        }
+
+        /* Styling for the main heading */
+        h1 {
+            color: #3498db; /* Blue heading */
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Subtle text shadow */
+        }
+
+        /* Styling for the canvas element */
+        canvas {
+            border: 4px solid #3498db; /* Blue border for canvas */
+            background-color: #f8f8f8; /* Off-white for actual path background */
+            display: block;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Soft shadow */
+            border-radius: 8px; /* Slightly rounded corners */
+        }
+
+        /* Styling for the game status message div */
+        #game_status {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ecf0f1;
+            text-align: center;
+            min-height: 30px; /* Ensure space for message even if empty */
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Maze Game</h1>
+    <canvas id="game_canvas"></canvas>
+    <div id="game_status"></div>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('game_canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game configuration constants
+        const CANVAS_WIDTH = 600;
+        const CANVAS_HEIGHT = 600;
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+
+        const CELL_SIZE = 30; // Size of each individual cell in the maze (pixels)
+        const MAZE_COLS = CANVAS_WIDTH / CELL_SIZE; // Number of columns in the maze grid
+        const MAZE_ROWS = CANVAS_HEIGHT / CELL_SIZE; // Number of rows in the maze grid
+
+        // Colors used in the game
+        const PLAYER_COLOR = '#FF6347'; // Tomato red for the player
+        const WALL_COLOR = '#444';      // Dark grey for maze walls
+        const PATH_COLOR = '#EEE';      // Light grey for maze paths
+        const START_COLOR = '#28A745';  // Green for the starting point
+        const END_COLOR = '#DC3545';    // Red for the exit point
+
+        // Game state variables
+        let maze; // The Maze object
+        let player; // The Player object
+        let game_active = false; // True if the game is currently in play (player can move)
+        let game_won = false;    // True if the player has reached the exit
+        const game_status_div = document.getElementById('game_status'); // Reference to the status message div
+        let animation_frame_id = null; // Stores the ID returned by requestAnimationFrame to cancel it
+
+        /**
+         * Represents a single cell in the maze grid.
+         * Each cell has walls on all four sides and a visited status for maze generation.
+         */
+        class Cell {
+            constructor(col, row) {
+                this.col = col; // Column index of the cell
+                this.row = row; // Row index of the cell
+                // Walls: true means the wall exists, false means it's a path
+                this.walls = {
+                    top: true,
+                    right: true,
+                    bottom: true,
+                    left: true
+                };
+                this.visited = false; // Used during maze generation to track visited cells
+            }
+
+            /**
+             * Draws the cell on the canvas, including its path and walls.
+             * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the canvas.
+             */
+            draw(ctx) {
+                const x = this.col * CELL_SIZE; // X-coordinate of the top-left corner of the cell
+                const y = this.row * CELL_SIZE; // Y-coordinate of the top-left corner of the cell
+
+                // Draw the path background first
+                ctx.fillStyle = PATH_COLOR;
+                ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+
+                // Set wall styling
+                ctx.strokeStyle = WALL_COLOR;
+                ctx.lineWidth = 2;
+
+                // Draw each wall if it exists
+                if (this.walls.top) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + CELL_SIZE, y);
+                    ctx.stroke();
+                }
+                if (this.walls.right) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + CELL_SIZE, y);
+                    ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE);
+                    ctx.stroke();
+                }
+                if (this.walls.bottom) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + CELL_SIZE, y + CELL_SIZE);
+                    ctx.lineTo(x, y + CELL_SIZE);
+                    ctx.stroke();
+                }
+                if (this.walls.left) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + CELL_SIZE);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        /**
+         * Represents the maze itself, handling generation and drawing.
+         * Uses a recursive backtracking algorithm for maze generation.
+         */
+        class Maze {
+            constructor(cols, rows) {
+                this.cols = cols; // Number of columns in the maze
+                this.rows = rows; // Number of rows in the maze
+                this.grid = []; // 2D array to store Cell objects
+                this.start = null; // Starting cell for the player
+                this.end = null;   // Ending cell (exit) of the maze
+                this.setupGrid();    // Initialize the grid with cells
+                this.generateMaze(); // Generate the maze structure
+            }
+
+            /**
+             * Initializes the 2D grid with Cell objects.
+             * Sets the default start (top-left) and end (bottom-right) cells.
+             */
+            setupGrid() {
+                for (let r = 0; r < this.rows; r++) {
+                    this.grid[r] = [];
+                    for (let c = 0; c < this.cols; c++) {
+                        this.grid[r][c] = new Cell(c, r);
+                    }
+                }
+                // Set fixed start and end points for simplicity
+                this.start = this.grid[0][0]; // Top-left cell
+                this.end = this.grid[this.rows - 1][this.cols - 1]; // Bottom-right cell
+            }
+
+            /**
+             * Generates the maze using the Recursive Backtracking algorithm.
+             * It starts from a cell, carves paths to unvisited neighbors, and backtracks when stuck.
+             */
+            generateMaze() {
+                let current = this.grid[0][0]; // Start maze generation from the top-left cell
+                let stack = []; // Stack to keep track of visited cells for backtracking
+
+                current.visited = true; // Mark the starting cell as visited
+                stack.push(current);    // Push it to the stack
+
+                while (stack.length > 0) {
+                    // Peek at the top of the stack (current cell)
+                    current = stack[stack.length - 1];
+
+                    // Get all unvisited neighbors of the current cell
+                    let neighbors = this.getUnvisitedNeighbors(current);
+
+                    if (neighbors.length > 0) {
+                        // Choose a random unvisited neighbor
+                        let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+
+                        // Remove the walls between the current cell and the chosen neighbor
+                        this.removeWalls(current, next);
+
+                        next.visited = true; // Mark the neighbor as visited
+                        stack.push(next);    // Push the neighbor onto the stack
+                    } else {
+                        stack.pop(); // If no unvisited neighbors, backtrack by popping from stack
+                    }
+                }
+            }
+
+            /**
+             * Returns a list of unvisited neighbor cells for a given cell.
+             * @param {Cell} cell - The cell to find neighbors for.
+             * @returns {Cell[]} An array of unvisited neighbor cells.
+             */
+            getUnvisitedNeighbors(cell) {
+                let neighbors = [];
+                let { col, row } = cell;
+
+                // Check top neighbor
+                if (row > 0 && !this.grid[row - 1][col].visited) {
+                    neighbors.push(this.grid[row - 1][col]);
+                }
+                // Check right neighbor
+                if (col < this.cols - 1 && !this.grid[row][col + 1].visited) {
+                    neighbors.push(this.grid[row][col + 1]);
+                }
+                // Check bottom neighbor
+                if (row < this.rows - 1 && !this.grid[row + 1][col].visited) {
+                    neighbors.push(this.grid[row + 1][col]);
+                }
+                // Check left neighbor
+                if (col > 0 && !this.grid[row][col - 1].visited) {
+                    neighbors.push(this.grid[row][col - 1]);
+                }
+                return neighbors;
+            }
+
+            /**
+             * Removes the shared wall between two adjacent cells.
+             * @param {Cell} cell1 - The first cell.
+             * @param {Cell} cell2 - The second cell (neighbor of cell1).
+             */
+            removeWalls(cell1, cell2) {
+                let x = cell1.col - cell2.col; // Horizontal difference
+                let y = cell1.row - cell2.row; // Vertical difference
+
+                if (x === 1) { // cell2 is to the left of cell1
+                    cell1.walls.left = false;
+                    cell2.walls.right = false;
+                } else if (x === -1) { // cell2 is to the right of cell1
+                    cell1.walls.right = false;
+                    cell2.walls.left = false;
+                }
+
+                if (y === 1) { // cell2 is above cell1
+                    cell1.walls.top = false;
+                    cell2.walls.bottom = false;
+                } else if (y === -1) { // cell2 is below cell1
+                    cell1.walls.bottom = false;
+                    cell2.walls.top = false;
+                }
+            }
+
+            /**
+             * Draws the entire maze grid on the canvas.
+             * Also highlights the start and end cells.
+             * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the canvas.
+             */
+            draw(ctx) {
+                for (let r = 0; r < this.rows; r++) {
+                    for (let c = 0; c < this.cols; c++) {
+                        this.grid[r][c].draw(ctx);
+                    }
+                }
+
+                // Draw start and end points
+                ctx.fillStyle = START_COLOR;
+                ctx.fillRect(this.start.col * CELL_SIZE, this.start.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                ctx.fillStyle = END_COLOR;
+                ctx.fillRect(this.end.col * CELL_SIZE, this.end.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+
+            /**
+             * Returns the cell at a specific grid coordinate.
+             * @param {number} col - The column index.
+             * @param {number} row - The row index.
+             * @returns {Cell|null} The Cell object if valid coordinates, otherwise null.
+             */
+            getCellAt(col, row) {
+                if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
+                    return this.grid[row][col];
+                }
+                return null;
+            }
+        }
+
+        /**
+         * Represents the player character in the maze.
+         * Handles player position and movement logic.
+         */
+        class Player {
+            constructor(start_cell) {
+                this.current_col = start_cell.col; // Current column of the player
+                this.current_row = start_cell.row; // Current row of the player
+                // Calculate pixel coordinates for drawing (centered in the cell)
+                this.x = this.current_col * CELL_SIZE + CELL_SIZE / 2;
+                this.y = this.current_row * CELL_SIZE + CELL_SIZE / 2;
+                this.radius = CELL_SIZE / 3; // Radius of the player circle
+            }
+
+            /**
+             * Draws the player as a circle on the canvas.
+             * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the canvas.
+             */
+            draw(ctx) {
+                ctx.fillStyle = PLAYER_COLOR;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            /**
+             * Attempts to move the player in a given direction.
+             * Checks for maze boundaries and wall collisions before allowing movement.
+             * @param {number} dx - Change in column index (-1 for left, 1 for right, 0 for no horizontal move).
+             * @param {number} dy - Change in row index (-1 for up, 1 for down, 0 for no vertical move).
+             * @param {Maze} maze - The current maze object for collision detection.
+             * @returns {boolean} True if the player successfully moved, false otherwise.
+             */
+            move(dx, dy, maze) {
+                let next_col = this.current_col + dx;
+                let next_row = this.current_row + dy;
+
+                // Check if the proposed move is out of maze bounds
+                if (next_col < 0 || next_col >= maze.cols || next_row < 0 || next_row >= maze.rows) {
+                    return false; // Cannot move out of bounds
+                }
+
+                let current_cell = maze.getCellAt(this.current_col, this.current_row);
+                let next_cell = maze.getCellAt(next_col, next_row);
+
+                // This should not happen if boundary checks are correct, but good for robustness
+                if (!current_cell || !next_cell) return false;
+
+                // Collision detection based on walls
+                if (dx === 1 && current_cell.walls.right) return false; // Moving right, wall exists
+                if (dx === -1 && current_cell.walls.left) return false;  // Moving left, wall exists
+                if (dy === 1 && current_cell.walls.bottom) return false; // Moving down, wall exists
+                if (dy === -1 && current_cell.walls.top) return false;   // Moving up, wall exists
+
+                // If no collision, update player's position
+                this.current_col = next_col;
+                this.current_row = next_row;
+                this.x = this.current_col * CELL_SIZE + CELL_SIZE / 2; // Update pixel x-coordinate
+                this.y = this.current_row * CELL_SIZE + CELL_SIZE / 2; // Update pixel y-coordinate
+                return true; // Movement successful
+            }
+        }
+
+        /**
+         * Initializes a new game, generating a new maze and placing the player at the start.
+         * Resets game state and starts the animation loop.
+         */
+        function initializeGame() {
+            // If an animation loop is already running, stop it to prevent multiple loops
+            if (animation_frame_id) {
+                cancelAnimationFrame(animation_frame_id);
+            }
+
+            // Create a new maze and player for a fresh game
+            maze = new Maze(MAZE_COLS, MAZE_ROWS);
+            player = new Player(maze.start);
+
+            // Reset game state variables
+            game_active = true;
+            game_won = false;
+            game_status_div.textContent = "Use arrow keys to navigate!"; // Update status message
+
+            drawGame(); // Start the game loop by drawing the first frame
+        }
+
+        /**
+         * The main game loop function, called repeatedly by requestAnimationFrame.
+         * Clears the canvas, draws all game elements, checks for win condition, and schedules the next frame.
+         */
+        function drawGame() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear the entire canvas
+
+            maze.draw(ctx); // Draw the maze
+            player.draw(ctx); // Draw the player
+
+            // Check for win condition if the game is active
+            if (game_active && player.current_col === maze.end.col && player.current_row === maze.end.row) {
+                game_won = true;     // Set game_won to true
+                game_active = false; // Stop the game (player can no longer move)
+                game_status_div.textContent = "Congratulations! You found the exit! Press 'R' to restart.";
+            }
+
+            // Only request the next animation frame if the game is still active
+            // This stops the loop when the game is won or waiting to start.
+            if (game_active) {
+                animation_frame_id = requestAnimationFrame(drawGame);
+            }
+        }
+
+        /**
+         * Event listener for keyboard input to control player movement and game restart.
+         */
+        document.addEventListener('keydown', (e) => {
+            // Handle 'R' key press for restarting the game
+            if (e.key === 'R' || e.key === 'r') {
+                initializeGame();
+                return; // Stop further processing for this key event
+            }
+
+            // Ignore movement input if the game is not active (e.g., before start, after win)
+            if (!game_active) return;
+
+            // Handle arrow key presses for player movement
+            switch (e.key) {
+                case 'ArrowUp':
+                    player.move(0, -1, maze); // Move up (decrease row)
+                    break;
+                case 'ArrowDown':
+                    player.move(0, 1, maze);  // Move down (increase row)
+                    break;
+                case 'ArrowLeft':
+                    player.move(-1, 0, maze); // Move left (decrease column)
+                    break;
+                case 'ArrowRight':
+                    player.move(1, 0, maze);  // Move right (increase column)
+                    break;
+            }
+            // Player movement updates the player's internal coordinates.
+            // The next `drawGame` call (scheduled by `requestAnimationFrame`) will render the new position.
+        });
+
+        /**
+         * Initial setup when the window loads.
+         * Draws an initial maze and player but waits for 'R' to start actual gameplay.
+         */
+        window.onload = () => {
+            // Create and draw a maze and player for the initial screen
+            maze = new Maze(MAZE_COLS, MAZE_ROWS);
+            player = new Player(maze.start);
+
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear canvas
+            maze.draw(ctx);    // Draw the initial maze
+            player.draw(ctx);  // Draw the player at the start
+            game_status_div.textContent = "Welcome to the Maze Game! Press 'R' to start."; // Initial message
+        };
+    </script>
+</body>
+</html>
