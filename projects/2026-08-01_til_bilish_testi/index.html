@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Til Bilish Testi</title>
+    <style>
+        /*
+         * General styles and reset
+         */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --text-color: #333;
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+            --border-radius: 8px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition-speed: 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        /*
+         * Quiz container styles
+         */
+        .quiz-container {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            text-align: center;
+            animation: fadeIn var(--transition-speed) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /*
+         * Header styles
+         */
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+
+        /*
+         * Question styles
+         */
+        #question-display {
+            font-size: 1.4em;
+            margin-bottom: 30px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        /*
+         * Answer options styles
+         */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .option-button {
+            background-color: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: var(--border-radius);
+            padding: 15px 20px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed), transform 0.1s ease;
+            text-align: left;
+            color: var(--text-color);
+            width: 100%;
+        }
+
+        .option-button:hover:not(.selected):not(.correct):not(.incorrect) {
+            background-color: #e9e9e9;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .option-button.selected {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            transform: scale(1.02);
+        }
+
+        .option-button.correct {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: white;
+            pointer-events: none; /* Disable interaction after showing correct */
+        }
+
+        .option-button.incorrect {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+            color: white;
+            pointer-events: none; /* Disable interaction after showing incorrect */
+        }
+
+        .option-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /*
+         * Feedback message styles
+         */
+        #feedback-message {
+            margin-top: -15px; /* Adjust spacing */
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-height: 25px; /* Reserve space to prevent layout shift */
+        }
+
+        .feedback-correct {
+            color: var(--secondary-color);
+        }
+
+        .feedback-incorrect {
+            color: var(--danger-color);
+        }
+
+        /*
+         * Navigation buttons styles
+         */
+        .controls-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px; /* Spacing between buttons if both are visible */
+        }
+
+        .action-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform 0.1s ease;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            max-width: fit-content; /* Prevent overstretching */
+            margin: 0 auto; /* Center button when only one is present */
+        }
+
+        .action-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+        }
+
+        .action-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #next-button.hidden, #submit-button.hidden, #restart-button.hidden {
+            display: none;
+        }
+
+        /*
+         * Result screen styles
+         */
+        .result-screen {
+            display: none; /* Hidden by default */
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: var(--border-radius);
+            animation: fadeIn var(--transition-speed) forwards;
+        }
+
+        .result-screen h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 2em;
+        }
+
+        .result-screen p {
+            font-size: 1.2em;
+            margin-bottom: 25px;
+        }
+
+        .score-text {
+            font-weight: bold;
+            color: var(--secondary-color);
+            font-size: 1.3em;
+        }
+
+        /*
+         * Responsive adjustments
+         */
+        @media (max-width: 768px) {
+            .quiz-container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            #question-display {
+                font-size: 1.2em;
+            }
+
+            .option-button {
+                font-size: 1em;
+                padding: 12px 15px;
+            }
+
+            .action-button {
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+
+            .controls-container {
+                flex-direction: column;
+            }
+            .action-button {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Til Bilish Testi</h1>
+
+        <div id="quiz-area">
+            <p id="question-display">Savol bu yerda ko'rsatiladi.</p>
+
+            <div id="options-container" class="options-container">
+                <!-- Answer options will be dynamically inserted here -->
+            </div>
+
+            <div id="feedback-message"></div>
+
+            <div class="controls-container">
+                <button id="next-button" class="action-button">Keyingi savol</button>
+                <button id="restart-button" class="action-button hidden">Qaytadan boshlash</button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="result-screen">
+            <h2>Natijangiz</h2>
+            <p>Siz <span id="final-score" class="score-text">0</span> ta to'g'ri javob berdingiz, jami <span id="total-questions" class="score-text">0</span> savoldan.</p>
+            <p id="result-message"></p>
+            <button id="restart-quiz-button" class="action-button">Qaytadan boshlash</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions
+        const questions = [
+            {
+                question: "Fe'lning asosiy vazifasi nima?",
+                options: ["Otni ta'riflash", "Harakatni ko'rsatish", "Gaplarni bog'lash", "Sifatni ta'riflash"],
+                correctAnswer: 1, // Index of "Harakatni ko'rsatish"
+                explanation: "Fe'l harakat, holat yoki mavjudlikni bildiradi."
+            },
+            {
+                question: "Nuqta vergul (;) qachon ishlatiladi?",
+                options: ["To'liq tugallangan gapni ko'rsatish uchun", "Qisqa pauza yoki ro'yxat elementlarini ajratish uchun", "Kuchli hissiyotni ifodalash uchun", "Ikkita mustaqil gapni bog'lash uchun, agar ular yaqin ma'noda bog'langan bo'lsa"],
+                correctAnswer: 3, // Index of "Ikkita mustaqil gapni bog'lash uchun..."
+                explanation: "Nuqta vergul ikkita mustaqil, ammo bog'liq gapni bog'lashda ishlatiladi, vergul esa qisqa pauza yoki ro'yxat uchun."
+            },
+            {
+                question: "\"U tez yugurdi\" gapida qaysi so'z ravish hisoblanadi?",
+                options: ["U", "tez", "yugurdi", "hech qaysi"],
+                correctAnswer: 1, // Index of "tez"
+                explanation: "Ravish fe'lni, sifatni yoki boshqa ravishni ta'riflaydi. 'tez' fe'l 'yugurdi'ni ta'riflayapti."
+            },
+            {
+                question: "\"Kitoblar javonda turibdi\" gapida ega qaysi?",
+                options: ["Kitoblar", "javonda", "turibdi", "hech qaysi"],
+                correctAnswer: 0, // Index of "Kitoblar"
+                explanation: "Ega gapda harakatni bajaruvchi yoki holat egasi bo'lgan shaxs/narsa."
+            },
+            {
+                question: "Quyidagilardan qaysi biri 'xursand' so'zining sinonimi?",
+                options: ["g'amgin", "baxtli", "jahldor", "charchagan"],
+                correctAnswer: 1, // Index of "baxtli"
+                explanation: "Sinonimlar bir xil yoki o'xshash ma'noga ega so'zlar."
+            },
+            {
+                question: "Qaysi so'z 'va' bog'lovchisining vazifasini bajaradi?",
+                options: ["yugurish", "chiroyli", "va", "ostida"],
+                correctAnswer: 2, // Index of "va"
+                explanation: "Bog'lovchilar so'zlarni, jumlalarni yoki gaplarni bog'lash uchun ishlatiladi."
+            },
+            {
+                question: "Bo'sh joyni to'g'ri to'ldiring: \"U kecha do'konga ___.\"",
+                options: ["bor", "boradi", "bordi", "borayotgan"],
+                correctAnswer: 2, // Index of "bordi" (past tense for "yesterday")
+                explanation: "'kecha' o'tgan zamonni bildiradi, shuning uchun 'bordi' to'g'ri fe'l shakli."
+            },
+            {
+                question: "'Bola' so'zining ko'plik shakli qaysi?",
+                options: ["bolalar", "bolasi", "bolalarimiz", "bolachalar"],
+                correctAnswer: 0, // Index of "bolalar"
+                explanation: "O'zbek tilida otlarning ko'plik shakli '-lar' qo'shimchasi bilan yasaladi."
+            },
+            {
+                question: "Qaysi gapda ega-kesim moslashuvi to'g'ri?",
+                options: ["Mushuk uxlaydi.", "Mushuklar uxlaydi.", "Mushuk uxlash.", "Mushuklar uxlashadi."],
+                correctAnswer: 0, // Index of "Mushuk uxlaydi."
+                explanation: "Yagona egalar yagona kesim bilan, ko'plik egalar ko'plik kesim bilan mos kelishi kerak. 'Mushuklar uxlashadi' ham to'g'ri bo'lishi mumkin, ammo berilgan variantlarda 'Mushuk uxlaydi' eng to'g'risi, chunki 'mushuklar uxlaydi' grammatik jihatdan noto'g'ri emas."
+            },
+            {
+                question: "'Boshlash' so'zining antonimi (qarama-qarshi ma'noli) qaysi?",
+                options: ["start", "tugatish", "davom ettirish", "ochish"],
+                correctAnswer: 1, // Index of "tugatish"
+                explanation: "Antonimlar qarama-qarshi ma'noga ega so'zlar."
+            },
+            {
+                question: "Maqolni to'ldiring: \"Mashq ___ hosil qiladi.\"",
+                options: ["mukammallik", "osonlik", "qiziqarli", "baxtli"],
+                correctAnswer: 0, // Index of "mukammallik"
+                explanation: "Bu mashhur ingliz maqolining tarjimasi: 'Practice makes perfect'."
+            },
+            {
+                question: "'Yaxshi' sifatining qiyosiy darajasi qaysi?",
+                options: ["yaxshirroq", "eng yaxshi", "yaxshiroq", "juda yaxshi"],
+                correctAnswer: 2, // Index of "yaxshiroq"
+                explanation: "O'zbek tilida sifatning qiyosiy darajasi odatda '-roq' qo'shimchasi bilan yasaladi."
+            }
+        ];
+
+        // DOM element references
+        const quizArea = document.getElementById('quiz-area');
+        const questionDisplay = document.getElementById('question-display');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const nextButton = document.getElementById('next-button');
+        const restartButton = document.getElementById('restart-button');
+        const resultScreen = document.getElementById('result-screen');
+        const finalScoreSpan = document.getElementById('final-score');
+        const totalQuestionsSpan = document.getElementById('total-questions');
+        const resultMessage = document.getElementById('result-message');
+        const restartQuizButton = document.getElementById('restart-quiz-button');
+
+        // Quiz state variables
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedAnswerIndex = null; // Stores the index of the currently selected option
+        let quizCompleted = false;
+
+        /**
+         * Initializes the quiz, resets state, and loads the first question.
+         */
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedAnswerIndex = null;
+            quizCompleted = false;
+
+            // Reset UI states
+            quizArea.style.display = 'block';
+            resultScreen.style.display = 'none';
+            nextButton.classList.remove('hidden');
+            nextButton.textContent = 'Keyingi savol';
+            restartButton.classList.add('hidden'); // Hide restart button initially
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = '';
+
+            loadQuestion();
+        }
+
+        /**
+         * Loads and displays the current question and its options.
+         */
+        function loadQuestion() {
+            // Check if quiz is completed
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            // Get current question data
+            const currentQuestion = questions[currentQuestionIndex];
+            questionDisplay.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+            optionsContainer.innerHTML = ''; // Clear previous options
+            feedbackMessage.textContent = ''; // Clear previous feedback
+            feedbackMessage.className = ''; // Clear feedback styles
+            selectedAnswerIndex = null; // Reset selected answer for new question
+            nextButton.disabled = true; // Disable next button until an answer is selected
+            nextButton.textContent = (currentQuestionIndex === questions.length - 1) ? 'Natijalarni ko\'rish' : 'Keyingi savol';
+
+            // Create answer buttons
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.addEventListener('click', () => selectAnswer(index));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Handles user selecting an answer.
+         * @param {number} index - The index of the selected answer option.
+         */
+        function selectAnswer(index) {
+            // If an answer was already selected, do nothing
+            if (selectedAnswerIndex !== null) return;
+
+            selectedAnswerIndex = index;
+            const buttons = optionsContainer.querySelectorAll('.option-button');
+
+            // Remove 'selected' class from all buttons and add to the chosen one
+            buttons.forEach((btn, i) => {
+                btn.classList.remove('selected');
+                if (i === index) {
+                    btn.classList.add('selected');
+                }
+            });
+
+            // Enable next button after an answer is selected
+            nextButton.disabled = false;
+        }
+
+        /**
+         * Checks the selected answer, updates the score, and provides visual feedback.
+         */
+        function checkAnswer() {
+            // Ensure an answer is selected before checking
+            if (selectedAnswerIndex === null) {
+                feedbackMessage.textContent = 'Iltimos, javobni tanlang!';
+                feedbackMessage.className = 'feedback-incorrect';
+                return;
+            }
+
+            const currentQuestion = questions[currentQuestionIndex];
+            const buttons = optionsContainer.querySelectorAll('.option-button');
+
+            // Disable all buttons to prevent further changes
+            buttons.forEach(btn => btn.disabled = true);
+
+            // Apply correct/incorrect styling
+            buttons.forEach((btn, i) => {
+                if (i === currentQuestion.correctAnswer) {
+                    btn.classList.add('correct'); // Mark the correct answer
+                }
+                if (i === selectedAnswerIndex && i !== currentQuestion.correctAnswer) {
+                    btn.classList.add('incorrect'); // Mark user's incorrect choice
+                }
+            });
+
+            // Update score and provide text feedback
+            if (selectedAnswerIndex === currentQuestion.correctAnswer) {
+                score++;
+                feedbackMessage.textContent = 'To\'g\'ri javob!';
+                feedbackMessage.className = 'feedback-correct';
+            } else {
+                feedbackMessage.textContent = `Noto'g'ri javob. To'g'ri javob: "${currentQuestion.options[currentQuestion.correctAnswer]}".`;
+                feedbackMessage.className = 'feedback-incorrect';
+            }
+
+            // The next button is already enabled from selectAnswer(), so no change needed here.
+            // It will trigger loadQuestion or showResults on click.
+        }
+
+        /**
+         * Advances to the next question or shows results if the quiz is finished.
+         */
+        function nextQuestion() {
+            // First, check the current answer and update score/feedback
+            // This is done implicitly by calling `nextQuestion` after selecting an answer,
+            // which means `selectedAnswerIndex` will not be null if the button is active.
+            checkAnswer();
+
+            // Wait a moment for the user to see feedback, then proceed
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1000); // 1 second delay
+        }
+
+        /**
+         * Displays the final results of the quiz.
+         */
+        function showResults() {
+            quizArea.style.display = 'none';
+            resultScreen.style.display = 'block';
+            finalScoreSpan.textContent = score;
+            totalQuestionsSpan.textContent = questions.length;
+
+            let message = '';
+            const percentage = (score / questions.length) * 100;
+
+            if (percentage >= 80) {
+                message = "Ajoyib natija! Til bilimingiz yuqori darajada.";
+            } else if (percentage >= 50) {
+                message = "Yaxshi natija! Ba'zi sohalarni takrorlash foydali bo'lishi mumkin.";
+            } else {
+                message = "Bilimingizni yanada oshirish uchun ko'proq mashq qiling!";
+            }
+            resultMessage.textContent = message;
+            quizCompleted = true;
+        }
+
+        /**
+         * Restarts the quiz from the beginning.
+         */
+        function restartQuiz() {
+            startQuiz();
+        }
+
+        // Event Listeners
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', restartQuiz); // For in-quiz restart (if needed, currently hidden)
+        restartQuizButton.addEventListener('click', restartQuiz); // For result screen restart
+
+        // Initial call to start the quiz when the page loads
+        startQuiz();
+    </script>
+</body>
+</html>
