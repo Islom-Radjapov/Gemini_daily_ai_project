@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analitika Dashboard</title>
+    <style>
+        /* Global styles and resets */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --accent-green: #28a745; /* Green */
+            --accent-red: #dc3545; /* Red */
+            --background-color: #f8f9fa; /* Light gray */
+            --card-background: #ffffff; /* White */
+            --text-color: #343a40; /* Dark gray */
+            --secondary-text-color: #6c757d; /* Medium gray */
+            --border-color: #e9ecef; /* Lighter gray for borders */
+            --shadow-light: 0 4px 8px rgba(0, 0, 0, 0.05);
+            --shadow-medium: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            background-color: var(--card-background);
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-light);
+            z-index: 1000;
+        }
+
+        .dashboard-header h1 {
+            font-size: 24px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .dashboard-header .current-datetime {
+            font-size: 16px;
+            color: var(--secondary-text-color);
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex: 1;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #343a40; /* Darker background for sidebar */
+            color: #ffffff;
+            padding: 20px 0;
+            box-shadow: var(--shadow-medium);
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+        }
+
+        .sidebar nav ul li a {
+            display: block;
+            padding: 15px 30px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .sidebar nav ul li a:hover,
+        .sidebar nav ul li a.active {
+            background-color: var(--primary-color);
+            color: var(--card-background);
+            border-left: 5px solid #fff;
+            padding-left: 25px;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Summary Cards */
+        .summary-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-light);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .card-title {
+            font-size: 16px;
+            color: var(--secondary-text-color);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 15px;
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: var(--secondary-text-color);
+        }
+
+        .card-footer .trend {
+            margin-right: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-footer .trend.up {
+            color: var(--accent-green);
+        }
+
+        .card-footer .trend.down {
+            color: var(--accent-red);
+        }
+
+        .card-footer .trend span {
+            font-size: 18px; /* Unicode arrow size */
+            margin-right: 3px;
+            line-height: 1;
+        }
+
+        /* Charts Section */
+        .charts-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-light);
+            flex: 1;
+            min-width: 400px; /* Minimum width for charts */
+            max-width: calc(50% - 12.5px); /* Two charts per row */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .chart-card h2 {
+            font-size: 20px;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        /* CSS Bar Chart Styles */
+        .chart-bars-container {
+            display: flex;
+            align-items: flex-end; /* Bars start from bottom */
+            justify-content: space-around;
+            height: 200px; /* Fixed height for the chart area */
+            background-color: #f0f2f5;
+            border-radius: 5px;
+            padding: 10px;
+            gap: 5px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            width: 100%; /* Take full width of its flex item */
+            background-color: var(--primary-color);
+            border-radius: 3px;
+            position: relative;
+            transition: height 0.5s ease;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .chart-bar-label {
+            position: absolute;
+            top: -20px; /* Position label above the bar */
+            font-size: 12px;
+            color: var(--text-color);
+            white-space: nowrap; /* Prevent label wrapping */
+        }
+        
+        .chart-bar-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            bottom: 100%; /* Position above the bar */
+            margin-bottom: 5px; /* Spacing from the bar */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none; /* Allows clicks to pass through */
+            z-index: 1;
+        }
+
+        .chart-bar:hover .chart-bar-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--secondary-text-color);
+        }
+
+        .chart-label-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        /* Recent Activity Table */
+        .recent-activity-section {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-light);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .recent-activity-section:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .recent-activity-section h2 {
+            font-size: 20px;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .activity-table th,
+        .activity-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .activity-table th {
+            background-color: #f1f4f8;
+            color: var(--text-color);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .activity-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .activity-table tbody tr:hover {
+            background-color: #f6f9fc;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 1200px) {
+            .charts-container {
+                flex-direction: column;
+            }
+            .chart-card {
+                max-width: 100%;
+                min-width: unset;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .main-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                padding: 15px 0;
+                text-align: center;
+            }
+            .sidebar nav ul {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .sidebar nav ul li a {
+                padding: 10px 15px;
+                border-left: none; /* Remove border-left on mobile */
+            }
+            .sidebar nav ul li a:hover,
+            .sidebar nav ul li a.active {
+                border-left: none;
+                padding-left: 15px; /* Reset padding for mobile */
+            }
+            .content-area {
+                padding: 20px;
+            }
+            .summary-cards-container {
+                grid-template-columns: 1fr;
+            }
+            .chart-card {
+                min-width: unset;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <h1>Analitika Dashboard</h1>
+        <div class="current-datetime" id="currentDateTime"></div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <h2>Admin Panel</h2>
+            <nav>
+                <ul>
+                    <li><a href="#" class="active">Dashboard</a></li>
+                    <li><a href="#">Foydalanuvchilar</a></li>
+                    <li><a href="#">Mahsulotlar</a></li>
+                    <li><a href="#">Buyurtmalar</a></li>
+                    <li><a href="#">Hisobotlar</a></li>
+                    <li><a href="#">Sozlamalar</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="content-area">
+            <section class="summary-cards-container">
+                <!-- Summary cards will be populated here by JS -->
+            </section>
+
+            <section class="charts-container">
+                <div class="chart-card">
+                    <h2>Haftalik Sotish Tendensiyasi</h2>
+                    <div id="salesTrendChart" class="chart-bars-container">
+                        <!-- Sales Trend Chart (bar chart representation) will be populated here by JS -->
+                    </div>
+                    <div id="salesTrendLabels" class="chart-labels"></div>
+                </div>
+
+                <div class="chart-card">
+                    <h2>Trafik Manbalari</h2>
+                    <div id="trafficSourceChart" class="chart-bars-container">
+                        <!-- Traffic Source Chart will be populated here by JS -->
+                    </div>
+                    <div id="trafficSourceLabels" class="chart-labels"></div>
+                </div>
+            </section>
+
+            <section class="recent-activity-section">
+                <h2>So'nggi Harakatlar</h2>
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Vaqt</th>
+                            <th>Harakat</th>
+                            <th>Foydalanuvchi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activityTableBody">
+                        <!-- Recent activities will be populated here by JS -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Function to update current date and time
+            function updateDateTime() {
+                const now = new Date();
+                const options = {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                };
+                document.getElementById('currentDateTime').textContent = now.toLocaleDateString('uz-UZ', options);
+            }
+
+            // Update date and time initially and then every second
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+
+            // --- Fake Data Generation Functions ---
+
+            /**
+             * Generates a random integer within a specified range.
+             * @param {number} min - The minimum value (inclusive).
+             * @param {number} max - The maximum value (inclusive).
+             * @returns {number} A random integer.
+             */
+            function getRandomInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            /**
+             * Generates fake data for the summary cards.
+             * @returns {Array<Object>} An array of summary card data.
+             */
+            function generateSummaryData() {
+                const totalUsers = getRandomInt(10000, 50000);
+                const revenue = getRandomInt(500000, 2000000);
+                const pageViews = getRandomInt(100000, 500000);
+                const bounceRate = (Math.random() * (0.6 - 0.2) + 0.2).toFixed(2); // 20% to 60%
+
+                return [{
+                    title: 'Umumiy Foydalanuvchilar',
+                    value: totalUsers.toLocaleString('uz-UZ'),
+                    trend: `${getRandomInt(1, 15)}%`,
+                    trendDirection: Math.random() > 0.5 ? 'up' : 'down',
+                    description: 'o‘tgan oydan'
+                }, {
+                    title: 'Jami Daromad',
+                    value: `$${revenue.toLocaleString('uz-UZ')}`,
+                    trend: `${getRandomInt(1, 10)}%`,
+                    trendDirection: Math.random() > 0.5 ? 'up' : 'down',
+                    description: 'o‘tgan oydan'
+                }, {
+                    title: 'Sahifa Ko‘rishlari',
+                    value: pageViews.toLocaleString('uz-UZ'),
+                    trend: `${getRandomInt(5, 20)}%`,
+                    trendDirection: Math.random() > 0.5 ? 'up' : 'down',
+                    description: 'o‘tgan oydan'
+                }, {
+                    title: 'Sakrash Darajasi',
+                    value: `${(bounceRate * 100).toFixed(0)}%`,
+                    trend: `${getRandomInt(1, 5)}%`,
+                    trendDirection: Math.random() > 0.5 ? 'down' : 'up', // Lower bounce rate is good, so "down" is "up" trend
+                    description: 'o‘tgan oydan'
+                }, ];
+            }
+
+            /**
+             * Generates fake sales trend data for the last 7 days.
+             * @returns {Array<Object>} An array of daily sales data.
+             */
+            function generateSalesTrendData() {
+                const data = [];
+                const today = new Date();
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - i);
+                    const dayName = date.toLocaleDateString('uz-UZ', {
+                        weekday: 'short'
+                    });
+                    const value = getRandomInt(500, 2000);
+                    data.push({
+                        label: dayName,
+                        value: value
+                    });
+                }
+                return data;
+            }
+
+            /**
+             * Generates fake traffic source data.
+             * @returns {Array<Object>} An array of traffic source data.
+             */
+            function generateTrafficSourceData() {
+                return [{
+                    source: 'To‘g‘ridan-to‘g‘ri',
+                    value: getRandomInt(1500, 3000)
+                }, {
+                    source: 'Qidiruv',
+                    value: getRandomInt(3000, 6000)
+                }, {
+                    source: 'Ijtimoiy',
+                    value: getRandomInt(1000, 4000)
+                }, {
+                    source: 'Tavsiya',
+                    value: getRandomInt(500, 2000)
+                }, {
+                    source: 'Boshqalar',
+                    value: getRandomInt(200, 1000)
+                }, ];
+            }
+
+            /**
+             * Generates fake recent activity data.
+             * @param {number} count - The number of activities to generate.
+             * @returns {Array<Object>} An array of recent activity data.
+             */
+            function generateRecentActivityData(count = 7) {
+                const activities = [
+                    'yangi mahsulot qo‘shdi',
+                    'buyurtma qildi',
+                    'profilini yangiladi',
+                    'hisobotni ko‘rdi',
+                    'sozlamalarni o‘zgartirdi',
+                    'sharh qoldirdi',
+                    'kirish qildi',
+                    'chiqish qildi'
+                ];
+                const users = ['Ali', 'Vali', 'Gulnora', 'Farhod', 'Nodira', 'Jasur', 'Dilnoza'];
+                const data = [];
+
+                for (let i = 0; i < count; i++) {
+                    const time = new Date(Date.now() - getRandomInt(0, 3600000 * 24 * 3)).toLocaleTimeString('uz-UZ', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    const activity = activities[getRandomInt(0, activities.length - 1)];
+                    const user = users[getRandomInt(0, users.length - 1)];
+                    data.push({
+                        time,
+                        activity,
+                        user
+                    });
+                }
+                return data.sort((a, b) => new Date(`1970/01/01 ${b.time}`) - new Date(`1970/01/01 ${a.time}`)); // Sort by time (latest first)
+            }
+
+
+            // --- Rendering Functions ---
+
+            /**
+             * Renders the summary cards into the DOM.
+             * @param {Array<Object>} data - An array of summary card data.
+             */
+            function renderSummaryCards(data) {
+                const container = document.querySelector('.summary-cards-container');
+                container.innerHTML = ''; // Clear previous content
+
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    const trendIcon = item.trendDirection === 'up' ? '▲' : '▼';
+                    const trendClass = item.trendDirection === 'up' ? 'up' : 'down';
+
+                    card.innerHTML = `
+                        <div class="card-title">${item.title}</div>
+                        <div class="card-value">${item.value}</div>
+                        <div class="card-footer">
+                            <span class="trend ${trendClass}"><span style="font-family: sans-serif;">${trendIcon}</span> ${item.trend}</span>
+                            <span>${item.description}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            /**
+             * Renders a bar chart using CSS for visualization.
+             * @param {string} chartId - The ID of the container for chart bars.
+             * @param {string} labelsId - The ID of the container for chart labels.
+             * @param {Array<Object>} data - An array of data points ({label: 'X', value: Y}).
+             * @param {string} valueLabelPrefix - Prefix for the tooltip value (e.g., "$").
+             * @param {string} valueLabelSuffix - Suffix for the tooltip value (e.g., "%").
+             */
+            function renderCssBarChart(chartId, labelsId, data, valueLabelPrefix = '', valueLabelSuffix = '') {
+                const chartContainer = document.getElementById(chartId);
+                const labelsContainer = document.getElementById(labelsId);
+                chartContainer.innerHTML = '';
+                labelsContainer.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    chartContainer.innerHTML = '<p style="text-align: center; color: var(--secondary-text-color);">Ma‘lumotlar yo‘q.</p>';
+                    return;
+                }
+
+                const maxVal = Math.max(...data.map(d => d.value));
+
+                data.forEach(item => {
+                    const bar = document.createElement('div');
+                    bar.classList.add('chart-bar');
+                    // Calculate height as percentage of max value
+                    const heightPercentage = (item.value / maxVal) * 90 + 10; // Min 10% height for visibility
+                    bar.style.height = `${heightPercentage}%`;
+
+                    // Add tooltip for value
+                    const tooltip = document.createElement('div');
+                    tooltip.classList.add('chart-bar-tooltip');
+                    tooltip.textContent = `${item.label}: ${valueLabelPrefix}${item.value.toLocaleString('uz-UZ')}${valueLabelSuffix}`;
+                    bar.appendChild(tooltip);
+
+                    chartContainer.appendChild(bar);
+                });
+
+                data.forEach(item => {
+                    const labelItem = document.createElement('div');
+                    labelItem.classList.add('chart-label-item');
+                    labelItem.textContent = item.label;
+                    labelsContainer.appendChild(labelItem);
+                });
+            }
+
+
+            /**
+             * Renders the recent activity table.
+             * @param {Array<Object>} data - An array of recent activity data.
+             */
+            function renderRecentActivityTable(data) {
+                const tbody = document.getElementById('activityTableBody');
+                tbody.innerHTML = ''; // Clear previous content
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.time}</td>
+                        <td>${item.activity}</td>
+                        <td>${item.user}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            // --- Initialize Dashboard ---
+            const summaryData = generateSummaryData();
+            renderSummaryCards(summaryData);
+
+            const salesTrendData = generateSalesTrendData();
+            renderCssBarChart('salesTrendChart', 'salesTrendLabels', salesTrendData, '$');
+
+            const trafficSourceData = generateTrafficSourceData();
+            renderCssBarChart('trafficSourceChart', 'trafficSourceLabels', trafficSourceData);
+
+            const recentActivityData = generateRecentActivityData();
+            renderRecentActivityTable(recentActivityData);
+        });
+    </script>
+</body>
+</html>

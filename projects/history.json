@@ -50,6 +50,7 @@
     "js_game::Asteroid o'yini",
     "interactive_art::Perlin noise landshaft",
     "js_game::Maze o'yini",
-    "quiz_app::Til bilish testi"
+    "quiz_app::Til bilish testi",
+    "dashboard::Analitika dashboard"
   ]
 }
