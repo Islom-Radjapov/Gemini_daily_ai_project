@@ -52,6 +52,7 @@
     "js_game::Maze o'yini",
     "quiz_app::Til bilish testi",
     "dashboard::Analitika dashboard",
-    "python_api::Log fayl analizatori"
+    "python_api::Log fayl analizatori",
+    "data_viz::Daraxt vizualizatsiyasi"
   ]
 }

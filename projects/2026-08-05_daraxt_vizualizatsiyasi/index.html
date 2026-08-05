@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Tree Visualization</title>
+    <style>
+        /* Global body styles for a clean, centered layout */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6; /* Light gray background */
+            color: #333; /* Dark gray text for general content */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center content horizontally */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+        }
+
+        /* Styling for the main title */
+        h1 {
+            color: #2c3e50; /* Darker blue-gray for title */
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05); /* Subtle text shadow */
+        }
+
+        /* Styling for the HTML Canvas element */
+        canvas {
+            display: block; /* Remove extra space below canvas */
+            background-color: #ffffff; /* White canvas background */
+            border: 1px solid #ddd; /* Light border around the canvas */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            border-radius: 10px; /* Slightly rounded corners for a softer look */
+            touch-action: none; /* Disable default touch actions for better responsiveness */
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Tree Visualization</h1>
+    <canvas id="treeCanvas"></canvas>
+
+    <script>
+        // Ensure the DOM is fully loaded before executing the script
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Canvas Setup ---
+            const canvas = document.getElementById('treeCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Define canvas dimensions
+            const CANVAS_WIDTH = 1000;
+            const CANVAS_HEIGHT = 700;
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+
+            // --- Configuration Constants ---
+            const NODE_RADIUS = 20; // Radius of the circular nodes
+            const NODE_COLOR = '#4285F4'; // Default background color for nodes (Google Blue)
+            const NODE_HOVER_COLOR = '#DB4437'; // Background color for hovered nodes (Google Red)
+            const EDGE_COLOR = '#BBBBBB'; // Color for lines connecting nodes (light grey)
+            const TEXT_COLOR_NODE = '#FFFFFF'; // Color for text inside nodes (white)
+            const TEXT_COLOR_LABEL = '#333333'; // Color for node labels below nodes (dark grey)
+            const FONT_FAMILY = 'Arial, sans-serif';
+            const FONT_SIZE_NODE = 13; // Font size for text inside nodes
+            const FONT_SIZE_LABEL = 11; // Font size for labels below nodes
+
+            const HORIZONTAL_SPACING = 150; // Minimum horizontal distance between leaf nodes
+            const VERTICAL_SPACING = 100;   // Vertical distance between tree levels
+            const MARGIN_TOP = 60; // Top margin for the tree layout
+            const MARGIN_LEFT_RIGHT = 50; // Initial left/right margin for layout before final centering
+
+            // --- Sample Tree Data Structure ---
+            // This object defines the hierarchical data to be visualized.
+            // Each node has a 'name' and an optional 'children' array.
+            const treeData = {
+                name: "Root Node (Level 0)",
+                children: [
+                    {
+                        name: "Branch A (Level 1)",
+                        children: [
+                            { name: "Leaf A1 (L2)" },
+                            { name: "Leaf A2 (L2)" }
+                        ]
+                    },
+                    {
+                        name: "Branch B (Level 1)",
+                        children: [
+                            { name: "Leaf B1 (L2)" },
+                            {
+                                name: "Branch B2 (L2)",
+                                children: [
+                                    { name: "Leaf B21 (L3)" },
+                                    { name: "Leaf B22 (L3)" },
+                                    { name: "Leaf B23 (L3)" }
+                                ]
+                            }
+                        ]
+                    },
+                    { name: "Branch C (Level 1)" },
+                    {
+                        name: "Branch D (Level 1)",
+                        children: [
+                            { name: "Leaf D1 (L2)" },
+                            { name: "Leaf D2 (L2)" }
+                        ]
+                    }
+                ]
+            };
+
+            // --- Global State Variables ---
+            let allNodes = []; // Stores all nodes with their calculated x, y positions, depth, etc.
+            let hoveredNode = null; // References the node currently under the mouse pointer
+
+            // --- Tree Layout Algorithm ---
+            // This function recursively traverses the tree (post-order traversal)
+            // to calculate the x and y coordinates for each node.
+            // Y-coordinates are based on the node's depth.
+            // X-coordinates for leaf nodes are assigned sequentially.
+            // X-coordinates for parent nodes are calculated as the average of their children's X,
+            // effectively centering the parent above its children.
+            let nextAvailableX = MARGIN_LEFT_RIGHT; // Tracks the next available X position for leaf nodes
+
+            function calculateLayout(node, parent, depth) {
+                // Assign essential properties to the node
+                node.parent = parent;           // Reference to the parent node
+                node.depth = depth;             // Current depth level in the tree
+                node.y = depth * VERTICAL_SPACING + MARGIN_TOP; // Calculate Y position based on depth
+                node.children = node.children || []; // Ensure 'children' property exists as an array
+
+                if (node.children.length > 0) {
+                    // If the node has children, recursively call calculateLayout for each child first.
+                    // This is a post-order traversal logic.
+                    node.children.forEach(child => calculateLayout(child, node, depth + 1));
+
+                    // After all children are laid out, calculate the parent's X position.
+                    // It's centered between its first and last child's X positions.
+                    const firstChildX = node.children[0].x;
+                    const lastChildX = node.children[node.children.length - 1].x;
+                    node.x = (firstChildX + lastChildX) / 2;
+                } else {
+                    // This is a leaf node (no children).
+                    // Assign a unique X position sequentially.
+                    node.x = nextAvailableX;
+                    nextAvailableX += HORIZONTAL_SPACING; // Increment for the next leaf node
+                }
+
+                // Add the processed node to the global array
+                allNodes.push(node);
+            }
+
+            // --- Drawing Functions ---
+
+            // Draws a single circular node on the canvas.
+            function drawNode(node, isHovered) {
+                // Draw the circle
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, NODE_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = isHovered ? NODE_HOVER_COLOR : NODE_COLOR; // Apply hover color if needed
+                ctx.fill();
+                ctx.strokeStyle = '#CCCCCC'; // Light grey border
+                ctx.lineWidth = 1.5; // Slightly thicker border
+                ctx.stroke();
+
+                // Draw node name (abbreviated if too long) inside the circle
+                ctx.fillStyle = TEXT_COLOR_NODE;
+                ctx.font = `bold ${FONT_SIZE_NODE}px ${FONT_FAMILY}`; // Bold font for better readability
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const nodeText = node.name.length > 7 ? node.name.substring(0, 6) + '...' : node.name;
+                ctx.fillText(nodeText, node.x, node.y);
+
+                // Draw the full node name as a label below the circle
+                ctx.fillStyle = TEXT_COLOR_LABEL;
+                ctx.font = `${FONT_SIZE_LABEL}px ${FONT_FAMILY}`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top'; // Position text below the circle
+                ctx.fillText(node.name, node.x, node.y + NODE_RADIUS + 8); // 8px padding below node
+            }
+
+            // Draws a line (edge) connecting a parent node to a child node.
+            function drawEdge(parent, child) {
+                ctx.beginPath();
+                // Start the line from the bottom edge of the parent node
+                ctx.moveTo(parent.x, parent.y + NODE_RADIUS);
+                // End the line at the top edge of the child node
+                ctx.lineTo(child.x, child.y - NODE_RADIUS);
+                ctx.strokeStyle = EDGE_COLOR;
+                ctx.lineWidth = 2; // Line thickness
+                ctx.stroke();
+            }
+
+            // --- Main Drawing Function ---
+            // Clears the entire canvas and redraws all elements of the tree.
+            function drawTree() {
+                // Clear the canvas content
+                ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                // Draw edges first, so that nodes are drawn on top of them
+                allNodes.forEach(node => {
+                    if (node.parent) {
+                        drawEdge(node.parent, node);
+                    }
+                });
+
+                // Draw nodes. Iterate in reverse to ensure root (top-most) is drawn last
+                // if there were any specific z-ordering needs, but for simple circles
+                // order mostly matters for edges vs. nodes.
+                allNodes.forEach(node => {
+                    drawNode(node, node === hoveredNode); // Pass hovered status
+                });
+            }
+
+            // --- Interactivity Functions ---
+
+            // Calculates the Euclidean distance between two points (x1, y1) and (x2, y2).
+            function distance(x1, y1, x2, y2) {
+                const dx = x1 - x2;
+                const dy = y1 - y2;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            // Event handler for mouse movement on the canvas.
+            // It detects if the mouse pointer is over a node and updates the visualization
+            // to show a hover effect.
+            function handleMouseMove(event) {
+                // Get the canvas's position on the page to calculate mouse coordinates relative to the canvas
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                let newHoveredNode = null;
+                // Check if the mouse is over any node
+                for (const node of allNodes) {
+                    if (distance(mouseX, mouseY, node.x, node.y) < NODE_RADIUS) {
+                        newHoveredNode = node; // Found a node under the mouse
+                        break; // Stop checking after finding the first one
+                    }
+                }
+
+                // If the hovered node has changed, update the state and redraw the tree
+                if (newHoveredNode !== hoveredNode) {
+                    hoveredNode = newHoveredNode;
+                    drawTree(); // Redraw to reflect the new hover state
+                }
+            }
+
+            // --- Initialization Logic ---
+
+            // 1. Calculate the initial layout of all nodes based on the treeData.
+            //    This populates the 'allNodes' array with x, y, depth, and parent references.
+            calculateLayout(treeData, null, 0); // Start with root node, no parent, depth 0
+
+            // 2. Adjust all X coordinates to horizontally center the entire tree on the canvas.
+            if (allNodes.length > 0) {
+                // Find the minimum and maximum X coordinates among all nodes
+                const minX = Math.min(...allNodes.map(n => n.x));
+                const maxX = Math.max(...allNodes.map(n => n.x));
+                const treeWidth = maxX - minX;
+
+                // Calculate the horizontal offset needed to center the tree.
+                // It ensures the tree is centered within the CANVAS_WIDTH, taking into account its current minX.
+                const offsetX = (CANVAS_WIDTH - treeWidth) / 2 - minX;
+
+                // Apply the calculated offset to the X coordinate of every node
+                allNodes.forEach(node => {
+                    node.x += offsetX;
+                });
+            }
+
+            // 3. Perform the initial drawing of the tree on the canvas.
+            drawTree();
+
+            // 4. Attach the mouse movement event listener to the canvas for interactivity.
+            canvas.addEventListener('mousemove', handleMouseMove);
+        });
+    </script>
+</body>
+</html>
