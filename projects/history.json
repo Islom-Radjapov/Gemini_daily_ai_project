@@ -53,6 +53,7 @@
     "quiz_app::Til bilish testi",
     "dashboard::Analitika dashboard",
     "python_api::Log fayl analizatori",
-    "data_viz::Daraxt vizualizatsiyasi"
+    "data_viz::Daraxt vizualizatsiyasi",
+    "python_api::Regex tester"
   ]
 }
