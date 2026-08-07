@@ -54,6 +54,7 @@
     "dashboard::Analitika dashboard",
     "python_api::Log fayl analizatori",
     "data_viz::Daraxt vizualizatsiyasi",
-    "python_api::Regex tester"
+    "python_api::Regex tester",
+    "python_api::QR kod generatori (ASCII)"
   ]
 }
