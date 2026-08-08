@@ -55,6 +55,7 @@
     "python_api::Log fayl analizatori",
     "data_viz::Daraxt vizualizatsiyasi",
     "python_api::Regex tester",
-    "python_api::QR kod generatori (ASCII)"
+    "python_api::QR kod generatori (ASCII)",
+    "python_cli::Parol generatori"
   ]
 }
