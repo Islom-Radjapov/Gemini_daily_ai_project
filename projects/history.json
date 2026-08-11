@@ -57,6 +57,7 @@
     "python_api::Regex tester",
     "python_api::QR kod generatori (ASCII)",
     "python_cli::Parol generatori",
-    "quiz_app::Sport viktorinasi"
+    "quiz_app::Sport viktorinasi",
+    "python_api::JSON formatlovchi va validatori"
   ]
 }
