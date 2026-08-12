@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hayvonlar Viktorinasi</title>
+    <style>
+        /* General styles for the body and container */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #7F00FF, #E100FF); /* Modern gradient background */
+            color: #333;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out; /* Fade-in animation for the container */
+        }
+
+        /* Keyframe animation for a smooth entrance */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Styles for the main title */
+        .title {
+            color: #4a007a; /* Dark purple color */
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        /* Styles for quiz and result cards */
+        .quiz-card {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05); /* Inner shadow for depth */
+        }
+
+        /* Styles for the question text */
+        #question-text {
+            font-size: 1.6em;
+            margin-bottom: 30px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        /* Grid layout for answer options */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Default to single column for small screens */
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        /* Media query for larger screens to show two columns */
+        @media (min-width: 480px) {
+            .options-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Styles for individual option buttons */
+        .option-button {
+            width: 100%;
+            padding: 15px 20px;
+            background-color: #e0e0e0;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transition for hover and selection */
+            color: #444;
+            text-align: left; /* Align text to left for better readability */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hover effect for option buttons (not selected, correct, or incorrect) */
+        .option-button:hover:not(.selected) {
+            background-color: #d0d0d0;
+            border-color: #b0b0b0;
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        /* Styles for the selected option button */
+        .option-button.selected {
+            background-color: #9c27b0; /* Purple for selected */
+            border-color: #6a1b9a;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* Styles for action buttons (Next, Restart) */
+        .action-button {
+            padding: 15px 30px;
+            background-color: #4a007a; /* Dark purple */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Hover effect for action buttons */
+        .action-button:hover:not(:disabled) {
+            background-color: #6a1b9a;
+            transform: translateY(-2px);
+        }
+
+        /* Styles for disabled action buttons */
+        .action-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Utility class to hide elements */
+        .hidden {
+            display: none;
+        }
+
+        /* Styles for the result text */
+        #result-text {
+            font-size: 2em;
+            color: #4a007a;
+            margin-bottom: 30px;
+        }
+
+        /* Specific style for the restart button */
+        #restart-button {
+            background-color: #007bff; /* Blue for restart */
+        }
+
+        /* Hover effect for the restart button */
+        #restart-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Hayvonlar Viktorinasi</h1>
+
+        <!-- Quiz Container: Visible during the quiz -->
+        <div id="quiz-container" class="quiz-card">
+            <h2 id="question-text"></h2>
+            <div id="options-container" class="options-grid">
+                <!-- Options will be injected here by JavaScript -->
+            </div>
+            <button id="next-button" class="action-button" disabled>Keyingi</button>
+        </div>
+
+        <!-- Result Container: Hidden until the quiz is finished -->
+        <div id="result-container" class="quiz-card hidden">
+            <h2 id="result-text"></h2>
+            <button id="restart-button" class="action-button">Qayta Boshlash</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions
+        // Each question object contains the question text, an array of options, and the correct answer.
+        const quizQuestions = [
+            {
+                question: "Eng katta sutemizuvchi hayvon qaysi?",
+                options: ["Fil", "Ko'k kit", "Jirafa", "Oq ayiq"],
+                correctAnswer: "Ko'k kit"
+            },
+            {
+                question: "Qaysi qush ucholmaydi?",
+                options: ["Burgut", "Chumchuq", "Tovuq", "Qaldirg'och"],
+                correctAnswer: "Tovuq"
+            },
+            {
+                question: "Qaysi hayvonning bo'yni eng uzun?",
+                options: ["Zebra", "Fil", "Jirafa", "Tuya"],
+                correctAnswer: "Jirafa"
+            },
+            {
+                question: "Cho'lda yashaydigan, suvni saqlash qobiliyatiga ega hayvon qaysi?",
+                options: ["Sher", "Ayig'", "Tuya", "Bo'ri"],
+                correctAnswer: "Tuya"
+            },
+            {
+                question: "Qaysi hayvonning terisi sarg'ish-qora chiziqlarga ega?",
+                options: ["Leopard", "Zebra", "Yo'lbars", "Jaguar"],
+                correctAnswer: "Zebra"
+            },
+            {
+                question: "Qaysi hayvon o'zini o'lik qilib ko'rsatib, yirtqichlardan qochadi?",
+                options: ["Tulki", "Opossum", "Quyon", "Kirpi"],
+                correctAnswer: "Opossum"
+            },
+            {
+                question: "Qaysi qush dunyodagi eng kichigi?",
+                options: ["Chumchuq", "Kichik pingvin", "Kolibri", "Qarg'a"],
+                correctAnswer: "Kolibri"
+            },
+            {
+                question: "Dunyodagi eng tez yuguruvchi hayvon qaysi?",
+                options: ["Gepard", "Antilopa", "Odam", "Tulki"],
+                correctAnswer: "Gepard"
+            },
+            {
+                question: "Qaysi hayvonning burni barmoq izi kabi noyob naqshga ega?",
+                options: ["Mushuk", "It", "Odam", "G'oz"],
+                correctAnswer: "It"
+            },
+            {
+                question: "Qaysi hayvon uzoq vaqt uxlaydi (qish uyqusiga ketadi)?",
+                options: ["Sher", "Ayig'", "Baliq", "Qush"],
+                correctAnswer: "Ayig'"
+            },
+            {
+                question: "Qaysi hasharot asal ishlab chiqaradi?",
+                options: ["Chivin", "Qumursqa", "Asalari", "Kapalak"],
+                correctAnswer: "Asalari"
+            },
+            {
+                question: "Qaysi hayvon suv ostida nafas olishi mumkin?",
+                options: ["Ot", "Baliq", "Sigir", "It"],
+                correctAnswer: "Baliq"
+            }
+        ];
+
+        // Get references to DOM elements
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextButton = document.getElementById('next-button');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultContainer = document.getElementById('result-container');
+        const resultText = document.getElementById('result-text');
+        const restartButton = document.getElementById('restart-button');
+
+        // Quiz state variables
+        let currentQuestionIndex = 0; // Tracks the current question number
+        let score = 0; // Stores the user's score
+        let selectedAnswer = null; // Stores the text of the currently selected option by the user
+
+        /**
+         * Initializes or restarts the quiz, resetting scores and displaying the first question.
+         */
+        function startQuiz() {
+            currentQuestionIndex = 0; // Reset question index
+            score = 0; // Reset score
+            selectedAnswer = null; // Clear any previously selected answer
+
+            // Show the quiz container and hide the result container
+            quizContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            nextButton.textContent = 'Keyingi'; // Ensure "Next" text is set for the button
+
+            displayQuestion(); // Display the first question
+        }
+
+        /**
+         * Displays the current question and its options.
+         */
+        function displayQuestion() {
+            // Disable the next button until an option is selected for the current question
+            nextButton.disabled = true;
+
+            // Get the current question object from the array
+            const currentQuestion = quizQuestions[currentQuestionIndex];
+            questionText.innerText = currentQuestion.question; // Set the question text
+
+            // Clear any previously displayed options
+            optionsContainer.innerHTML = '';
+
+            // Create a button for each option and append it to the options container
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.innerText = option; // Set button text to the option
+                button.classList.add('option-button'); // Add general styling class
+                // Add click event listener to handle option selection
+                button.addEventListener('click', () => selectAnswer(button, option));
+                optionsContainer.appendChild(button);
+            });
+
+            // Update next button text to "Tugatish" if it's the last question
+            if (currentQuestionIndex === quizQuestions.length - 1) {
+                nextButton.textContent = 'Tugatish';
+            } else {
+                nextButton.textContent = 'Keyingi';
+            }
+        }
+
+        /**
+         * Handles the selection of an answer option.
+         * Visually highlights the selected option and enables the next button.
+         * @param {HTMLElement} clickedButton - The button element that was clicked.
+         * @param {string} answer - The text content of the selected answer.
+         */
+        function selectAnswer(clickedButton, answer) {
+            // Remove the 'selected' class from all option buttons to unhighlight previous selection
+            const allOptions = optionsContainer.querySelectorAll('.option-button');
+            allOptions.forEach(button => {
+                button.classList.remove('selected');
+            });
+
+            // Add the 'selected' class to the clicked button to highlight it
+            clickedButton.classList.add('selected');
+            selectedAnswer = answer; // Store the text of the selected answer
+            nextButton.disabled = false; // Enable the next button as an option has been chosen
+        }
+
+        /**
+         * Processes the selected answer, updates the score, and moves to the next question or shows results.
+         */
+        function nextQuestion() {
+            // If no answer is selected (though the button should be disabled in this case), exit
+            if (selectedAnswer === null) {
+                return;
+            }
+
+            // Check if the selected answer matches the correct answer for the current question
+            if (selectedAnswer === quizQuestions[currentQuestionIndex].correctAnswer) {
+                score++; // Increment score if correct
+            }
+
+            // Reset selected answer for the next question to ensure no pre-selection
+            selectedAnswer = null;
+
+            // Move to the next question's index
+            currentQuestionIndex++;
+
+            // Check if there are more questions to display
+            if (currentQuestionIndex < quizQuestions.length) {
+                displayQuestion(); // Display the next question
+            } else {
+                showResults(); // If no more questions, display the final results
+            }
+        }
+
+        /**
+         * Displays the final score and result message to the user.
+         */
+        function showResults() {
+            quizContainer.classList.add('hidden'); // Hide the quiz interface
+            resultContainer.classList.remove('hidden'); // Show the result interface
+            // Update the result text with the final score
+            resultText.innerText = `Sizning natijangiz: ${score} / ${quizQuestions.length}`;
+        }
+
+        // Add event listeners to the action buttons
+        nextButton.addEventListener('click', nextQuestion); // When "Next" button is clicked
+        restartButton.addEventListener('click', startQuiz); // When "Restart" button is clicked
+
+        // Start the quiz automatically when the page loads
+        startQuiz();
+    </script>
+</body>
+</html>
