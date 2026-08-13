@@ -59,6 +59,7 @@
     "python_cli::Parol generatori",
     "quiz_app::Sport viktorinasi",
     "python_api::JSON formatlovchi va validatori",
-    "quiz_app::Hayvonlar viktorinasi"
+    "quiz_app::Hayvonlar viktorinasi",
+    "data_viz::Treemap vizualizatsiya"
   ]
 }

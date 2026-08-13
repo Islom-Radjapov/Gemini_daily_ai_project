@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Treemap Visualization</title>
+    <style>
+        /* Global styles and reset */
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+            text-align: center;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #555;
+            font-size: 1.1em;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        /* Treemap Container */
+        #treemap-container {
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden; /* Ensures SVG doesn't bleed out */
+            margin-top: 20px;
+            width: fit-content; /* Adjusts to SVG size */
+        }
+
+        /* SVG Styles */
+        svg {
+            display: block; /* Removes extra space below SVG */
+        }
+
+        /* Treemap Rectangle Styles */
+        .treemap-rect {
+            stroke: #fff;
+            stroke-width: 0.5px;
+            transition: fill 0.2s ease-out, stroke-width 0.2s ease-out;
+            cursor: pointer;
+        }
+
+        .treemap-rect:hover {
+            stroke-width: 2px;
+            filter: brightness(1.1); /* Slightly brighter on hover */
+        }
+
+        /* Treemap Text Labels */
+        .treemap-label {
+            font-size: 0.8em;
+            fill: #fff; /* White text for better contrast */
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none; /* Allows mouse events to pass through to the rect */
+            user-select: none; /* Prevents text selection */
+        }
+
+        .treemap-label.dark-text {
+            fill: #333; /* For very light background colors */
+        }
+
+        /* Tooltip Styles */
+        #tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            pointer-events: none; /* Ensures tooltip doesn't block mouse events */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+            z-index: 1000; /* Ensures tooltip is on top */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            white-space: nowrap; /* Prevents text wrapping */
+        }
+
+        #tooltip.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #tooltip strong {
+            color: #a7d9f7; /* Highlighted text in tooltip */
+        }
+    </style>
+</head>
+<body>
+    <h1>Global Economy Treemap</h1>
+    <p>
+        An interactive treemap visualization showing the distribution of the global economy across different regions and countries.
+        Hover over the rectangles to see detailed information.
+    </p>
+
+    <div id="treemap-container"></div>
+    <div id="tooltip"></div>
+
+    <script>
+        // Define the dimensions for the SVG canvas
+        const svgWidth = 960;
+        const svgHeight = 600;
+
+        // Reference to the container div and tooltip div
+        const treemapContainer = document.getElementById('treemap-container');
+        const tooltip = document.getElementById('tooltip');
+
+        // Sample hierarchical data for the treemap
+        // Each node can have a 'value' (for leaf nodes) or 'children' (for parent nodes)
+        const treemapData = {
+            name: "Global Economy",
+            children: [
+                {
+                    name: "North America",
+                    children: [
+                        { name: "USA", value: 25.46 },
+                        { name: "Canada", value: 2.14 },
+                        { name: "Mexico", value: 1.41 }
+                    ]
+                },
+                {
+                    name: "Europe",
+                    children: [
+                        { name: "Germany", value: 4.31 },
+                        { name: "UK", value: 3.19 },
+                        { name: "France", value: 2.94 },
+                        { name: "Italy", value: 2.19 },
+                        { name: "Spain", value: 1.40 }
+                    ]
+                },
+                {
+                    name: "Asia",
+                    children: [
+                        { name: "China", value: 17.70 },
+                        { name: "Japan", value: 4.23 },
+                        { name: "India", value: 3.39 },
+                        { name: "South Korea", value: 1.73 },
+                        { name: "Indonesia", value: 1.29 }
+                    ]
+                },
+                {
+                    name: "South America",
+                    children: [
+                        { name: "Brazil", value: 1.92 },
+                        { name: "Argentina", value: 0.63 }
+                    ]
+                },
+                {
+                    name: "Africa",
+                    children: [
+                        { name: "Nigeria", value: 0.50 },
+                        { name: "South Africa", value: 0.40 }
+                    ]
+                },
+                {
+                    name: "Oceania",
+                    children: [
+                        { name: "Australia", value: 1.69 }
+                    ]
+                }
+            ]
+        };
+
+        // Define a color palette for the top-level categories
+        const colors = [
+            '#4a6fe3', // Blue for North America
+            '#5cb85c', // Green for Europe
+            '#ffc107', // Yellow for Asia
+            '#dc3545', // Red for South America
+            '#17a2b8', // Cyan for Africa
+            '#6f42c1'  // Purple for Oceania
+        ];
+
+        // --- Helper Functions ---
+
+        /**
+         * Recursively sums the 'value' of all leaf nodes under a given node.
+         * If a node has children, its 'value' will be computed as the sum of its children's values.
+         * @param {object} node - The current node in the hierarchical data.
+         * @returns {number} The total value of the node and its descendants.
+         */
+        function sumValues(node) {
+            if (node.value !== undefined && typeof node.value === 'number') {
+                return node.value;
+            }
+            if (node.children && node.children.length > 0) {
+                // If it's a parent node, calculate its value by summing children's values
+                node.value = node.children.reduce((acc, child) => acc + sumValues(child), 0);
+                return node.value;
+            }
+            // If a node has no value and no children, treat its value as 0
+            node.value = 0;
+            return 0;
+        }
+
+        /**
+         * Generates the treemap layout using a "slice-and-dice" algorithm.
+         * It recursively subdivides the given rectangle (x, y, width, height)
+         * among the children based on their values, alternating between
+         * horizontal and vertical slicing at each depth level.
+         *
+         * @param {object} node - The current node to layout.
+         * @param {number} x - The x-coordinate of the current rectangle.
+         * @param {number} y - The y-coordinate of the current rectangle.
+         * @param {number} width - The width of the current rectangle.
+         * @param {number} height - The height of the current rectangle.
+         * @param {number} depth - The current depth in the hierarchy (root is depth 0).
+         * @param {string} parentName - The name of the parent node (used for coloring logic).
+         */
+        function generateTreemapLayout(node, x, y, width, height, depth = 0, parentName = null) {
+            // Assign calculated layout properties to the node
+            node.x = x;
+            node.y = y;
+            node.width = width;
+            node.height = height;
+            node.depth = depth;
+            node.parentName = parentName; // Store parent name for potential use (e.g., breadcrumbs)
+
+            // If the node has children, recursively layout them
+            if (node.children && node.children.length > 0) {
+                const totalValue = node.value; // Total value of current node (already summed by sumValues)
+
+                let currentX = x;
+                let currentY = y;
+
+                node.children.forEach(child => {
+                    // Calculate the proportion of the child's value relative to the parent's total value
+                    const ratio = child.value / totalValue;
+                    let childX, childY, childWidth, childHeight;
+
+                    // Alternate slicing direction based on depth
+                    if (depth % 2 === 0) { // Even depth: slice vertically (divide width)
+                        childWidth = width * ratio;
+                        childHeight = height;
+                        childX = currentX;
+                        childY = y;
+                        currentX += childWidth; // Move currentX for the next child
+                    } else { // Odd depth: slice horizontally (divide height)
+                        childWidth = width;
+                        childHeight = height * ratio;
+                        childX = x;
+                        childY = currentY;
+                        currentY += childHeight; // Move currentY for the next child
+                    }
+                    // Recursively call layout for the child
+                    generateTreemapLayout(child, childX, childY, childWidth, childHeight, depth + 1, node.name);
+                });
+            }
+        }
+
+        /**
+         * Flattens the hierarchical data structure into a single array of nodes.
+         * This makes it easier to iterate and draw all nodes.
+         * @param {object} node - The current node to flatten.
+         * @param {Array<object>} arr - Accumulator array for flattened nodes.
+         * @returns {Array<object>} A flat array containing all nodes from the hierarchy.
+         */
+        function flattenNodes(node, arr = []) {
+            // Add the current node to the flat array
+            arr.push(node);
+            // If the node has children, recursively flatten them
+            if (node.children) {
+                node.children.forEach(child => flattenNodes(child, arr));
+            }
+            return arr;
+        }
+
+        /**
+         * Assigns a color to a node based on its top-level parent or depth.
+         * @param {object} node - The node for which to determine the color.
+         * @returns {string} A CSS color string.
+         */
+        function getNodeColor(node) {
+            // Find the top-level parent (direct child of the root)
+            let currentNode = node;
+            while (currentNode.depth > 1) {
+                currentNode = findNodeByName(treemapData, currentNode.parentName);
+                if (!currentNode) break; // Should not happen with correctly formed data
+            }
+
+            // Get the index of the top-level child
+            if (currentNode && currentNode.parentName === treemapData.name && treemapData.children) {
+                const topLevelIndex = treemapData.children.findIndex(c => c.name === currentNode.name);
+                if (topLevelIndex !== -1) {
+                    return colors[topLevelIndex % colors.length]; // Use modulo for color cycling
+                }
+            }
+            // Fallback for root or nodes not directly under a top-level child (shouldn't happen with this logic)
+            // or if the data structure is different.
+            return '#ccc'; // Default grey for unknown
+        }
+
+        /**
+         * Helper to find a node by name. For `getNodeColor` logic.
+         * This is a simple linear search. For very large trees, a more efficient
+         * lookup (e.g., using a map built during flattening) might be needed.
+         * @param {object} root - The root of the data tree.
+         * @param {string} name - The name of the node to find.
+         * @returns {object|null} The found node or null.
+         */
+        function findNodeByName(root, name) {
+            if (root.name === name) {
+                return root;
+            }
+            if (root.children) {
+                for (const child of root.children) {
+                    const found = findNodeByName(child, name);
+                    if (found) {
+                        return found;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // --- Treemap Initialization and Drawing ---
+
+        // 1. Calculate sum values for all parent nodes
+        sumValues(treemapData);
+
+        // 2. Generate the treemap layout (calculate x, y, width, height for each node)
+        generateTreemapLayout(treemapData, 0, 0, svgWidth, svgHeight, 0);
+
+        // 3. Flatten the hierarchical data into a single array for easier drawing
+        const flatNodes = flattenNodes(treemapData);
+
+        // 4. Create the SVG element
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute('width', svgWidth);
+        svg.setAttribute('height', svgHeight);
+        svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`); // Ensures scalability
+        treemapContainer.appendChild(svg);
+
+        // Filter out the root node for drawing rectangles, as it typically encompasses the whole area
+        // and is not drawn as a distinct rectangle itself in a standard treemap visualization.
+        const nodesToDraw = flatNodes.filter(node => node.depth > 0);
+
+        // 5. Draw the treemap rectangles and labels
+        nodesToDraw.forEach(node => {
+            if (node.width <= 0 || node.height <= 0) return; // Skip invisible rectangles
+
+            // Create a group for each rectangle and its label
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            svg.appendChild(group);
+
+            // Create the rectangle element
+            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute('x', node.x);
+            rect.setAttribute('y', node.y);
+            rect.setAttribute('width', node.width);
+            rect.setAttribute('height', node.height);
+            rect.setAttribute('fill', getNodeColor(node));
+            rect.classList.add('treemap-rect'); // Add class for styling
+
+            // Store node data on the rect for easy access during events
+            rect.dataset.name = node.name;
+            rect.dataset.value = node.value.toFixed(2); // Format value for display
+            rect.dataset.depth = node.depth;
+
+            group.appendChild(rect);
+
+            // Add interactivity: mouseover, mousemove, mouseout for tooltip
+            rect.addEventListener('mouseover', (event) => showTooltip(event, node));
+            rect.addEventListener('mousemove', moveTooltip);
+            rect.addEventListener('mouseout', hideTooltip);
+
+            // Add text label if the rectangle is large enough
+            // Minimum dimensions to display text to avoid overcrowding
+            const minTextWidth = 50;
+            const minTextHeight = 25;
+            if (node.width > minTextWidth && node.height > minTextHeight) {
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute('x', node.x + node.width / 2);
+                text.setAttribute('y', node.y + node.height / 2);
+                text.textContent = node.name;
+                text.classList.add('treemap-label');
+
+                // Adjust font size based on rectangle size (simple heuristic)
+                const fontSize = Math.min(node.width / node.name.length * 1.5, node.height / 2, 16);
+                text.style.fontSize = `${fontSize}px`;
+
+                // Optionally, make text darker if background is very light
+                const colorHex = getNodeColor(node);
+                // Simple check for light color: count brightness of RGB values
+                // This is a rough estimation. For production, convert to HSL/LAB or use proper WCAG contrast algorithms.
+                const r = parseInt(colorHex.slice(1, 3), 16);
+                const g = parseInt(colorHex.slice(3, 5), 16);
+                const b = parseInt(colorHex.slice(5, 7), 16);
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                if (brightness > 180) { // Arbitrary threshold for "light" color
+                    text.classList.add('dark-text');
+                }
+
+                group.appendChild(text);
+            }
+        });
+
+        // --- Tooltip Functions ---
+
+        /**
+         * Shows the tooltip with node-specific information.
+         * @param {Event} event - The mouse event.
+         * @param {object} node - The data node associated with the hovered rectangle.
+         */
+        function showTooltip(event, node) {
+            tooltip.innerHTML = `
+                <strong>${node.name}</strong><br>
+                Value: ${node.value.toFixed(2)} (Billion USD)
+            `;
+            tooltip.classList.add('visible');
+            moveTooltip(event); // Position immediately
+        }
+
+        /**
+         * Updates the tooltip's position to follow the mouse cursor.
+         * @param {Event} event - The mouse event.
+         */
+        function moveTooltip(event) {
+            const padding = 15; // Offset from cursor
+            let x = event.pageX + padding;
+            let y = event.pageY + padding;
+
+            // Adjust tooltip position if it goes off screen (right and bottom)
+            if (x + tooltip.offsetWidth > window.innerWidth) {
+                x = event.pageX - tooltip.offsetWidth - padding;
+            }
+            if (y + tooltip.offsetHeight > window.innerHeight) {
+                y = event.pageY - tooltip.offsetHeight - padding;
+            }
+
+            tooltip.style.left = `${x}px`;
+            tooltip.style.top = `${y}px`;
+        }
+
+        /**
+         * Hides the tooltip.
+         */
+        function hideTooltip() {
+            tooltip.classList.remove('visible');
+        }
+    </script>
+</body>
+</html>
