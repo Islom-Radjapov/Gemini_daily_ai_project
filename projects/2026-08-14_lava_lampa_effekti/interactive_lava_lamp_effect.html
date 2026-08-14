@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Lava Lamp</title>
+    <style>
+        /*
+         * Global styles for the body and canvas.
+         * Ensures the canvas fills the entire viewport and removes default margins.
+         */
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            background-color: #1a012e; /* Deep purple background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+        }
+
+        /*
+         * Canvas styles.
+         * Display block removes extra space below the canvas, making it truly fullscreen.
+         */
+        canvas {
+            display: block;
+            background-color: transparent; /* Canvas background will be transparent over body's background */
+        }
+
+        /* Styling for the info box to guide user interaction */
+        #info_box {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1em;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 10; /* Ensure it's above the canvas */
+            pointer-events: none; /* Allows mouse events to pass through to canvas */
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #info_box.hidden {
+            opacity: 0;
+            /* Optional: Add a delay or completely remove from DOM if needed */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="lava_lamp_canvas"></canvas>
+    <div id="info_box">
+        Move your mouse to attract blobs.<br>Press SPACEBAR to add a new blob.
+    </div>
+
+    <script>
+        /**
+         * Main script for the Interactive Lava Lamp effect.
+         * This script handles canvas drawing, blob simulation, and user interaction.
+         */
+
+        // Get the canvas element and its 2D rendering context.
+        const canvas = document.getElementById('lava_lamp_canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Array to hold all the lava blobs.
+        const blobs = [];
+
+        // Mouse interaction state.
+        // Initial position is center of the canvas until mouse moves.
+        const mouse = {
+            x: 0,
+            y: 0,
+            radius: 150 // Radius of attraction for the mouse
+        };
+
+        // Configuration constants for the lava lamp.
+        const CONFIG = {
+            initialBlobCount: 8,
+            minBlobRadius: 20,
+            maxBlobRadius: 50,
+            minBlobSpeed: 0.5,
+            maxBlobSpeed: 1.5,
+            blobColorSaturation: 90, // HSL saturation
+            blobColorLightness: 60,  // HSL lightness
+            attractionStrength: 0.006, // How strongly blobs are attracted to mouse
+            bounceFactor: 0.9,       // How much speed is retained after bouncing
+            filterBlur: 35,          // Blur amount for the metaball effect
+            filterContrast: 15       // Contrast amount for the metaball effect
+        };
+
+        /**
+         * Blob class represents a single 'lava' droplet.
+         * Handles its position, movement, and drawing.
+         */
+        class Blob {
+            /**
+             * @param {number} x - Initial x position.
+             * @param {number} y - Initial y position.
+             * @param {number} radius - Radius of the blob.
+             * @param {number} hue - HSL hue value for the blob's color.
+             * @param {number} dx - Initial x velocity.
+             * @param {number} dy - Initial y velocity.
+             */
+            constructor(x, y, radius, hue, dx, dy) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.hue = hue;
+                this.dx = dx; // Velocity in x direction
+                this.dy = dy; // Velocity in y direction
+            }
+
+            /**
+             * Updates the blob's position and handles wall collisions.
+             * Applies mouse attraction force.
+             */
+            update() {
+                // Apply mouse attraction
+                const distToMouseX = mouse.x - this.x;
+                const distToMouseY = mouse.y - this.y;
+                const distance = Math.sqrt(distToMouseX * distToMouseX + distToMouseY * distToMouseY);
+
+                if (distance < mouse.radius) {
+                    // Calculate force direction and magnitude
+                    const forceDirectionX = distToMouseX / (distance || 1); // Avoid division by zero
+                    const forceDirectionY = distToMouseY / (distance || 1);
+                    // Force is stronger when closer to the mouse
+                    const force = CONFIG.attractionStrength * (mouse.radius - distance) / mouse.radius;
+                    this.dx += forceDirectionX * force;
+                    this.dy += forceDirectionY * force;
+                }
+
+                // Update position
+                this.x += this.dx;
+                this.y += this.dy;
+
+                // Wall collision detection and bounce
+                // Left wall
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.dx *= -CONFIG.bounceFactor;
+                }
+                // Right wall
+                if (this.x + this.radius > canvas.width) {
+                    this.x = canvas.width - this.radius;
+                    this.dx *= -CONFIG.bounceFactor;
+                }
+                // Top wall
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.dy *= -CONFIG.bounceFactor;
+                }
+                // Bottom wall
+                if (this.y + this.radius > canvas.height) {
+                    this.y = canvas.height - this.radius;
+                    this.dy *= -CONFIG.bounceFactor;
+                }
+
+                // Add slight random jitter for more organic movement
+                this.dx += (Math.random() - 0.5) * 0.01;
+                this.dy += (Math.random() - 0.5) * 0.01;
+
+                // Limit speed to prevent blobs from flying too fast
+                const speed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+                if (speed > CONFIG.maxBlobSpeed * 2) { // A higher limit for max speed
+                    this.dx = (this.dx / speed) * CONFIG.maxBlobSpeed * 2;
+                    this.dy = (this.dy / speed) * CONFIG.maxBlobSpeed * 2;
+                }
+            }
+
+            /**
+             * Draws the blob on the canvas.
+             * @param {CanvasRenderingContext2D} ctx - The 2D rendering context.
+             */
+            draw(ctx) {
+                ctx.fillStyle = `hsl(${this.hue}, ${CONFIG.blobColorSaturation}%, ${CONFIG.blobColorLightness}%)`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        /**
+         * Initializes the canvas size based on the window dimensions.
+         * Also sets initial mouse position to the center of the canvas.
+         */
+        function initCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Update mouse position if canvas size changes
+            mouse.x = canvas.width / 2;
+            mouse.y = canvas.height / 2;
+        }
+
+        /**
+         * Generates a new random blob.
+         * @returns {Blob} A newly created Blob instance.
+         */
+        function createRandomBlob() {
+            const radius = Math.random() * (CONFIG.maxBlobRadius - CONFIG.minBlobRadius) + CONFIG.minBlobRadius;
+            // Ensure blob spawns fully within bounds
+            const x = Math.random() * (canvas.width - radius * 2) + radius;
+            const y = Math.random() * (canvas.height - radius * 2) + radius;
+            const hue = Math.random() * 360; // Random hue for color variation
+            const dx = (Math.random() - 0.5) * CONFIG.maxBlobSpeed * 2;
+            const dy = (Math.random() - 0.5) * CONFIG.maxBlobSpeed * 2;
+            return new Blob(x, y, radius, hue, dx, dy);
+        }
+
+        /**
+         * Hides the info box with a fade-out effect.
+         */
+        let infoBoxHidden = false;
+        function hideInfoBox() {
+            if (!infoBoxHidden) {
+                const infoBox = document.getElementById('info_box');
+                if (infoBox) {
+                    infoBox.classList.add('hidden');
+                }
+                infoBoxHidden = true;
+            }
+        }
+
+        /**
+         * Initializes the lava lamp simulation by creating initial blobs
+         * and setting up event listeners.
+         */
+        function initLavaLamp() {
+            initCanvasSize();
+
+            // Create initial blobs
+            for (let i = 0; i < CONFIG.initialBlobCount; i++) {
+                blobs.push(createRandomBlob());
+            }
+
+            // Event listener for window resizing
+            window.addEventListener('resize', initCanvasSize);
+
+            // Event listeners for mouse interaction
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+                // Hide info box after first interaction
+                hideInfoBox();
+            });
+
+            // Event listener for keyboard input
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    // Prevent default spacebar action (scrolling)
+                    e.preventDefault();
+                    blobs.push(createRandomBlob());
+                    // Hide info box after first interaction
+                    hideInfoBox();
+                }
+            });
+
+            // Start the animation loop
+            animate();
+        }
+
+        /**
+         * The main animation loop.
+         * Clears the canvas, updates blob positions, and redraws them
+         * with the metaball filter effect.
+         */
+        function animate() {
+            // Clear the entire canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Apply the blur and contrast filters for the metaball effect.
+            // All subsequent drawing operations will be affected by this filter
+            // until it's reset. This creates the characteristic "lava lamp" merge effect.
+            ctx.filter = `blur(${CONFIG.filterBlur}px) contrast(${CONFIG.filterContrast})`;
+
+            // Draw all blobs
+            blobs.forEach(blob => {
+                blob.update(); // Update position before drawing
+                blob.draw(ctx);
+            });
+
+            // Reset the filter to avoid affecting other potential drawings (though none exist here)
+            ctx.filter = 'none';
+
+            // Request the next animation frame.
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize the lava lamp when the DOM is fully loaded.
+        document.addEventListener('DOMContentLoaded', initLavaLamp);
+    </script>
+</body>
+</html>

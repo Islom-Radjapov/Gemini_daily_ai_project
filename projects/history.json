@@ -60,6 +60,7 @@
     "quiz_app::Sport viktorinasi",
     "python_api::JSON formatlovchi va validatori",
     "quiz_app::Hayvonlar viktorinasi",
-    "data_viz::Treemap vizualizatsiya"
+    "data_viz::Treemap vizualizatsiya",
+    "interactive_art::Lava lampa effekti"
   ]
 }
