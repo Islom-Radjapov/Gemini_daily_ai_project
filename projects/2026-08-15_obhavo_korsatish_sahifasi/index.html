@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <!-- Favicon using SVG for a simple emoji icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☀️</text></svg>">
+    
+    <style>
+        /* Import Google Font - Poppins */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+        /* Universal box-sizing and font family */
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Body styling: full height, centered content, light background */
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #71b7e6, #9b59b6); /* Gradient background */
+            color: #333; /* Default text color */
+        }
+
+        /* Container for the entire weather dashboard */
+        .weather-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 100%;
+            max-width: 400px; /* Max width for better aesthetics on larger screens */
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* Hover effect for the container */
+        .weather-container:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Title styling */
+        .weather-container h1 {
+            font-size: 2.2em;
+            margin-bottom: 25px;
+            color: #333;
+            font-weight: 700;
+        }
+
+        /* Search area styling */
+        .search-area {
+            display: flex;
+            margin-bottom: 25px;
+            gap: 10px; /* Space between input and button */
+        }
+
+        /* Input field styling */
+        .search-area input {
+            flex-grow: 1; /* Input takes available space */
+            padding: 12px 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        /* Input focus effect */
+        .search-area input:focus {
+            border-color: #71b7e6;
+        }
+
+        /* Search button styling */
+        .search-area button {
+            padding: 12px 20px;
+            background-color: #71b7e6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            font-weight: 600;
+        }
+
+        /* Search button hover and active effects */
+        .search-area button:hover {
+            background-color: #5a9edb;
+        }
+
+        .search-area button:active {
+            transform: scale(0.98);
+        }
+
+        /* Weather display area styling - initially hidden */
+        .weather-display {
+            display: none; /* Hide until weather data is available */
+            animation: fadeIn 0.8s ease-out forwards; /* Fade in animation */
+        }
+
+        /* Keyframe animation for fading in */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Error message styling */
+        .error-message {
+            color: #e74c3c;
+            font-size: 1.1em;
+            margin-top: 15px;
+            display: none; /* Hidden by default */
+        }
+
+        /* City name styling */
+        .city-name {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #444;
+        }
+
+        /* Temperature styling */
+        .temperature {
+            font-size: 4em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        /* Weather description styling */
+        .description {
+            font-size: 1.6em;
+            color: #666;
+            margin-bottom: 15px;
+            text-transform: capitalize; /* Capitalize first letter */
+        }
+
+        /* Weather icon styling */
+        .weather-icon {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 15px;
+            vertical-align: middle; /* Align icon vertically */
+        }
+
+        /* Additional details styling */
+        .details {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        /* Individual detail item styling */
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px 15px;
+            min-width: 100px; /* Minimum width for each item */
+        }
+
+        .detail-item .label {
+            font-size: 0.9em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .detail-item .value {
+            font-size: 1.4em;
+            font-weight: 500;
+            color: #555;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 480px) {
+            .weather-container {
+                padding: 20px;
+                margin: 20px;
+            }
+
+            .weather-container h1 {
+                font-size: 1.8em;
+            }
+
+            .search-area {
+                flex-direction: column; /* Stack input and button vertically */
+                gap: 15px;
+            }
+
+            .search-area button {
+                width: 100%;
+            }
+
+            .city-name {
+                font-size: 2em;
+            }
+
+            .temperature {
+                font-size: 3.5em;
+            }
+
+            .description {
+                font-size: 1.3em;
+            }
+
+            .weather-icon {
+                width: 80px;
+                height: 80px;
+            }
+
+            .details {
+                flex-direction: column; /* Stack details vertically */
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="weather-container">
+        <h1>Weather Dashboard</h1>
+        <div class="search-area">
+            <input type="text" id="city-input" placeholder="Enter city name..." autocomplete="off">
+            <button id="search-button">Search</button>
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+
+        <div id="weather-display" class="weather-display">
+            <h2 class="city-name" id="city-name"></h2>
+            <img src="" alt="Weather Icon" class="weather-icon" id="weather-icon">
+            <div class="temperature" id="temperature"></div>
+            <div class="description" id="description"></div>
+            
+            <div class="details">
+                <div class="detail-item">
+                    <div class="label">Humidity</div>
+                    <div class="value" id="humidity"></div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">Wind Speed</div>
+                    <div class="value" id="wind-speed"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // IMPORTANT: Replace 'YOUR_API_KEY' with your actual OpenWeatherMap API key.
+        // You can get one for free from https://openweathermap.org/api
+        const API_KEY = "YOUR_API_KEY"; 
+        const API_BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
+
+        // Get references to DOM elements
+        const cityInput = document.getElementById('city-input');
+        const searchButton = document.getElementById('search-button');
+        const errorMessage = document.getElementById('error-message');
+        const weatherDisplay = document.getElementById('weather-display');
+
+        const cityNameElement = document.getElementById('city-name');
+        const weatherIconElement = document.getElementById('weather-icon');
+        const temperatureElement = document.getElementById('temperature');
+        const descriptionElement = document.getElementById('description');
+        const humidityElement = document.getElementById('humidity');
+        const windSpeedElement = document.getElementById('wind-speed');
+
+        /**
+         * Fetches weather data for a given city from the OpenWeatherMap API.
+         * @param {string} city The name of the city.
+         */
+        async function fetchWeatherData(city) {
+            // Hide previous weather data and error message
+            weatherDisplay.style.display = 'none';
+            errorMessage.style.display = 'none';
+
+            // Basic input validation
+            if (!city.trim()) {
+                displayError("Please enter a city name.");
+                return;
+            }
+
+            const url = `${API_BASE_URL}?q=${city}&appid=${API_KEY}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayWeather(data);
+                } else {
+                    // Handle API errors (e.g., city not found)
+                    if (data.message) {
+                        displayError(data.message.charAt(0).toUpperCase() + data.message.slice(1));
+                    } else {
+                        displayError("Could not retrieve weather data. Please try again.");
+                    }
+                }
+            } catch (error) {
+                // Handle network errors
+                console.error("Error fetching weather data:", error);
+                displayError("Failed to connect to the weather service. Check your internet connection.");
+            }
+        }
+
+        /**
+         * Updates the DOM with the fetched weather data.
+         * @param {object} data The weather data object from the API.
+         */
+        function displayWeather(data) {
+            // Convert temperature from Kelvin to Celsius
+            const temperatureCelsius = (data.main.temp - 273.15).toFixed(1); // One decimal place
+
+            cityNameElement.textContent = data.name;
+            temperatureElement.textContent = `${temperatureCelsius}°C`;
+            descriptionElement.textContent = data.weather[0].description;
+            humidityElement.textContent = `${data.main.humidity}%`;
+            windSpeedElement.textContent = `${data.wind.speed} m/s`; // Wind speed in meters per second
+
+            // Construct the icon URL
+            const iconCode = data.weather[0].icon;
+            weatherIconElement.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+            weatherIconElement.alt = data.weather[0].description;
+
+            // Show the weather display area
+            weatherDisplay.style.display = 'block';
+        }
+
+        /**
+         * Displays an error message to the user.
+         * @param {string} message The error message to display.
+         */
+        function displayError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            weatherDisplay.style.display = 'none'; // Ensure weather display is hidden on error
+        }
+
+        // Add event listener to the search button
+        searchButton.addEventListener('click', () => {
+            const city = cityInput.value;
+            fetchWeatherData(city);
+        });
+
+        // Allow searching by pressing Enter key in the input field
+        cityInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                searchButton.click(); // Simulate a click on the search button
+            }
+        });
+
+        // Fetch weather for a default city when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchWeatherData('Tashkent'); // Default city
+        });
+    </script>
+</body>
+</html>
