@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Kaleidoscope</title>
+    <style>
+        /* General body styles to remove default margins and overflows */
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars from appearing */
+            background-color: #000; /* Black background for contrast */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff; /* Default text color for instructions */
+        }
+
+        /* Canvas styling to make it fill the entire screen */
+        canvas {
+            display: block; /* Removes any extra space below the canvas */
+            cursor: crosshair; /* Changes cursor to indicate a drawing tool */
+            background-color: #000; /* Ensure canvas background is black */
+        }
+
+        /* Styling for the instructions overlay */
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Center the div */
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
+            padding: 20px 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); /* Subtle glow effect */
+            transition: opacity 0.5s ease-in-out; /* Smooth fade transition */
+            max-width: 80%; /* Limit width on larger screens */
+            pointer-events: none; /* Allow mouse events to pass through to the canvas */
+            z-index: 10; /* Ensure instructions are above the canvas */
+        }
+
+        /* Class to hide the instructions */
+        #instructions.hidden {
+            opacity: 0;
+            pointer-events: none; /* Make it completely non-interactive when hidden */
+        }
+
+        /* Styling for the instruction title */
+        #instructions h1 {
+            margin-top: 0;
+            color: #8aff8a; /* A bright green for visual appeal */
+            font-size: 1.8em;
+        }
+
+        /* Styling for general instruction paragraphs */
+        #instructions p {
+            margin-bottom: 8px;
+            font-size: 1em;
+            line-height: 1.5;
+            color: #ccc;
+        }
+
+        /* Styling for emphasized text within instructions */
+        #instructions p strong {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Styling for the last instruction paragraph (e.g., "Enjoy") */
+        #instructions p:last-child {
+            margin-top: 20px;
+            margin-bottom: 0;
+            font-style: italic;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="kaleidoscopeCanvas"></canvas>
+
+    <!-- Instructions overlay for user guidance -->
+    <div id="instructions">
+        <h1>Interactive Kaleidoscope</h1>
+        <p><strong>Mouse:</strong> Drag to draw beautiful patterns.</p>
+        <p><strong>Left Click:</strong> Starts a new drawing and changes brush color.</p>
+        <p><strong>Arrow Keys:</strong> Move the drawing brush.</p>
+        <p><strong>Spacebar:</strong> Toggle drawing mode (on/off) and change brush color.</p>
+        <p><strong>R Key:</strong> Clear the canvas and start fresh.</p>
+        <p><strong>P Key:</strong> Pause/unpause the animation.</p>
+        <p><strong>I Key:</strong> Toggle these instructions.</p>
+        <p>Enjoy creating your unique art!</p>
+    </div>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('kaleidoscopeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // General kaleidoscope parameters
+        let width, height; // Stores canvas dimensions
+        let centerX, centerY; // Stores the center coordinates of the kaleidoscope
+        const numSegments = 12; // Number of symmetrical segments in the kaleidoscope
+        const angleStep = (Math.PI * 2) / numSegments; // Angle covered by each segment in radians
+
+        // Drawing state variables
+        let isDrawing = false; // Flag to indicate if the mouse/keyboard is actively drawing
+        // Stores an array of points, each containing x, y, hue, and brushSize
+        let pathPoints = []; 
+        let currentHue = 0; // The current hue value for the brush color (0-359)
+        let currentBrushSize = 5; // The base size of the drawing brush
+
+        // Animation state variables
+        let animationFrameId; // Stores the ID returned by requestAnimationFrame for pausing
+        let isPaused = false; // Flag to indicate if the animation is currently paused
+
+        // Instructions visibility state
+        let instructionsElement = document.getElementById('instructions');
+        // Flag to control initial auto-hiding of instructions
+        let initialInstructionsShown = true; 
+
+        // --- Initialization Function ---
+        /**
+         * Initializes the kaleidoscope canvas, sets up event listeners, and starts the animation.
+         */
+        function init() {
+            // Set initial canvas dimensions to fill the window
+            resizeCanvas();
+            // Add event listener for window resizing to make the kaleidoscope responsive
+            window.addEventListener('resize', resizeCanvas);
+
+            // Mouse event listeners for drawing interaction
+            canvas.addEventListener('mousedown', onMouseDown);
+            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('mouseleave', onMouseUp); // Stop drawing if mouse leaves canvas area
+
+            // Keyboard event listener for control
+            document.addEventListener('keydown', onKeyDown);
+
+            // Automatically hide instructions after a few seconds
+            setTimeout(() => {
+                if (initialInstructionsShown) {
+                    instructionsElement.classList.add('hidden');
+                    initialInstructionsShown = false;
+                }
+            }, 7000); // Instructions visible for 7 seconds
+
+            // Start the main animation loop
+            animate();
+        }
+
+        // --- Canvas Resizing Function ---
+        /**
+         * Adjusts the canvas dimensions to match the current window size and recalculates center.
+         */
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            centerX = width / 2;
+            centerY = height / 2;
+            // Redraw the kaleidoscope immediately after resizing to prevent visual distortion
+            draw();
+        }
+
+        // --- Drawing Logic Functions ---
+
+        /**
+         * Draws all stored path points onto the canvas. This function is called multiple times
+         * within the main draw loop, with different canvas transformations applied.
+         * @param {boolean} flipX - If true, the drawing will be reflected horizontally across the segment's axis.
+         */
+        function drawPath(flipX) {
+            // Requires at least two points to draw a line segment
+            if (pathPoints.length < 2) return;
+
+            ctx.lineCap = 'round'; // Round caps for line ends
+            ctx.lineJoin = 'round'; // Round joins for line corners
+
+            for (let i = 0; i < pathPoints.length - 1; i++) {
+                const p1 = pathPoints[i];
+                const p2 = pathPoints[i + 1];
+
+                // Set stroke style using HSL for dynamic color
+                ctx.strokeStyle = `hsl(${p1.hue}, 100%, 50%)`;
+                ctx.lineWidth = p1.brushSize;
+
+                ctx.beginPath(); // Start a new path for each line segment
+
+                // Convert absolute screen coordinates to coordinates relative to the current
+                // transformed canvas origin (which is the kaleidoscope center).
+                let x1_relative = p1.x - centerX;
+                let y1_relative = p1.y - centerY;
+                let x2_relative = p2.x - centerX;
+                let y2_relative = p2.y - centerY;
+
+                // Apply horizontal flip if requested (for symmetrical segments)
+                if (flipX) {
+                    x1_relative = -x1_relative;
+                    x2_relative = -x2_relative;
+                }
+
+                ctx.moveTo(x1_relative, y1_relative);
+                ctx.lineTo(x2_relative, y2_relative);
+                ctx.stroke(); // Draw the line segment
+            }
+        }
+
+        /**
+         * The main drawing function that orchestrates the kaleidoscope effect.
+         * It clears the canvas and then iteratively draws reflected and rotated copies
+         * of the path points for each segment.
+         */
+        function draw() {
+            // Clear the entire canvas with a black background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save(); // Save the current canvas state (identity matrix)
+            ctx.translate(centerX, centerY); // Move the canvas origin to the center of the kaleidoscope
+
+            // Loop through each segment of the kaleidoscope
+            for (let i = 0; i < numSegments; i++) {
+                ctx.rotate(angleStep); // Rotate the canvas for the next segment
+
+                ctx.save(); // Save the state after rotation
+                
+                // Draw the path normally for the current segment
+                drawPath(false);
+
+                // Reflect and draw the path again for inner segment symmetry.
+                // This creates the classic mirroring effect within each wedge.
+                ctx.scale(-1, 1); // Flip the canvas horizontally (across its current Y-axis)
+                drawPath(true); // Draw the path again, indicating it should be horizontally flipped
+                ctx.restore(); // Restore the state before scaling (undo the horizontal flip)
+            }
+
+            ctx.restore(); // Restore to the initial canvas state (origin at 0,0, no rotation)
+        }
+
+        // --- Event Handlers ---
+
+        /**
+         * Handles the mouse down event. Starts a new drawing path and updates color.
+         * @param {MouseEvent} event - The mouse event object.
+         */
+        function onMouseDown(event) {
+            isDrawing = true;
+            pathPoints = []; // Clear previous path to start a new one
+            currentHue = (currentHue + 30) % 360; // Change hue by 30 degrees for a new color
+            currentBrushSize = 5; // Reset brush size
+            // Add the first point of the new path
+            pathPoints.push({
+                x: event.clientX,
+                y: event.clientY,
+                hue: currentHue,
+                brushSize: currentBrushSize
+            });
+            draw(); // Redraw immediately to show the start of the new path
+        }
+
+        /**
+         * Handles the mouse move event. Adds points to the current path if drawing.
+         * @param {MouseEvent} event - The mouse event object.
+         */
+        function onMouseMove(event) {
+            if (!isDrawing) return; // Only process if drawing mode is active
+
+            // Get the last point's coordinates for brush size calculation
+            const prevX = pathPoints.length > 0 ? pathPoints[pathPoints.length - 1].x : event.clientX;
+            const prevY = pathPoints.length > 0 ? pathPoints[pathPoints.length - 1].y : event.clientY;
+
+            // Calculate distance moved to vary brush size (simulating pressure/speed)
+            const distance = Math.sqrt(Math.pow(event.clientX - prevX, 2) + Math.pow(event.clientY - prevY, 2));
+            // Adjust brush size: min 2, max 15, increased by speed
+            const newBrushSize = Math.max(2, Math.min(15, currentBrushSize + distance / 10)); 
+
+            // Add the new point to the path
+            pathPoints.push({
+                x: event.clientX,
+                y: event.clientY,
+                hue: currentHue,
+                brushSize: newBrushSize
+            });
+            currentBrushSize = newBrushSize; // Update current brush size for the next point
+
+            // Optional: Limit the number of path points to maintain performance
+            if (pathPoints.length > 500) {
+                pathPoints.shift(); // Remove the oldest point
+            }
+            draw(); // Redraw the kaleidoscope with the new point
+        }
+
+        /**
+         * Handles the mouse up event. Stops the drawing process.
+         */
+        function onMouseUp() {
+            isDrawing = false;
+        }
+
+        /**
+         * Handles keyboard keydown events for various controls.
+         * @param {KeyboardEvent} event - The keyboard event object.
+         */
+        function onKeyDown(event) {
+            const step = 15; // Movement step for arrow keys
+            let needsRedraw = false; // Flag to indicate if drawing needs to be updated
+
+            // Hide instructions if any key is pressed and they are still visible
+            if (initialInstructionsShown) {
+                instructionsElement.classList.add('hidden');
+                initialInstructionsShown = false;
+            }
+
+            // Handle arrow key movements for the brush
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                // Get the current brush position, defaulting to center if no points exist
+                let currentX = pathPoints.length > 0 ? pathPoints[pathPoints.length - 1].x : centerX;
+                let currentY = pathPoints.length > 0 ? pathPoints[pathPoints.length - 1].y : centerY;
+
+                // Adjust coordinates based on arrow key
+                switch (event.key) {
+                    case 'ArrowUp':
+                        currentY -= step;
+                        break;
+                    case 'ArrowDown':
+                        currentY += step;
+                        break;
+                    case 'ArrowLeft':
+                        currentX -= step;
+                        break;
+                    case 'ArrowRight':
+                        currentX += step;
+                        break;
+                }
+
+                // Constrain the brush within canvas boundaries
+                currentX = Math.max(0, Math.min(width, currentX));
+                currentY = Math.max(0, Math.min(height, currentY));
+
+                // If drawing, add the new point to the path
+                if (isDrawing) {
+                    pathPoints.push({
+                        x: currentX,
+                        y: currentY,
+                        hue: currentHue,
+                        brushSize: currentBrushSize
+                    });
+                    // Maintain path point limit
+                    if (pathPoints.length > 500) {
+                        pathPoints.shift();
+                    }
+                }
+                needsRedraw = true; // Indicate that a redraw is needed
+            }
+
+            // Spacebar: Toggle drawing mode and change brush color
+            if (event.key === ' ') {
+                event.preventDefault(); // Prevent default browser action (e.g., page scrolling)
+                isDrawing = !isDrawing; // Toggle drawing state
+                currentHue = (currentHue + 30) % 360; // Change color for new drawing/mode
+                if (isDrawing) {
+                    pathPoints = []; // Start a new path when drawing is enabled
+                    // Add an initial point based on previous position or center
+                    const initialX = pathPoints.length > 0 ? pathPoints[pathPoints.length - 1].x : centerX;
+                    const initialY = pathPoints.length > 0 ? pathPoints[pathPoints.length - 1].y : centerY;
+                    pathPoints.push({x: initialX, y: initialY, hue: currentHue, brushSize: currentBrushSize});
+                }
+                needsRedraw = true;
+            }
+
+            // 'R' key: Clear the entire canvas
+            if (event.key === 'r' || event.key === 'R') {
+                pathPoints = []; // Clear all path points
+                needsRedraw = true;
+            }
+
+            // 'P' key: Pause or unpause the animation
+            if (event.key === 'p' || event.key === 'P') {
+                isPaused = !isPaused; // Toggle pause state
+                if (!isPaused) {
+                    animate(); // Resume animation if unpaused
+                } else {
+                    cancelAnimationFrame(animationFrameId); // Stop animation frame loop
+                }
+            }
+
+            // 'I' key: Toggle visibility of the instructions
+            if (event.key === 'i' || event.key === 'I') {
+                instructionsElement.classList.toggle('hidden');
+            }
+
+            // Redraw the canvas if any action that requires an update occurred
+            if (needsRedraw) {
+                draw();
+            }
+        }
+
+        // --- Animation Loop ---
+        /**
+         * The main animation loop that continuously updates and redraws the kaleidoscope.
+         */
+        function animate() {
+            if (isPaused) return; // If paused, stop the loop
+
+            draw(); // Call the main drawing function
+            // Request the next animation frame, creating a continuous loop
+            animationFrameId = requestAnimationFrame(animate); 
+        }
+
+        // --- Start the Application ---
+        init();
+    </script>
+</body>
+</html>
