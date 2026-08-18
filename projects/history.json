@@ -63,6 +63,7 @@
     "data_viz::Treemap vizualizatsiya",
     "interactive_art::Lava lampa effekti",
     "web_page::Ob-havo ko'rsatish sahifasi",
-    "interactive_art::Kaleidoskop"
+    "interactive_art::Kaleidoskop",
+    "dashboard::Kripto valyuta tracker"
   ]
 }
