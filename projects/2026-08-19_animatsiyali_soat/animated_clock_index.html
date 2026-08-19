@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated CSS Clock</title>
+    <style>
+        /* General body styling */
+        body {
+            display: flex; /* Use flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Full viewport height */
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); /* Gradient background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Clean font */
+            overflow: hidden; /* Hide potential scrollbars */
+            margin: 0; /* Remove default body margin */
+        }
+
+        /* Clock container styling */
+        .clock_container {
+            width: 300px; /* Fixed width */
+            height: 300px; /* Fixed height */
+            background: rgba(255, 255, 255, 0.05); /* Semi-transparent background */
+            border-radius: 50%; /* Make it a circle */
+            border: 2px solid rgba(255, 255, 255, 0.1); /* Light border */
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), /* Inner shadow */
+                        inset 0 0 30px rgba(255, 255, 255, 0.1); /* Outer shadow */
+            position: relative; /* For absolute positioning of hands and markings */
+            display: flex; /* To center the clock face elements */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Center dot styling */
+        .center_dot {
+            width: 15px; /* Size of the center dot */
+            height: 15px;
+            background: #fff; /* White color */
+            border-radius: 50%; /* Make it circular */
+            position: absolute; /* Position relative to clock_container */
+            z-index: 10; /* Ensure it's above the hands */
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.8),
+                        0 0 10px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Clock hand base styling */
+        .hand {
+            position: absolute; /* Position relative to clock_container */
+            bottom: 50%; /* Start from the center bottom of the clock_container */
+            transform-origin: bottom center; /* Pivot point at the bottom center of the hand */
+            border-radius: 5px; /* Rounded edges for hands */
+            background-color: #fff; /* Default hand color */
+            /* CSS custom properties for rotation */
+            --rotation: 0deg; 
+            transform: rotate(var(--rotation)); /* Apply rotation from JS */
+            transition: transform 0.5s cubic-bezier(0.4, 2.3, 0.6, 1); /* Smooth transition for rotation */
+            /* The cubic-bezier makes it "bouncy" or "springy" */
+        }
+
+        /* Specific styling for the hour hand */
+        .hour_hand {
+            width: 8px;
+            height: 70px; /* Shorter hand */
+            background-color: #fff;
+            transition: transform 0.8s ease-out; /* Slightly slower and smoother transition for hour hand */
+        }
+
+        /* Specific styling for the minute hand */
+        .minute_hand {
+            width: 6px;
+            height: 100px; /* Medium length hand */
+            background-color: #fff;
+            transition: transform 0.6s ease-out; /* Standard smooth transition for minute hand */
+        }
+
+        /* Specific styling for the second hand */
+        .second_hand {
+            width: 2px;
+            height: 120px; /* Longest and thinnest hand */
+            background-color: #f00; /* Red color for seconds */
+            transition: transform 0.1s linear; /* Fast, linear transition for second hand */
+        }
+        
+        /* Markings for the clock face */
+        .markings div {
+            position: absolute;
+            width: 10px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.6);
+            transform-origin: 50% 150px; /* Pivot around the center of the clock */
+            top: 0;
+            left: calc(50% - 5px); /* Center horizontally */
+        }
+
+        /* Specific styling for hour markings (larger) */
+        .markings div:nth-child(5n) { /* Every 5th marking (hour) */
+            height: 6px;
+            width: 4px;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Positioning of individual markings */
+        .markings div:nth-child(1) { transform: rotate(6deg) translateY(-140px); }
+        .markings div:nth-child(2) { transform: rotate(12deg) translateY(-140px); }
+        .markings div:nth-child(3) { transform: rotate(18deg) translateY(-140px); }
+        .markings div:nth-child(4) { transform: rotate(24deg) translateY(-140px); }
+        .markings div:nth-child(5) { transform: rotate(30deg) translateY(-140px); } /* 1 o'clock */
+        .markings div:nth-child(6) { transform: rotate(36deg) translateY(-140px); }
+        .markings div:nth-child(7) { transform: rotate(42deg) translateY(-140px); }
+        .markings div:nth-child(8) { transform: rotate(48deg) translateY(-140px); }
+        .markings div:nth-child(9) { transform: rotate(54deg) translateY(-140px); }
+        .markings div:nth-child(10) { transform: rotate(60deg) translateY(-140px); } /* 2 o'clock */
+        .markings div:nth-child(11) { transform: rotate(66deg) translateY(-140px); }
+        .markings div:nth-child(12) { transform: rotate(72deg) translateY(-140px); }
+        .markings div:nth-child(13) { transform: rotate(78deg) translateY(-140px); }
+        .markings div:nth-child(14) { transform: rotate(84deg) translateY(-140px); }
+        .markings div:nth-child(15) { transform: rotate(90deg) translateY(-140px); } /* 3 o'clock */
+        .markings div:nth-child(16) { transform: rotate(96deg) translateY(-140px); }
+        .markings div:nth-child(17) { transform: rotate(102deg) translateY(-140px); }
+        .markings div:nth-child(18) { transform: rotate(108deg) translateY(-140px); }
+        .markings div:nth-child(19) { transform: rotate(114deg) translateY(-140px); }
+        .markings div:nth-child(20) { transform: rotate(120deg) translateY(-140px); } /* 4 o'clock */
+        .markings div:nth-child(21) { transform: rotate(126deg) translateY(-140px); }
+        .markings div:nth-child(22) { transform: rotate(132deg) translateY(-140px); }
+        .markings div:nth-child(23) { transform: rotate(138deg) translateY(-140px); }
+        .markings div:nth-child(24) { transform: rotate(144deg) translateY(-140px); }
+        .markings div:nth-child(25) { transform: rotate(150deg) translateY(-140px); } /* 5 o'clock */
+        .markings div:nth-child(26) { transform: rotate(156deg) translateY(-140px); }
+        .markings div:nth-child(27) { transform: rotate(162deg) translateY(-140px); }
+        .markings div:nth-child(28) { transform: rotate(168deg) translateY(-140px); }
+        .markings div:nth-child(29) { transform: rotate(174deg) translateY(-140px); }
+        .markings div:nth-child(30) { transform: rotate(180deg) translateY(-140px); } /* 6 o'clock */
+        .markings div:nth-child(31) { transform: rotate(186deg) translateY(-140px); }
+        .markings div:nth-child(32) { transform: rotate(192deg) translateY(-140px); }
+        .markings div:nth-child(33) { transform: rotate(198deg) translateY(-140px); }
+        .markings div:nth-child(34) { transform: rotate(204deg) translateY(-140px); }
+        .markings div:nth-child(35) { transform: rotate(210deg) translateY(-140px); } /* 7 o'clock */
+        .markings div:nth-child(36) { transform: rotate(216deg) translateY(-140px); }
+        .markings div:nth-child(37) { transform: rotate(222deg) translateY(-140px); }
+        .markings div:nth-child(38) { transform: rotate(228deg) translateY(-140px); }
+        .markings div:nth-child(39) { transform: rotate(234deg) translateY(-140px); }
+        .markings div:nth-child(40) { transform: rotate(240deg) translateY(-140px); } /* 8 o'clock */
+        .markings div:nth-child(41) { transform: rotate(246deg) translateY(-140px); }
+        .markings div:nth-child(42) { transform: rotate(252deg) translateY(-140px); }
+        .markings div:nth-child(43) { transform: rotate(258deg) translateY(-140px); }
+        .markings div:nth-child(44) { transform: rotate(264deg) translateY(-140px); }
+        .markings div:nth-child(45) { transform: rotate(270deg) translateY(-140px); } /* 9 o'clock */
+        .markings div:nth-child(46) { transform: rotate(276deg) translateY(-140px); }
+        .markings div:nth-child(47) { transform: rotate(282deg) translateY(-140px); }
+        .markings div:nth-child(48) { transform: rotate(288deg) translateY(-140px); }
+        .markings div:nth-child(49) { transform: rotate(294deg) translateY(-140px); }
+        .markings div:nth-child(50) { transform: rotate(300deg) translateY(-140px); } /* 10 o'clock */
+        .markings div:nth-child(51) { transform: rotate(306deg) translateY(-140px); }
+        .markings div:nth-child(52) { transform: rotate(312deg) translateY(-140px); }
+        .markings div:nth-child(53) { transform: rotate(318deg) translateY(-140px); }
+        .markings div:nth-child(54) { transform: rotate(324deg) translateY(-140px); }
+        .markings div:nth-child(55) { transform: rotate(330deg) translateY(-140px); } /* 11 o'clock */
+        .markings div:nth-child(56) { transform: rotate(336deg) translateY(-140px); }
+        .markings div:nth-child(57) { transform: rotate(342deg) translateY(-140px); }
+        .markings div:nth-child(58) { transform: rotate(348deg) translateY(-140px); }
+        .markings div:nth-child(59) { transform: rotate(354deg) translateY(-140px); }
+        .markings div:nth-child(60) { transform: rotate(360deg) translateY(-140px); } /* 12 o'clock */
+
+    </style>
+</head>
+<body>
+
+    <div class="clock_container">
+        <!-- Markings for the clock face (60 small lines) -->
+        <div class="markings">
+            <!-- Generate 60 markings dynamically if preferred, or hardcode as done here for simplicity -->
+            <!-- In a real project, CSS custom properties and a loop in JS could generate these,
+                 but for a static CSS animation, hardcoding is fine to showcase the styling. -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 1 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 2 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 3 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 4 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 5 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 6 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 7 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 8 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 9 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 10 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 11 -->
+            <div></div><div></div><div></div><div></div><div></div> <!-- 12 -->
+        </div>
+
+        <!-- Clock hands -->
+        <div class="hand hour_hand"></div>
+        <div class="hand minute_hand"></div>
+        <div class="hand second_hand"></div>
+
+        <!-- Center pivot dot -->
+        <div class="center_dot"></div>
+    </div>
+
+    <script>
+        // Get references to the clock hand elements
+        const hourHand = document.querySelector('.hour_hand');
+        const minuteHand = document.querySelector('.minute_hand');
+        const secondHand = document.querySelector('.second_hand');
+
+        /**
+         * Updates the position of the clock hands based on the current time.
+         * This function calculates the rotation angles for each hand and applies them
+         * as CSS custom properties. CSS transitions then handle the smooth animation.
+         */
+        function updateClock() {
+            const now = new Date(); // Get current date and time
+            const seconds = now.getSeconds(); // Get current seconds (0-59)
+            const minutes = now.getMinutes(); // Get current minutes (0-59)
+            const hours = now.getHours(); // Get current hours (0-23)
+
+            // Calculate rotation for the second hand
+            // Each second is 6 degrees (360 degrees / 60 seconds)
+            // Initial 90deg offset because CSS transform: rotate(0deg) points to the right (3 o'clock)
+            // and we want 12 o'clock to be 0deg. So, we subtract 90.
+            const secondDegrees = ((seconds / 60) * 360) + 90; 
+            secondHand.style.setProperty('--rotation', `${secondDegrees}deg`);
+
+            // Calculate rotation for the minute hand
+            // Each minute is 6 degrees. Add a fraction for seconds to make it smooth.
+            const minuteDegrees = ((minutes / 60) * 360) + ((seconds / 60 / 60) * 360) + 90;
+            minuteHand.style.setProperty('--rotation', `${minuteDegrees}deg`);
+
+            // Calculate rotation for the hour hand
+            // Each hour is 30 degrees (360 / 12). Add fractions for minutes and seconds.
+            // Use hours % 12 for 12-hour format, then add fractions for precise movement.
+            const hourDegrees = ((hours % 12 / 12) * 360) + ((minutes / 60 / 12) * 360) + ((seconds / 3600 / 12) * 360) + 90;
+            hourHand.style.setProperty('--rotation', `${hourDegrees}deg`);
+        }
+
+        // Call updateClock once immediately to set the initial positions
+        updateClock();
+
+        // Update the clock every second (1000 milliseconds)
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>
