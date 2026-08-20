@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Breakout Game</title>
+    <style>
+        /* Basic styling for the body and canvas */
+        body {
+            background-color: #2c3e50; /* Dark blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+
+        canvas {
+            background-color: #34495e; /* Slightly lighter background for the game area */
+            border: 5px solid #ecf0f1; /* Light gray border */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+            display: block; /* Remove extra space below canvas */
+            cursor: none; /* Hide default cursor to use paddle as primary focus */
+        }
+
+        /* Message styling (optional, done directly on canvas for this project) */
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- Game Variables ---
+
+        // Ball properties
+        let ballRadius = 10;
+        let x = canvas.width / 2; // Ball's initial X position
+        let y = canvas.height - 30; // Ball's initial Y position
+        let dx = 4; // Ball's speed in X direction
+        let dy = -4; // Ball's speed in Y direction (negative to move up initially)
+        const ballColor = '#e74c3c'; // Red
+
+        // Paddle properties
+        const paddleHeight = 15;
+        const paddleWidth = 120;
+        let paddleX = (canvas.width - paddleWidth) / 2; // Paddle's initial X position
+        const paddleSpeed = 8; // Speed at which the paddle moves
+        const paddleColor = '#3498db'; // Blue
+
+        // Keyboard input states
+        let rightPressed = false;
+        let leftPressed = false;
+
+        // Brick properties
+        const brickRowCount = 5;
+        const brickColumnCount = 8;
+        const brickWidth = 80;
+        const brickHeight = 20;
+        const brickPadding = 10;
+        const brickOffsetTop = 30; // Space from the top edge of the canvas
+        const brickOffsetLeft = 30; // Space from the left edge of the canvas
+        const brickColors = ['#2ecc71', '#f1c40f', '#e67e22', '#c0392b', '#9b59b6']; // Green, Yellow, Orange, Red, Purple
+
+        // Array to hold brick objects
+        const bricks = [];
+
+        // Game state variables
+        let score = 0;
+        let lives = 3;
+        let gameStarted = false; // True once the player presses space to begin
+        let gameOver = false;    // True when game ends (win or lose)
+        let animationFrameId;    // To store the requestAnimationFrame ID
+
+        // --- Event Listeners ---
+
+        // Listen for key presses
+        document.addEventListener('keydown', keyDownHandler, false);
+        document.addEventListener('keyup', keyUpHandler, false);
+
+        /**
+         * Handles key down events.
+         * Sets movement flags for paddle and triggers game start/restart with Spacebar.
+         * @param {KeyboardEvent} e - The keyboard event object.
+         */
+        function keyDownHandler(e) {
+            if (e.key === 'Right' || e.key === 'ArrowRight') {
+                rightPressed = true;
+            } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+                leftPressed = true;
+            } else if (e.key === ' ' && (gameOver || !gameStarted)) { // Spacebar to start or restart
+                e.preventDefault(); // Prevent page scrolling
+                startGame();
+            }
+        }
+
+        /**
+         * Handles key up events.
+         * Clears movement flags for paddle.
+         * @param {KeyboardEvent} e - The keyboard event object.
+         */
+        function keyUpHandler(e) {
+            if (e.key === 'Right' || e.key === 'ArrowRight') {
+                rightPressed = false;
+            } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+                leftPressed = false;
+            }
+        }
+
+        // --- Game Initialization ---
+
+        /**
+         * Initializes the bricks array with their positions and active status.
+         */
+        function initBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
+                for (let r = 0; r < brickRowCount; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1 }; // status 1 means active, 0 means destroyed
+                }
+            }
+        }
+
+        /**
+         * Resets game state and starts the game loop.
+         */
+        function startGame() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId); // Cancel any previous game loop
+            }
+
+            // Reset ball and paddle position
+            x = canvas.width / 2;
+            y = canvas.height - 30;
+            dx = 4;
+            dy = -4;
+            paddleX = (canvas.width - paddleWidth) / 2;
+
+            // Reset score and lives if it's a new game or restart after game over
+            if (!gameStarted || gameOver) {
+                score = 0;
+                lives = 3;
+                initBricks(); // Re-initialize all bricks
+            }
+
+            gameStarted = true;
+            gameOver = false;
+            draw(); // Start the game loop
+        }
+
+        /**
+         * Resets the ball and paddle position after a life is lost.
+         * If no lives left, sets game over.
+         */
+        function resetBallAndPaddle() {
+            x = canvas.width / 2;
+            y = canvas.height - 30;
+            dx = 4;
+            dy = -4; // Ensure ball starts moving upwards
+            paddleX = (canvas.width - paddleWidth) / 2;
+        }
+
+        // --- Drawing Functions ---
+
+        /**
+         * Draws the ball on the canvas.
+         */
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = ballColor;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        /**
+         * Draws the paddle on the canvas.
+         */
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = paddleColor;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        /**
+         * Draws all active bricks on the canvas.
+         */
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) { // Only draw active bricks
+                        const brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+                        const brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        ctx.fillStyle = brickColors[r % brickColors.length]; // Cycle through colors
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        /**
+         * Draws the current score on the canvas.
+         */
+        function drawScore() {
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#ecf0f1'; // Light gray
+            ctx.fillText(`Score: ${score}`, 8, 20); // Position at top-left
+        }
+
+        /**
+         * Draws the remaining lives on the canvas.
+         */
+        function drawLives() {
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#ecf0f1'; // Light gray
+            ctx.fillText(`Lives: ${lives}`, canvas.width - 65, 20); // Position at top-right
+        }
+
+        /**
+         * Draws game messages (start, win, lose) on the canvas.
+         */
+        function drawMessages() {
+            ctx.font = '30px Arial';
+            ctx.fillStyle = '#ecf0f1'; // Light gray
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            if (!gameStarted) {
+                ctx.fillText('Press Space to Start', canvas.width / 2, canvas.height / 2);
+            } else if (gameOver) {
+                if (score === brickColumnCount * brickRowCount) {
+                    ctx.fillText('YOU WIN, CONGRATULATIONS!', canvas.width / 2, canvas.height / 2 - 30);
+                } else {
+                    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 30);
+                }
+                ctx.fillText('Press Space to Restart', canvas.width / 2, canvas.height / 2 + 30);
+            }
+        }
+
+        // --- Game Logic Functions ---
+
+        /**
+         * Detects collision between the ball and bricks.
+         * Updates brick status and score if a collision occurs.
+         * Checks for win condition.
+         */
+        function collisionDetection() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    const b = bricks[c][r];
+                    if (b.status === 1) { // If brick is active
+                        if (x + ballRadius > b.x && x - ballRadius < b.x + brickWidth &&
+                            y + ballRadius > b.y && y - ballRadius < b.y + brickHeight) {
+                            dy = -dy; // Reverse ball direction
+                            b.status = 0; // Destroy the brick
+                            score++;
+
+                            if (score === brickRowCount * brickColumnCount) {
+                                gameOver = true; // All bricks destroyed
+                                if (animationFrameId) {
+                                    cancelAnimationFrame(animationFrameId);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * Main game drawing and update loop.
+         * Clears canvas, draws elements, updates positions, and handles collisions.
+         */
+        function draw() {
+            // Clear the entire canvas on each frame
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            drawScore();
+            drawLives();
+            drawMessages();
+
+            if (!gameStarted || gameOver) {
+                // If the game hasn't started or is over, only draw the initial state/message.
+                // The loop will not continue until startGame() is called.
+                return;
+            }
+
+            // Ball movement
+            x += dx;
+            y += dy;
+
+            // Ball collision with walls
+            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                dx = -dx; // Reverse X direction
+            }
+            if (y + dy < ballRadius) {
+                dy = -dy; // Reverse Y direction (top wall)
+            } else if (y + dy > canvas.height - ballRadius) {
+                // Ball hits bottom edge
+                if (x > paddleX && x < paddleX + paddleWidth) {
+                    // Ball hits paddle
+                    dy = -dy; // Reverse Y direction
+
+                    // Adjust DX based on where the ball hits the paddle for varied bounces
+                    const hitPoint = x - (paddleX + paddleWidth / 2); // -paddleWidth/2 to paddleWidth/2
+                    dx = hitPoint * 0.15; // Multiply by a factor to control angle (adjust as needed)
+                } else {
+                    // Ball missed paddle, lose a life
+                    lives--;
+                    if (!lives) {
+                        gameOver = true; // No lives left, game over
+                        if (animationFrameId) {
+                            cancelAnimationFrame(animationFrameId);
+                        }
+                    } else {
+                        resetBallAndPaddle(); // Reset ball and paddle for next life
+                    }
+                }
+            }
+
+            // Paddle movement
+            if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                paddleX += paddleSpeed;
+            } else if (leftPressed && paddleX > 0) {
+                paddleX -= paddleSpeed;
+            }
+
+            collisionDetection();
+
+            // Request the next animation frame to continue the loop
+            animationFrameId = requestAnimationFrame(draw);
+        }
+
+        // --- Initial Setup ---
+        initBricks(); // Initialize bricks once when the page loads
+        draw();       // Draw the initial state (before the game starts)
+    </script>
+</body>
+</html>
