@@ -66,6 +66,7 @@
     "interactive_art::Kaleidoskop",
     "dashboard::Kripto valyuta tracker",
     "css_animation::Animatsiyali soat",
-    "js_game::Breakout o'yini"
+    "js_game::Breakout o'yini",
+    "python_api::URL qisqartiruvchi"
   ]
 }
