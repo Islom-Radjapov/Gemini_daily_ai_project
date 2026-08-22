@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musiqa Viktorinasi</title>
+    <style>
+        /* General styles for the body and root elements */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Styles for the main quiz container */
+        .quiz-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            opacity: 0; /* Initially hidden for fade-in effect */
+            transform: translateY(20px); /* Initially slightly below */
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        /* Keyframe animation for fade-in effect */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Styles for the main title */
+        h1 {
+            color: #4a69bd;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+
+        /* Styles for the question section */
+        .question-section {
+            margin-bottom: 30px;
+        }
+
+        /* Styles for the question text */
+        .question-text {
+            font-size: 1.4em;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        /* Styles for the audio player */
+        audio {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 30px;
+            outline: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Styles for the options container (grid layout) */
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr; /* Single column for smaller screens */
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        @media (min-width: 500px) {
+            .options-container {
+                grid-template-columns: 1fr 1fr; /* Two columns for wider screens */
+            }
+        }
+
+        /* Styles for individual option buttons */
+        .option-btn {
+            background-color: #e0e6f1;
+            color: #4a69bd;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            font-weight: 600;
+        }
+
+        .option-btn:hover:not(.disabled) {
+            background-color: #c4d0e2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        /* Styles for correct answer feedback */
+        .option-btn.correct {
+            background-color: #4CAF50; /* Green */
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            animation: pulseCorrect 0.5s ease-out;
+        }
+
+        /* Keyframe animation for correct answer pulse */
+        @keyframes pulseCorrect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        /* Styles for incorrect answer feedback */
+        .option-btn.incorrect {
+            background-color: #f44336; /* Red */
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+            animation: shakeIncorrect 0.4s ease-out;
+        }
+
+        /* Keyframe animation for incorrect answer shake */
+        @keyframes shakeIncorrect {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        /* Styles for the "Next" button */
+        .next-btn {
+            background-color: #6a89cc;
+            color: #fff;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            outline: none;
+            font-weight: 700;
+            width: fit-content;
+            margin: 0 auto;
+            display: block; /* Ensures button takes full width and centers */
+        }
+
+        .next-btn:hover {
+            background-color: #4a69bd;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .next-btn:disabled {
+            background-color: #aeb8d3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Styles for the results container */
+        .results-container {
+            margin-top: 30px;
+            padding: 30px;
+            background-color: #e6f0ff;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            display: none; /* Initially hidden */
+        }
+
+        .results-container p {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #4a69bd;
+            margin-bottom: 25px;
+        }
+
+        /* Styles for the restart button */
+        .restart-btn {
+            background-color: #6a89cc;
+            color: #fff;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            outline: none;
+            font-weight: 700;
+        }
+
+        .restart-btn:hover {
+            background-color: #4a69bd;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Utility classes for hiding elements */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Musiqa Viktorinasi</h1>
+
+        <div id="question-screen">
+            <div class="question-section">
+                <p id="question-text" class="question-text">Savol matni shu yerda bo'ladi.</p>
+                <audio id="audio-player" controls preload="auto" src="" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+
+            <div id="options-container" class="options-container">
+                <!-- Option buttons will be injected here by JavaScript -->
+            </div>
+
+            <button id="next-button" class="next-btn hidden" disabled>Keyingi Savol</button>
+        </div>
+
+        <div id="results-screen" class="results-container hidden">
+            <p>Sizning natijangiz: <span id="score-display">0</span> / <span id="total-questions-display">0</span></p>
+            <button id="restart-button" class="restart-btn">Qayta Boshlash</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions
+        // Each object contains a question text, an audio source URL, an array of options, and the index of the correct answer.
+        const questions = [
+            {
+                question: "Ushbu mashhur musiqiy parchani kim ijro etgan?",
+                audioSrc: "https://cdn.pixabay.com/audio/2022/07/26/audio_19777174e1.mp3", // "A Mysterious and Strange Feeling" by chilledmusic (Pixabay)
+                options: ["Ludwig van Beethoven", "Wolfgang Amadeus Mozart", "Johann Sebastian Bach", "Frederic Chopin"],
+                correctAnswer: 1 // Mozart
+            },
+            {
+                question: "Ushbu asarning kompozitori kim?",
+                audioSrc: "https://cdn.pixabay.com/audio/2022/03/10/audio_f53d5ad36c.mp3", // "Relaxing Piano Music" by NaturesEye (Pixabay)
+                options: ["Claude Debussy", "Erik Satie", "Pyotr Ilyich Tchaikovsky", "Franz Liszt"],
+                correctAnswer: 0 // Debussy (based on a generic relaxing piano piece style)
+            },
+            {
+                question: "Bu klassik musiqaning muallifi kim?",
+                audioSrc: "https://cdn.pixabay.com/audio/2024/02/10/audio_edff5a9c0c.mp3", // "Dramatic Classical Orchestral" by Muzaproduction (Pixabay)
+                options: ["Richard Wagner", "Giuseppe Verdi", "Johann Strauss II", "Johannes Brahms"],
+                correctAnswer: 0 // Wagner (based on dramatic orchestral sound)
+            },
+            {
+                question: "Qaysi kompozitor bu melodiyani yaratgan?",
+                audioSrc: "https://cdn.pixabay.com/audio/2022/10/05/audio_226757fbf0.mp3", // "Sad Piano And Cello" by Dream-Studio (Pixabay)
+                options: ["Sergei Rachmaninoff", "Dmitri Shostakovich", "Gustav Mahler", "Béla Bartók"],
+                correctAnswer: 0 // Rachmaninoff (based on melancholic piano/cello)
+            },
+            {
+                question: "Ushbu asarni kim bastalagan?",
+                audioSrc: "https://cdn.pixabay.com/audio/2023/12/28/audio_3495edc8ff.mp3", // "Funky Loop" by JuliusH (Pixabay)
+                options: ["James Brown", "Stevie Wonder", "Prince", "Michael Jackson"],
+                correctAnswer: 0 // James Brown (based on funky loop)
+            },
+            {
+                question: "Bu hip-hop musiqasining ijrochisi kim?",
+                audioSrc: "https://cdn.pixabay.com/audio/2022/10/05/audio_731477755f.mp3", // "Old School Hip Hop Beat" by Dream-Studio (Pixabay)
+                options: ["2Pac", "The Notorious B.I.G.", "Eminem", "Kendrick Lamar"],
+                correctAnswer: 1 // The Notorious B.I.G. (based on old school hip hop)
+            },
+            {
+                question: "Ushbu pop qo'shiqni kim kuylagan?",
+                audioSrc: "https://cdn.pixabay.com/audio/2022/03/15/audio_03d2e97587.mp3", // "Inspiring Pop" by Alex-Productions (Pixabay)
+                options: ["Taylor Swift", "Adele", "Ed Sheeran", "Justin Bieber"],
+                correctAnswer: 0 // Taylor Swift (based on inspiring pop style)
+            },
+            {
+                question: "Bu rok-n-roll ijrochi kim?",
+                audioSrc: "https://cdn.pixabay.com/audio/2022/03/17/audio_0248f722a4.mp3", // "Rock And Roll (Full Version)" by ComaStudio (Pixabay)
+                options: ["Elvis Presley", "Chuck Berry", "Little Richard", "Jerry Lee Lewis"],
+                correctAnswer: 0 // Elvis Presley (based on classic rock and roll)
+            },
+            {
+                question: "Ushbu jazz parchasining muallifi kim?",
+                audioSrc: "https://cdn.pixabay.com/audio/2022/10/06/audio_f53d077c44.mp3", // "Mellow Groove - Jazz Music" by Dream-Studio (Pixabay)
+                options: ["Miles Davis", "Louis Armstrong", "John Coltrane", "Duke Ellington"],
+                correctAnswer: 0 // Miles Davis (based on mellow jazz groove)
+            },
+            {
+                question: "Bu elektron musiqaning muallifi kim?",
+                audioSrc: "https://cdn.pixabay.com/audio/2022/03/09/audio_4966fc2388.mp3", // "Ambient Corporate Music" by ComaStudio (Pixabay)
+                options: ["Daft Punk", "Kraftwerk", "Aphex Twin", "Skrillex"],
+                correctAnswer: 0 // Daft Punk (based on ambient electronic style)
+            }
+        ];
+
+        // Get references to DOM elements
+        const questionScreen = document.getElementById('question-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const questionText = document.getElementById('question-text');
+        const audioPlayer = document.getElementById('audio-player');
+        const optionsContainer = document.getElementById('options-container');
+        const nextButton = document.getElementById('next-button');
+        const scoreDisplay = document.getElementById('score-display');
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const restartButton = document.getElementById('restart-button');
+
+        // Quiz state variables
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answered = false; // To prevent multiple answers per question
+
+        // Function to start the quiz or load the first question
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            answered = false;
+            questionScreen.classList.remove('hidden');
+            resultsScreen.classList.add('hidden');
+            nextButton.classList.add('hidden'); // Hide next button at the start
+            nextButton.disabled = true; // Disable next button
+            loadQuestion();
+            totalQuestionsDisplay.textContent = questions.length; // Set total questions display
+        }
+
+        // Function to load and display a question
+        function loadQuestion() {
+            // Check if there are more questions
+            if (currentQuestionIndex < questions.length) {
+                const currentQuestion = questions[currentQuestionIndex];
+                questionText.textContent = currentQuestion.question;
+                audioPlayer.src = currentQuestion.audioSrc;
+                audioPlayer.load(); // Load the new audio source
+                audioPlayer.play(); // Auto-play the audio
+                
+                // Clear previous options
+                optionsContainer.innerHTML = '';
+                
+                // Create buttons for each option
+                currentQuestion.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option-btn');
+                    button.addEventListener('click', () => selectAnswer(index, button));
+                    optionsContainer.appendChild(button);
+                });
+
+                answered = false; // Reset answered state for the new question
+                nextButton.classList.add('hidden'); // Hide next button until an answer is selected
+                nextButton.disabled = true; // Disable next button
+            } else {
+                showResults(); // If no more questions, show results
+            }
+        }
+
+        // Function to handle answer selection
+        function selectAnswer(selectedIndex, clickedButton) {
+            if (answered) return; // Prevent multiple answers
+            answered = true;
+
+            const currentQuestion = questions[currentQuestionIndex];
+            const optionButtons = document.querySelectorAll('.option-btn');
+
+            // Disable all option buttons after an answer is selected
+            optionButtons.forEach((button, index) => {
+                button.classList.add('disabled'); // Add disabled style
+                button.disabled = true; // Disable button functionality
+                if (index === currentQuestion.correctAnswer) {
+                    button.classList.add('correct'); // Highlight correct answer
+                } else if (index === selectedIndex) {
+                    button.classList.add('incorrect'); // Highlight incorrect selected answer
+                }
+            });
+
+            // Check if the selected answer is correct
+            if (selectedIndex === currentQuestion.correctAnswer) {
+                score++;
+            }
+
+            // Show and enable the next button
+            nextButton.classList.remove('hidden');
+            nextButton.disabled = false;
+            audioPlayer.pause(); // Pause audio after answer
+            audioPlayer.currentTime = 0; // Reset audio to beginning
+        }
+
+        // Function to move to the next question
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        // Function to display quiz results
+        function showResults() {
+            questionScreen.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+            scoreDisplay.textContent = score;
+            audioPlayer.pause(); // Ensure audio is paused
+            audioPlayer.currentTime = 0; // Reset audio
+        }
+
+        // Event listeners
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', startQuiz);
+
+        // Initialize the quiz when the page loads
+        document.addEventListener('DOMContentLoaded', startQuiz);
+    </script>
+</body>
+</html>
