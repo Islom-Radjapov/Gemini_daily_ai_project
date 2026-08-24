@@ -68,6 +68,7 @@
     "css_animation::Animatsiyali soat",
     "js_game::Breakout o'yini",
     "python_api::URL qisqartiruvchi",
-    "quiz_app::Musiqa viktorinasi"
+    "quiz_app::Musiqa viktorinasi",
+    "python_api::Port scanner"
   ]
 }
