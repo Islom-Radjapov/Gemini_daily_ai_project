@@ -69,6 +69,7 @@
     "js_game::Breakout o'yini",
     "python_api::URL qisqartiruvchi",
     "quiz_app::Musiqa viktorinasi",
-    "python_api::Port scanner"
+    "python_api::Port scanner",
+    "js_game::Snake o'yini"
   ]
 }
