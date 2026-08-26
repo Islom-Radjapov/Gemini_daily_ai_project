@@ -1,0 +1,495 @@
+`filename:README.md
+# gauge_chart_visualization
+
+## Project Name: Gauge Chart Visualization
+
+## Description
+This project presents a simple, interactive gauge chart implemented using HTML Canvas, CSS, and JavaScript. The entire application is self-contained within a single `index.html` file, demonstrating how to visualize a numerical value through a classic radial gauge interface. Users can dynamically adjust the displayed value using a slider control.
+
+## How to Run
+1.  **Save the file:** Copy the content of `index.html` into a file named `index.html` on your local computer.
+2.  **Open in browser:** Navigate to the saved `index.html` file and open it with any modern web browser (e.g., Google Chrome, Mozilla Firefox, Microsoft Edge, Apple Safari).
+3.  **Interact:** Once opened, you will see a gauge chart and a slider. Drag the slider to change the gauge's value dynamically.
+
+## Features
+*   **Interactive Gauge Chart:** Visualizes a numerical value from 0 to 100 on a radial gauge.
+*   **HTML Canvas API:** Utilizes the HTML Canvas element for all drawing operations, providing full control over the visual elements.
+*   **Dynamic Value Updates:** The gauge's needle and numerical display update in real-time as the user interacts with a slider.
+*   **Clean and Modern Design:** Features a professional aesthetic with clear labels, tick marks, and a responsive layout for the chart area.
+*   **Numerical Value Display:** Shows the exact current value below the gauge for precise reading.
+*   **Self-Contained:** All HTML, CSS, and JavaScript are embedded within a single `index.html` file, making it easy to deploy and share.
+*   **Customizable:** The JavaScript code is structured with a configuration object, making it straightforward to modify colors, ranges, and other visual properties.
+`filename:index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Gauge Chart</title>
+    <style>
+        /* General body styling for a clean, dark theme */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1a2e; /* Dark background */
+            color: #e0e0e0; /* Light text */
+            overflow: hidden; /* Prevent scrollbar for aesthetic */
+        }
+
+        /* Main container for the gauge and controls */
+        .gauge-container {
+            background-color: #2e2e4a; /* Slightly lighter dark background for the container */
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            margin-top: 20px;
+        }
+
+        /* Heading style */
+        h1 {
+            color: #92a8d1; /* Accent color for heading */
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Canvas element styling */
+        canvas {
+            display: block; /* Remove extra space below canvas */
+            margin: 0 auto 20px auto; /* Center canvas and add bottom margin */
+            border-radius: 10px;
+            /* Optional: Add a subtle border or shadow to canvas if desired */
+            /* border: 1px solid rgba(255, 255, 255, 0.1); */
+        }
+
+        /* Display for current numerical value */
+        .current-value-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #e0e0e0; /* Light color for value */
+            margin-bottom: 30px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Slider container for better layout */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        /* Slider label */
+        .slider-container label {
+            font-size: 1.1em;
+            margin-right: 15px;
+            color: #a8dadc; /* Another accent color */
+            min-width: 60px; /* Ensure label has enough space */
+            text-align: right;
+        }
+
+        /* Range input (slider) styling */
+        input[type="range"] {
+            -webkit-appearance: none; /* Override default look */
+            width: 70%; /* Adjust width */
+            height: 10px;
+            background: #4a4a6e; /* Darker track */
+            outline: none;
+            opacity: 0.8;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        /* Slider thumb styling (webkit for Chrome/Safari) */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #7bdff2; /* Bright accent for thumb */
+            cursor: grab;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            border: 2px solid #e0e0e0;
+        }
+
+        /* Slider thumb styling (moz for Firefox) */
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #7bdff2;
+            cursor: grab;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            border: 2px solid #e0e0e0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            .gauge-container {
+                padding: 20px;
+                width: 95%;
+            }
+            .current-value-display {
+                font-size: 2em;
+            }
+            .slider-container label {
+                font-size: 1em;
+                margin-right: 10px;
+            }
+            input[type="range"] {
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gauge-container">
+        <h1>Dynamic Gauge Chart</h1>
+        <canvas id="gaugeCanvas" width="400" height="250"></canvas>
+        <div class="current-value-display">Current Value: <span id="gaugeValue">50</span></div>
+        <div class="slider-container">
+            <label for="valueSlider">Adjust Value:</label>
+            <input type="range" id="valueSlider" min="0" max="100" value="50">
+        </div>
+    </div>
+
+    <script>
+        // Get canvas element and its 2D rendering context
+        const canvas = document.getElementById('gaugeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get elements for value display and slider
+        const gaugeValueDisplay = document.getElementById('gaugeValue');
+        const valueSlider = document.getElementById('valueSlider');
+
+        // --- Gauge Configuration ---
+        const gaugeConfig = {
+            // Canvas and layout
+            centerX: canvas.width / 2,
+            centerY: canvas.height * 0.9, // Lower center to make space for top arc
+            radius: canvas.width * 0.4,   // Radius based on canvas width
+
+            // Value range
+            minValue: 0,
+            maxValue: 100,
+
+            // Arc angles (225 degrees to -45 degrees, covering 270 degrees)
+            startAngleDeg: 225,
+            endAngleDeg: -45,
+
+            // Visual properties
+            arcWidth: 30, // Thickness of the gauge arc
+            majorTickCount: 10, // Number of major tick marks (e.g., for 0, 10, 20...100)
+            minorTicksPerMajor: 2, // Number of minor ticks between major ones
+            tickLengthMajor: 15,
+            tickLengthMinor: 8,
+            tickWidthMajor: 3,
+            tickWidthMinor: 1,
+            labelOffset: 30, // Distance of labels from the arc
+
+            // Needle properties
+            needleLengthRatio: 0.7, // Ratio of needle length to gauge radius
+            needleWidth: 7,
+            centerCircleRadius: 15,
+
+            // Colors
+            colorBackgroundArc: '#3e4a61', // Darker background for the empty part of the arc
+            colorGradientStart: '#7bdff2', // Light blue for start of filled arc
+            colorGradientEnd: '#2196f3',   // Deeper blue for end of filled arc
+            colorNeedle: '#f00',          // Bright red for the needle
+            colorCenterPin: '#e0e0e0',    // Light gray for the center pin
+            colorMajorTick: '#e0e0e0',    // Light gray for major ticks
+            colorMinorTick: '#888',       // Darker gray for minor ticks
+            colorLabel: '#e0e0e0',        // Light gray for labels
+            colorValueText: '#e0e0e0',    // Light gray for the displayed value
+
+            // Fonts
+            fontLabel: '16px Arial',
+            fontValue: '3em Arial' // This is for text within the canvas, not the HTML display
+        };
+
+        // --- Helper Functions ---
+
+        /**
+         * Converts degrees to radians.
+         * @param {number} degrees - Angle in degrees.
+         * @returns {number} Angle in radians.
+         */
+        function degreesToRadians(degrees) {
+            return degrees * Math.PI / 180;
+        }
+
+        /**
+         * Converts a value from the gauge's range to an angle in radians.
+         * @param {number} value - The current value to convert.
+         * @returns {number} The angle in radians corresponding to the value.
+         */
+        function valueToAngle(value) {
+            const { minValue, maxValue, startAngleDeg, endAngleDeg } = gaugeConfig;
+            const range = maxValue - minValue;
+            const angleRange = endAngleDeg - startAngleDeg; // Will be negative for counter-clockwise
+            const normalizedValue = (value - minValue) / range;
+            const angle = startAngleDeg + (normalizedValue * angleRange);
+            return degreesToRadians(angle);
+        }
+
+        // --- Drawing Functions ---
+
+        /**
+         * Draws the static background arc of the gauge.
+         */
+        function drawGaugeBackground() {
+            const { centerX, centerY, radius, arcWidth, startAngleDeg, endAngleDeg, colorBackgroundArc } = gaugeConfig;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, degreesToRadians(startAngleDeg), degreesToRadians(endAngleDeg), false);
+            ctx.lineWidth = arcWidth;
+            ctx.strokeStyle = colorBackgroundArc;
+            ctx.stroke();
+        }
+
+        /**
+         * Draws the filled arc (progress bar) of the gauge up to the current value.
+         * @param {number} value - The current value to fill up to.
+         */
+        function drawGaugeFill(value) {
+            const { centerX, centerY, radius, arcWidth, startAngleDeg, colorGradientStart, colorGradientEnd } = gaugeConfig;
+            const currentAngle = valueToAngle(value);
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, degreesToRadians(startAngleDeg), currentAngle, false);
+
+            // Create a linear gradient across the arc or a radial one from center
+            const gradient = ctx.createLinearGradient(
+                centerX - radius, centerY,
+                centerX + radius, centerY
+            );
+            gradient.addColorStop(0, colorGradientStart);
+            gradient.addColorStop(1, colorGradientEnd);
+
+            ctx.lineWidth = arcWidth;
+            ctx.strokeStyle = gradient;
+            ctx.stroke();
+        }
+
+        /**
+         * Draws the major and minor tick marks on the gauge.
+         */
+        function drawTicks() {
+            const {
+                centerX, centerY, radius, arcWidth,
+                minValue, maxValue, startAngleDeg, endAngleDeg,
+                majorTickCount, minorTicksPerMajor,
+                tickLengthMajor, tickWidthMajor, colorMajorTick,
+                tickLengthMinor, tickWidthMinor, colorMinorTick
+            } = gaugeConfig;
+
+            const totalTicks = majorTickCount * minorTicksPerMajor;
+            const angleRange = endAngleDeg - startAngleDeg;
+
+            for (let i = 0; i <= majorTickCount; i++) {
+                const majorValue = minValue + (i * (maxValue - minValue) / majorTickCount);
+                const majorAngleDeg = startAngleDeg + (i * angleRange / majorTickCount);
+                const majorAngleRad = degreesToRadians(majorAngleDeg);
+
+                // Draw Major Tick
+                ctx.beginPath();
+                ctx.strokeStyle = colorMajorTick;
+                ctx.lineWidth = tickWidthMajor;
+                ctx.lineCap = 'round'; // Rounded ends for ticks
+
+                const outerXMajor = centerX + (radius + arcWidth / 2) * Math.cos(majorAngleRad);
+                const outerYMajor = centerY + (radius + arcWidth / 2) * Math.sin(majorAngleRad);
+                const innerXMajor = centerX + (radius + arcWidth / 2 - tickLengthMajor) * Math.cos(majorAngleRad);
+                const innerYMajor = centerY + (radius + arcWidth / 2 - tickLengthMajor) * Math.sin(majorAngleRad);
+
+                ctx.moveTo(outerXMajor, outerYMajor);
+                ctx.lineTo(innerXMajor, innerYMajor);
+                ctx.stroke();
+
+                // Draw Minor Ticks between major ones (if not the last major tick)
+                if (i < majorTickCount) {
+                    for (let j = 1; j <= minorTicksPerMajor; j++) {
+                        // Skip if it aligns with a major tick or if no minor ticks needed
+                        if (j === minorTicksPerMajor) continue;
+
+                        const minorAngleDeg = majorAngleDeg + (j * angleRange / (majorTickCount * minorTicksPerMajor));
+                        const minorAngleRad = degreesToRadians(minorAngleDeg);
+
+                        ctx.beginPath();
+                        ctx.strokeStyle = colorMinorTick;
+                        ctx.lineWidth = tickWidthMinor;
+                        ctx.lineCap = 'round';
+
+                        const outerXMinor = centerX + (radius + arcWidth / 2) * Math.cos(minorAngleRad);
+                        const outerYMinor = centerY + (radius + arcWidth / 2) * Math.sin(minorAngleRad);
+                        const innerXMinor = centerX + (radius + arcWidth / 2 - tickLengthMinor) * Math.cos(minorAngleRad);
+                        const innerYMinor = centerY + (radius + arcWidth / 2 - tickLengthMinor) * Math.sin(minorAngleRad);
+
+                        ctx.moveTo(outerXMinor, outerYMinor);
+                        ctx.lineTo(innerXMinor, innerYMinor);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        /**
+         * Draws the numerical labels for major tick marks.
+         */
+        function drawLabels() {
+            const {
+                centerX, centerY, radius, arcWidth,
+                minValue, maxValue, startAngleDeg, endAngleDeg,
+                majorTickCount, labelOffset, colorLabel, fontLabel
+            } = gaugeConfig;
+
+            const angleRange = endAngleDeg - startAngleDeg;
+
+            ctx.font = fontLabel;
+            ctx.fillStyle = colorLabel;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (let i = 0; i <= majorTickCount; i++) {
+                const labelValue = minValue + (i * (maxValue - minValue) / majorTickCount);
+                const angleDeg = startAngleDeg + (i * angleRange / majorTickCount);
+                const angleRad = degreesToRadians(angleDeg);
+
+                // Position labels further out from the arc
+                const labelX = centerX + (radius + arcWidth / 2 + labelOffset) * Math.cos(angleRad);
+                const labelY = centerY + (radius + arcWidth / 2 + labelOffset) * Math.sin(angleRad);
+
+                ctx.fillText(labelValue.toString(), labelX, labelY);
+            }
+        }
+
+        /**
+         * Draws the needle pointing to the current value.
+         * @param {number} value - The current value for the needle to point to.
+         */
+        function drawNeedle(value) {
+            const {
+                centerX, centerY, radius, arcWidth,
+                needleLengthRatio, needleWidth, colorNeedle
+            } = gaugeConfig;
+
+            const angleRad = valueToAngle(value);
+
+            ctx.save(); // Save the current canvas state
+            ctx.translate(centerX, centerY); // Move origin to the center of the gauge
+            ctx.rotate(angleRad + Math.PI / 2); // Rotate to point to the correct angle (adjust for 0 degrees being right)
+
+            // Draw needle as a triangle
+            ctx.beginPath();
+            ctx.moveTo(0, -arcWidth / 2); // Base of the needle starts a bit below center Y
+            ctx.lineTo(-needleWidth / 2, radius * needleLengthRatio * -1); // Tip of the needle
+            ctx.lineTo(needleWidth / 2, radius * needleLengthRatio * -1); // Tip of the needle
+            ctx.closePath();
+
+            ctx.fillStyle = colorNeedle;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'; // Add shadow for depth
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 3;
+            ctx.fill();
+
+            ctx.restore(); // Restore the canvas state (undo translate and rotate)
+        }
+
+        /**
+         * Draws the decorative center pin where the needle pivots.
+         */
+        function drawCenterPin() {
+            const { centerX, centerY, centerCircleRadius, colorCenterPin } = gaugeConfig;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, centerCircleRadius, 0, Math.PI * 2, false);
+            ctx.fillStyle = colorCenterPin;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.fill();
+
+            // Clear shadow for subsequent drawings
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        }
+
+        /**
+         * Main function to draw the entire gauge.
+         * @param {number} value - The current value to display on the gauge.
+         */
+        function drawGauge(value) {
+            // Clear the entire canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw static elements first
+            drawGaugeBackground();
+            drawTicks();
+            drawLabels();
+
+            // Draw dynamic elements
+            drawGaugeFill(value);
+            drawNeedle(value);
+            drawCenterPin();
+        }
+
+        /**
+         * Updates the HTML text display for the current value.
+         * @param {number} value - The current value to display.
+         */
+        function updateValueDisplay(value) {
+            gaugeValueDisplay.textContent = Math.round(value); // Display rounded value
+        }
+
+        // --- Initialization and Event Handling ---
+
+        // Set initial value from the slider
+        let currentValue = parseFloat(valueSlider.value);
+
+        // Draw the gauge initially
+        drawGauge(currentValue);
+        updateValueDisplay(currentValue);
+
+        // Add event listener for the slider
+        valueSlider.addEventListener('input', (event) => {
+            currentValue = parseFloat(event.target.value);
+            drawGauge(currentValue);
+            updateValueDisplay(currentValue);
+        });
+
+        // Optional: Resize canvas if needed, but for a single-page fixed size, not strictly necessary.
+        // If responsiveness is critical, recalculate gaugeConfig based on new canvas dimensions.
+        // window.addEventListener('resize', () => {
+        //     // Update canvas width/height if using relative sizes
+        //     // Re-calculate gaugeConfig.centerX, .centerY, .radius etc.
+        //     // drawGauge(currentValue);
+        // });
+
+    </script>
+</body>
+</html>
+`
