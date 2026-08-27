@@ -1,0 +1,9 @@
+(Replace `-d 2` with the desired maximum depth. For example, `-d 1` will show only immediate subdirectories and files, `-d 0` will only show the root directory itself.)
+
+## Features
+*   **Hierarchical Visualization**: Displays directories and files in a clear, tree-like structure.
+*   **Standard Library Only**: Requires no external dependencies, ensuring broad compatibility.
+*   **Customizable Starting Path**: Allows users to specify any valid directory path as the root of the tree.
+*   **Maximum Depth Control**: Provides an option to limit the depth of the tree traversal, useful for large directories.
+*   **Error Handling**: Gracefully handles non-existent paths or paths that are not directories.
+*   **Clean Output**: Uses standard tree drawing characters (e.g., `├── `, `└── `, `│   `) for a professional look.

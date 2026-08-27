@@ -1,0 +1,2 @@
+(Replace `/path/to/your/directory` with the actual path you want to visualize. Use `.` for the current directory or `..` for the parent directory.)
+    *   To view the tree for a **specific path with a maximum depth**:
