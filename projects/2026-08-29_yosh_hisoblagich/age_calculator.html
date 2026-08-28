@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Calculator</title>
+    <style>
+        /* Global Reset and Body Styling */
+        *, *::before, *::after {
+            box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern, clean font stack */
+            margin: 0;
+            display: flex; /* Flexbox for easy centering */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Full viewport height */
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); /* Subtle gradient background */
+            color: #333; /* Dark grey text for readability */
+            padding: 20px; /* Padding around the body for smaller screens */
+            overflow: auto; /* Allow scrolling if content overflows on very small screens */
+        }
+
+        /* Calculator Container Styling */
+        .calculator-container {
+            background-color: #ffffff; /* White background for the card */
+            padding: 40px;
+            border-radius: 15px; /* Softer rounded corners */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Deeper shadow for elevation effect */
+            text-align: center;
+            max-width: 450px; /* Max width for better readability on large screens */
+            width: 100%; /* Full width on smaller screens */
+            transition: transform 0.3s ease-in-out; /* Smooth hover effect */
+        }
+
+        .calculator-container:hover {
+            transform: translateY(-5px); /* Lift effect on hover */
+        }
+
+        /* Title Styling */
+        h1 {
+            color: #007bff; /* Primary brand color */
+            margin-bottom: 30px;
+            font-size: 2.2em; /* Slightly larger title */
+            font-weight: 600; /* Bolder title */
+        }
+
+        /* Input Group Styling */
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left; /* Align label and input to the left */
+        }
+
+        .input-group label {
+            display: block; /* Make label take full width */
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #555; /* Slightly lighter label color */
+            font-weight: 500;
+        }
+
+        .input-group input[type="date"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ced4da; /* Light grey border */
+            border-radius: 8px; /* Slightly more rounded input fields */
+            font-size: 1.1em;
+            color: #495057;
+            transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            -webkit-appearance: none; /* Remove default date input styling for better cross-browser consistency */
+            -moz-appearance: none;
+            appearance: none;
+            cursor: pointer; /* Indicate it's interactive */
+            background-color: #f8f9fa; /* Light background for input */
+        }
+
+        .input-group input[type="date"]:focus {
+            outline: none;
+            border-color: #007bff; /* Highlight border on focus */
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Subtle glow on focus */
+            background-color: #fff; /* White background on focus */
+        }
+
+        /* Button Styling */
+        button {
+            background-color: #007bff; /* Primary brand color for button */
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.15em;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: block; /* Make button take full width */
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        button:active {
+            transform: translateY(0); /* Return to original position on click */
+        }
+
+        /* Result Display Styling */
+        .result {
+            margin-top: 30px;
+            font-size: 1.3em; /* Larger font for results */
+            color: #28a745; /* Green for success/positive result */
+            font-weight: 700; /* Bolder results */
+            min-height: 2em; /* Ensure some height even when empty, for consistent layout */
+            display: flex; /* Flexbox for content alignment */
+            justify-content: center;
+            align-items: center;
+            line-height: 1.5; /* Improve readability for multi-line results */
+            padding: 10px; /* Add some padding inside the result area */
+            border-radius: 8px; /* Slightly rounded corners for the result box */
+            background-color: #e2f0d9; /* Light green background for positive results */
+        }
+
+        .result.error {
+            color: #dc3545; /* Red for error messages */
+            font-size: 1.1em;
+            background-color: #f8d7da; /* Light red background for error messages */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px; /* Less padding on very small screens */
+            }
+            .calculator-container {
+                padding: 30px 20px; /* Adjust padding for smaller screens */
+                border-radius: 10px; /* Slightly less rounded on mobile */
+            }
+
+            h1 {
+                font-size: 1.8em; /* Smaller title on mobile */
+                margin-bottom: 20px;
+            }
+
+            .input-group label,
+            .input-group input,
+            button,
+            .result {
+                font-size: 1em; /* Adjust font sizes for mobile readability */
+            }
+            .input-group {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Age Calculator</h1>
+        <div class="input-group">
+            <label for="birthdate">Enter your birthdate:</label>
+            <input type="date" id="birthdate">
+        </div>
+        <button id="calculate-btn">Calculate Age</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // Get references to HTML elements
+        const birthdateInput = document.getElementById('birthdate');
+        const calculateButton = document.getElementById('calculate-btn');
+        const resultDiv = document.getElementById('result');
+
+        /**
+         * Calculates the age based on a given birthdate string.
+         * @param {string} birthdateString - The birthdate in 'YYYY-MM-DD' format.
+         * @returns {{years: number, months: number, days: number}} An object containing years, months, and days.
+         */
+        function calculateAge(birthdateString) {
+            const today = new Date();
+            const birthDate = new Date(birthdateString);
+
+            // If the birthdate itself is invalid (e.g., malformed string, although input type="date" handles this well)
+            if (isNaN(birthDate.getTime())) {
+                return { years: -1, months: 0, days: 0 }; // Indicate an invalid date for error handling
+            }
+
+            let years = today.getFullYear() - birthDate.getFullYear();
+            let months = today.getMonth() - birthDate.getMonth();
+            let days = today.getDate() - birthDate.getDate();
+
+            // Adjust for months: If current month is before birth month, or it's the same month but current day is before birth day
+            if (months < 0 || (months === 0 && days < 0)) {
+                years--; // Decrement year as the full year hasn't passed yet
+                months += 12; // Add 12 months to get a positive month difference
+            }
+
+            // Adjust for days: If current day is before birth day
+            if (days < 0) {
+                // To get the number of days in the previous month relative to `today`
+                // Setting day to 0 of the current month effectively gets the last day of the previous month
+                const daysInLastFullMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+                days += daysInLastFullMonth; // Add the days from the previous month
+                months--; // Decrement month, as we've borrowed days from it
+            }
+
+            return { years, months, days };
+        }
+
+        // Add event listener to the calculate button
+        calculateButton.addEventListener('click', () => {
+            const birthdateString = birthdateInput.value;
+
+            // Validate if a birthdate is selected
+            if (!birthdateString) {
+                resultDiv.textContent = 'Please select your birthdate.';
+                resultDiv.classList.add('error'); // Apply error styling
+                return; // Stop execution if no date is selected
+            }
+
+            // Remove error class if previously applied
+            resultDiv.classList.remove('error');
+            resultDiv.style.backgroundColor = '#e2f0d9'; // Reset background color for new calculations
+
+            // Calculate age
+            const { years, months, days } = calculateAge(birthdateString);
+
+            // Display the result
+            if (years < 0) {
+                // This case should theoretically not happen if the 'max' attribute is set correctly
+                // but included for robustness against potential manual input or edge cases.
+                resultDiv.textContent = 'The birthdate cannot be in the future. Please select a valid date.';
+                resultDiv.classList.add('error');
+                resultDiv.style.backgroundColor = '#f8d7da'; // Error background
+            } else if (years === 0 && months === 0 && days === 0) {
+                resultDiv.textContent = 'Happy Birthday! You are exactly 0 years, 0 months, and 0 days old (today!).';
+            } else {
+                resultDiv.textContent = `Your age is: ${years} years, ${months} months, and ${days} days.`;
+            }
+        });
+
+        // Set the maximum date for the input field to today's date
+        // This prevents users from selecting a future date as a birthdate.
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        let mm = today.getMonth() + 1; // Months are 0-indexed in JS Date, so add 1
+        let dd = today.getDate();
+
+        if (mm < 10) mm = '0' + mm; // Pad month with leading zero if needed
+        if (dd < 10) dd = '0' + dd; // Pad day with leading zero if needed
+
+        const todayFormatted = `${yyyy}-${mm}-${dd}`;
+        birthdateInput.setAttribute('max', todayFormatted);
+
+        // Set a default value to illustrate functionality immediately on load
+        // This makes the calculator interactive from the start.
+        const defaultDate = new Date();
+        defaultDate.setFullYear(defaultDate.getFullYear() - 25); // Set default to 25 years ago for a common age
+        const defaultYYYY = defaultDate.getFullYear();
+        let defaultMM = defaultDate.getMonth() + 1;
+        let defaultDD = defaultDate.getDate();
+
+        if (defaultMM < 10) defaultMM = '0' + defaultMM;
+        if (defaultDD < 10) defaultDD = '0' + defaultDD;
+
+        const defaultDateFormatted = `${defaultYYYY}-${defaultMM}-${defaultDD}`;
+        birthdateInput.value = defaultDateFormatted;
+
+        // Immediately calculate for the default date when the page loads
+        // This provides an initial result instead of a blank state.
+        window.addEventListener('load', () => {
+            if (birthdateInput.value) { // Ensure a default value was successfully set
+                calculateButton.click(); // Simulate a click on the calculate button
+            }
+        });
+    </script>
+</body>
+</html>

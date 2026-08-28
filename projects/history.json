@@ -72,6 +72,7 @@
     "python_api::Port scanner",
     "js_game::Snake o'yini",
     "data_viz::Gauge chart",
-    "python_cli::Katalog daraxtini chizuvchi"
+    "python_cli::Katalog daraxtini chizuvchi",
+    "calculator::Yosh hisoblagich"
   ]
 }
