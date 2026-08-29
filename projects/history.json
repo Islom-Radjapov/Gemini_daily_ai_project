@@ -73,6 +73,7 @@
     "js_game::Snake o'yini",
     "data_viz::Gauge chart",
     "python_cli::Katalog daraxtini chizuvchi",
-    "calculator::Yosh hisoblagich"
+    "calculator::Yosh hisoblagich",
+    "python_cli::Valyuta konvertori"
   ]
 }
