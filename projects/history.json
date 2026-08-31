@@ -74,6 +74,7 @@
     "data_viz::Gauge chart",
     "python_cli::Katalog daraxtini chizuvchi",
     "calculator::Yosh hisoblagich",
-    "python_cli::Valyuta konvertori"
+    "python_cli::Valyuta konvertori",
+    "web_page::Portfolio sahifa"
   ]
 }
