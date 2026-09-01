@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Mole Game</title>
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #7ed6df, #e056fd); /* Modern gradient background */
+            color: #333;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+
+        /* Game title styling */
+        h1 {
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            letter-spacing: 1px;
+        }
+
+        /* Canvas container and styling */
+        #game-container {
+            position: relative;
+            background-color: #5cb85c; /* Grass color */
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            border: 5px solid #4a90e2; /* Border for the game area */
+        }
+
+        canvas {
+            display: block;
+            background-color: #5cb85c; /* Grass color */
+            border-radius: 10px;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewport="0 0 100 100" style="fill:black;font-size:24px;"><text y="50%">🔨</text></svg>') 15 15, auto; /* Custom hammer cursor */
+            transition: transform 0.1s ease;
+        }
+        
+        canvas:active {
+            transform: scale(0.98); /* Slight click effect */
+        }
+
+        /* Game UI styling (score, timer) */
+        #game-ui {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            margin-top: 20px;
+            display: flex;
+            gap: 40px;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #555;
+            z-index: 10;
+        }
+
+        #game-ui p {
+            margin: 0;
+        }
+
+        #score, #timer {
+            color: #d9534f;
+        }
+
+        /* Start button styling */
+        .game-button {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            z-index: 20;
+        }
+
+        .game-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .game-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Game Over screen styling */
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 2em;
+            z-index: 50; /* Ensure it's on top */
+            border-radius: 10px;
+            visibility: hidden; /* Hidden by default */
+            opacity: 0;
+            transition: visibility 0s, opacity 0.5s ease;
+        }
+
+        #game-over-screen.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        #game-over-screen h2 {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        #game-over-screen p {
+            font-size: 1em;
+            margin-bottom: 30px;
+        }
+
+        #final-score {
+            color: #ffd700; /* Gold color for final score */
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Whack-a-Mole!</h1>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="game-over-screen">
+            <h2>Game Over!</h2>
+            <p>Your Final Score: <span id="final-score">0</span></p>
+            <button id="restartButton" class="game-button">Play Again</button>
+        </div>
+    </div>
+
+    <div id="game-ui">
+        <p>Score: <span id="score">0</span></p>
+        <p>Time: <span id="timer">30</span>s</p>
+    </div>
+
+    <button id="startButton" class="game-button">Start Game</button>
+
+    <script>
+        // Get canvas and context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get UI elements
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const startButton = document.getElementById('startButton');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButton = document.getElementById('restartButton');
+        const gameUI = document.getElementById('game-ui');
+        const gameContainer = document.getElementById('game-container');
+
+        // Game state variables
+        let score = 0;
+        let timeLeft = 30; // seconds
+        let gameRunning = false;
+        let gameInterval; // Interval for game timer
+        let moleSpawnInterval; // Interval for spawning moles
+        let animationFrameId; // For requestAnimationFrame
+
+        // Game settings
+        const GAME_DURATION = 30; // seconds
+        const MOLE_POP_MIN_TIME = 800; // ms, min time a mole stays up
+        const MOLE_POP_MAX_TIME = 1500; // ms, max time a mole stays up
+        const MOLE_SPAWN_INTERVAL_MIN = 700; // ms, min delay between mole spawns
+        const MOLE_SPAWN_INTERVAL_MAX = 1300; // ms, max delay between mole spawns
+        const MOLE_RADIUS = 35; // Radius of the mole
+        const HOLE_RADIUS = 50; // Radius of the mole hole
+        const HOLE_COLOR = '#4c321b'; // Dark brown
+        const MOLE_COLOR = '#8B4513'; // SaddleBrown
+
+        // Define mole hole positions (grid layout)
+        const holePositions = [
+            { x: 150, y: 150 }, { x: 400, y: 150 }, { x: 650, y: 150 },
+            { x: 150, y: 300 }, { x: 400, y: 300 }, { x: 650, y: 300 },
+            { x: 150, y: 450 }, { x: 400, y: 450 }, { x: 650, y: 450 }
+        ];
+
+        // Moles array
+        const moles = holePositions.map((pos, index) => ({
+            id: index,
+            x: pos.x,
+            y: pos.y,
+            radius: MOLE_RADIUS,
+            isUp: false,
+            timeUp: 0, // When it popped up
+            timeDown: 0 // When it should go down
+        }));
+
+        // Audio context for simple sound effects
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        /**
+         * Creates and plays a simple beep sound.
+         * @param {number} frequency - The frequency of the beep in Hz.
+         * @param {number} duration - The duration of the beep in seconds.
+         * @param {number} volume - The volume of the beep (0 to 1).
+         */
+        function playBeep(frequency, duration, volume) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = frequency;
+            gainNode.gain.value = volume;
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        /**
+         * Plays a hit sound.
+         */
+        function playHitSound() {
+            playBeep(800, 0.1, 0.5); // High-pitched short beep
+        }
+
+        /**
+         * Plays a miss sound.
+         */
+        function playMissSound() {
+            playBeep(300, 0.1, 0.3); // Low-pitched short beep
+        }
+
+        /**
+         * Draws the game background, including the grass and mole holes.
+         */
+        function drawBackground() {
+            // Draw grass background (canvas background color handles this)
+            // No explicit fillRect needed as canvas background is set via CSS/style.
+
+            // Draw holes
+            ctx.fillStyle = HOLE_COLOR; // Dark brown for holes
+            moles.forEach(mole => {
+                ctx.beginPath();
+                ctx.arc(mole.x, mole.y + HOLE_RADIUS * 0.2, HOLE_RADIUS, 0, Math.PI * 2); // Slightly oval-ish appearance
+                ctx.ellipse(mole.x, mole.y + HOLE_RADIUS * 0.2, HOLE_RADIUS, HOLE_RADIUS * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        /**
+         * Draws a single mole if it's currently up.
+         * @param {object} mole - The mole object to draw.
+         */
+        function drawMole(mole) {
+            if (!mole.isUp) return;
+
+            const timePassed = Date.now() - mole.timeUp;
+            const popAnimationDuration = 150; // Milliseconds for pop-up animation
+            let currentRadius = mole.radius;
+            let currentYOffset = 0;
+
+            // Simple pop-up animation
+            if (timePassed < popAnimationDuration) {
+                const progress = timePassed / popAnimationDuration;
+                currentRadius = mole.radius * progress;
+                currentYOffset = mole.radius * (1 - progress); // Mole appears from bottom of hole
+            }
+
+            ctx.fillStyle = MOLE_COLOR; // SaddleBrown for moles
+            ctx.beginPath();
+            ctx.arc(mole.x, mole.y + currentYOffset, currentRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes (optional, for more detail)
+            if (currentRadius > mole.radius * 0.5) { // Only draw eyes if mole is big enough
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(mole.x - currentRadius * 0.3, mole.y - currentRadius * 0.2 + currentYOffset, currentRadius * 0.1, 0, Math.PI * 2);
+                ctx.arc(mole.x + currentRadius * 0.3, mole.y - currentRadius * 0.2 + currentYOffset, currentRadius * 0.1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        /**
+         * Spawns a mole by making it appear from a random available hole.
+         */
+        function spawnMole() {
+            if (!gameRunning) return;
+
+            const availableMoles = moles.filter(m => !m.isUp);
+            if (availableMoles.length === 0) return;
+
+            const randomIndex = Math.floor(Math.random() * availableMoles.length);
+            const moleToPop = availableMoles[randomIndex];
+
+            moleToPop.isUp = true;
+            moleToPop.timeUp = Date.now();
+            moleToPop.timeDown = moleToPop.timeUp + Math.random() * (MOLE_POP_MAX_TIME - MOLE_POP_MIN_TIME) + MOLE_POP_MIN_TIME;
+        }
+
+        /**
+         * Hides a specific mole.
+         * @param {object} mole - The mole object to hide.
+         */
+        function hideMole(mole) {
+            mole.isUp = false;
+        }
+
+        /**
+         * Main game update and draw loop.
+         */
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+            drawBackground();
+
+            const currentTime = Date.now();
+            moles.forEach(mole => {
+                if (mole.isUp) {
+                    drawMole(mole);
+                    if (currentTime > mole.timeDown) {
+                        hideMole(mole); // Mole's time is up, hide it
+                    }
+                }
+            });
+
+            if (gameRunning) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        /**
+         * Checks if a click occurred on a mole.
+         * @param {MouseEvent} event - The click event.
+         */
+        function handleClick(event) {
+            if (!gameRunning) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            let hit = false;
+            for (let i = 0; i < moles.length; i++) {
+                const mole = moles[i];
+                if (mole.isUp) {
+                    // Check if click is within mole's radius
+                    const distance = Math.sqrt((mouseX - mole.x) ** 2 + (mouseY - mole.y) ** 2);
+                    if (distance < mole.radius) {
+                        score++;
+                        scoreDisplay.textContent = score;
+                        playHitSound();
+                        hideMole(mole);
+                        hit = true;
+                        break; // Only hit one mole per click
+                    }
+                }
+            }
+
+            if (!hit) {
+                playMissSound();
+            }
+        }
+
+        /**
+         * Starts the game.
+         */
+        function startGame() {
+            // Reset game state
+            score = 0;
+            timeLeft = GAME_DURATION;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+
+            // Hide start button, show UI and canvas
+            startButton.style.display = 'none';
+            gameUI.style.display = 'flex';
+            gameOverScreen.classList.remove('active');
+            gameContainer.style.display = 'block'; // Make game container visible if hidden
+
+            // Reset all moles to hidden
+            moles.forEach(mole => mole.isUp = false);
+
+            gameRunning = true;
+            requestAnimationFrame(gameLoop); // Start rendering loop
+
+            // Start game timer
+            gameInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // Start mole spawning interval
+            moleSpawnInterval = setInterval(spawnMole, Math.random() * (MOLE_SPAWN_INTERVAL_MAX - MOLE_SPAWN_INTERVAL_MIN) + MOLE_SPAWN_INTERVAL_MIN);
+        }
+
+        /**
+         * Ends the game.
+         */
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(moleSpawnInterval);
+            cancelAnimationFrame(animationFrameId);
+
+            // Show game over screen
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.classList.add('active');
+        }
+
+        /**
+         * Initializes the game by setting up event listeners and initial UI.
+         */
+        function initializeGame() {
+            startButton.addEventListener('click', startGame);
+            restartButton.addEventListener('click', startGame);
+            canvas.addEventListener('click', handleClick);
+
+            // Initial UI state
+            gameUI.style.display = 'none'; // Hide score/timer until game starts
+            gameOverScreen.classList.remove('active'); // Ensure game over is hidden
+            gameContainer.style.display = 'block'; // Ensure canvas container is visible for initial draw
+            
+            // Draw initial empty game state
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+        }
+
+        // Run initialization when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeGame);
+
+    </script>
+</body>
+</html>

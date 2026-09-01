@@ -75,6 +75,7 @@
     "python_cli::Katalog daraxtini chizuvchi",
     "calculator::Yosh hisoblagich",
     "python_cli::Valyuta konvertori",
-    "web_page::Portfolio sahifa"
+    "web_page::Portfolio sahifa",
+    "js_game::Whack-a-mole o'yini"
   ]
 }
