@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasteful Delights - Restaurant Menu</title>
+    <style>
+        /*
+         * CSS Styles for the Tasteful Delights Restaurant Menu
+         * All styles are inline within this HTML file.
+         */
+
+        /* Import Google Fonts for a modern aesthetic */
+        @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Poppins:wght@400;600&display=swap');
+
+        /* Universal Box-Sizing Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        /* General Body Styles */
+        body {
+            font-family: 'Poppins', sans-serif; /* Primary font for general text and buttons */
+            margin: 0;
+            padding: 0;
+            background-color: #fcfaf6; /* Light, warm background color */
+            color: #333; /* Dark gray for main text */
+            line-height: 1.6;
+            scroll-behavior: smooth; /* Smooth scrolling for potential anchors */
+        }
+
+        /* Heading Styles */
+        h1, h2, h3 {
+            font-family: 'Lora', serif; /* Elegant font for headings */
+            color: #2c3e50; /* Darker shade for headings */
+            margin-top: 0;
+        }
+
+        /* Hero Section - Restaurant Header */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background-color: #A77B5B; /* Accent color for the header */
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Subtle shadow for depth */
+        }
+
+        .restaurant-name {
+            font-size: 4em;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Text shadow for name */
+        }
+
+        .tagline {
+            font-size: 1.3em;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        /* Main Menu Container */
+        .menu-container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 25px; /* Padding on sides for smaller screens */
+        }
+
+        /* Filter Buttons Section */
+        .filter-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; /* Allows buttons to wrap to the next line on small screens */
+            gap: 15px; /* Space between buttons */
+            margin-bottom: 50px;
+        }
+
+        .filter-btn {
+            background-color: #eee;
+            color: #333;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 30px; /* Pill-shaped buttons */
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 600;
+            transition: all 0.3s ease; /* Smooth transitions for hover/active states */
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            outline: none; /* Remove default outline */
+        }
+
+        .filter-btn:hover {
+            background-color: #ddd;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+
+        .filter-btn.active {
+            background-color: #A77B5B; /* Active button uses accent color */
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+            transform: translateY(-3px); /* More pronounced lift for active state */
+        }
+
+        /* Menu Items Grid Layout */
+        .menu-items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Responsive grid columns */
+            gap: 35px; /* Space between menu items */
+        }
+
+        /* Individual Menu Item Card */
+        .menu-item {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08); /* Soft shadow for card effect */
+            display: flex; /* Use flexbox for internal layout */
+            flex-direction: column;
+            justify-content: space-between; /* Pushes price to the bottom */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-8px); /* Lift on hover */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); /* Enhanced shadow on hover */
+        }
+
+        .item-name {
+            font-size: 2.1em;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+
+        .item-description {
+            font-size: 1.05em;
+            color: #666;
+            margin-bottom: 20px;
+            flex-grow: 1; /* Allows description to take available vertical space */
+        }
+
+        .item-price {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #A77B5B; /* Accent color for price */
+            text-align: right; /* Align price to the right */
+            align-self: flex-end; /* Ensures price stays at the bottom-right */
+        }
+
+        /* Footer Section */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #333;
+            color: #fff;
+            margin-top: 80px;
+            font-size: 0.9em;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.15); /* Shadow for depth */
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .hero {
+                padding: 60px 20px;
+            }
+
+            .restaurant-name {
+                font-size: 3em;
+            }
+
+            .tagline {
+                font-size: 1.1em;
+            }
+
+            .menu-container {
+                margin: 40px auto;
+                padding: 0 15px;
+            }
+
+            .filter-buttons {
+                gap: 10px;
+                margin-bottom: 30px;
+            }
+
+            .filter-btn {
+                padding: 10px 20px;
+                font-size: 0.95em;
+            }
+
+            .menu-items-grid {
+                grid-template-columns: 1fr; /* Stack items vertically on small screens */
+                gap: 25px;
+            }
+
+            .menu-item {
+                padding: 25px;
+            }
+
+            .item-name {
+                font-size: 1.8em;
+            }
+
+            .item-description {
+                font-size: 1em;
+            }
+
+            .item-price {
+                font-size: 1.4em;
+            }
+
+            .footer {
+                margin-top: 60px;
+                padding: 30px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .restaurant-name {
+                font-size: 2.5em;
+            }
+
+            .tagline {
+                font-size: 0.9em;
+            }
+
+            .filter-buttons {
+                flex-direction: column; /* Stack filter buttons on very small screens */
+                align-items: stretch;
+            }
+
+            .filter-btn {
+                width: 100%; /* Make buttons full width */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header section with restaurant name and tagline -->
+    <header class="hero">
+        <h1 class="restaurant-name">Tasteful Delights</h1>
+        <p class="tagline">Experience the Art of Cuisine</p>
+    </header>
+
+    <!-- Main content area for the menu -->
+    <main class="menu-container">
+        <!-- Filter buttons to categorize menu items -->
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-category="all">All</button>
+            <button class="filter-btn" data-category="appetizers">Appetizers</button>
+            <button class="filter-btn" data-category="main_courses">Main Courses</button>
+            <button class="filter-btn" data-category="desserts">Desserts</button>
+            <button class="filter-btn" data-category="drinks">Drinks</button>
+        </div>
+
+        <!-- Grid to display menu items dynamically -->
+        <section class="menu-items-grid" id="menu-items-grid">
+            <!-- Menu items will be dynamically inserted here by JavaScript -->
+        </section>
+    </main>
+
+    <!-- Footer section -->
+    <footer class="footer">
+        <p>&copy; 2023 Tasteful Delights. All rights reserved.</p>
+    </footer>
+
+    <script>
+        /*
+         * JavaScript for the Tasteful Delights Restaurant Menu
+         * All scripts are inline within this HTML file.
+         */
+
+        // Array containing all menu items data
+        const menuItemsData = [
+            {
+                id: 1,
+                name: "Classic Burger",
+                category: "main_courses",
+                description: "Juicy beef patty, fresh lettuce, tomato, onion, pickles, and our special sauce, served with crispy fries.",
+                price: "15.99"
+            },
+            {
+                id: 2,
+                name: "Grilled Salmon",
+                category: "main_courses",
+                description: "Pan-seared salmon fillet with a delicate lemon-dill sauce, served alongside seasonal roasted vegetables.",
+                price: "22.50"
+            },
+            {
+                id: 3,
+                name: "Caesar Salad",
+                category: "appetizers",
+                description: "Crisp romaine lettuce, crunchy croutons, grated parmesan cheese, and a creamy, tangy Caesar dressing.",
+                price: "10.00"
+            },
+            {
+                id: 4,
+                name: "Garlic Bread",
+                category: "appetizers",
+                description: "Warm, toasted baguette slices generously spread with aromatic garlic butter and fresh parsley.",
+                price: "6.50"
+            },
+            {
+                id: 5,
+                name: "Chocolate Lava Cake",
+                category: "desserts",
+                description: "Indulgent warm chocolate cake with a molten, gooey center, perfectly paired with a scoop of vanilla bean ice cream.",
+                price: "9.00"
+            },
+            {
+                id: 6,
+                name: "New York Cheesecake",
+                category: "desserts",
+                description: "Rich, creamy, and velvety cheesecake on a buttery graham cracker crust, topped with a vibrant berry compote.",
+                price: "8.50"
+            },
+            {
+                id: 7,
+                name: "Sparkling Water",
+                category: "drinks",
+                description: "A bottle of premium, crisp, and refreshing sparkling mineral water.",
+                price: "3.00"
+            },
+            {
+                id: 8,
+                name: "Fresh Orange Juice",
+                category: "drinks",
+                description: "Naturally sweet and zesty orange juice, freshly squeezed on demand.",
+                price: "4.50"
+            },
+            {
+                id: 9,
+                name: "Vegetable Lasagna",
+                category: "main_courses",
+                description: "Layers of pasta, rich tomato sauce, creamy béchamel, and a medley of fresh seasonal vegetables.",
+                price: "16.50"
+            },
+            {
+                id: 10,
+                name: "Shrimp Cocktail",
+                category: "appetizers",
+                description: "Succulent jumbo shrimp served chilled with a tangy cocktail sauce and a lemon wedge.",
+                price: "12.00"
+            },
+            {
+                id: 11,
+                name: "Tiramisu",
+                category: "desserts",
+                description: "Classic Italian dessert with layers of coffee-soaked ladyfingers, mascarpone cheese, and cocoa powder.",
+                price: "9.50"
+            },
+            {
+                id: 12,
+                name: "Espresso",
+                category: "drinks",
+                description: "A strong shot of freshly brewed, aromatic espresso coffee.",
+                price: "3.50"
+            }
+        ];
+
+        // Get references to HTML elements
+        const menuItemsGrid = document.getElementById('menu-items-grid');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+
+        /**
+         * Dynamically generates all menu items from the menuItemsData array
+         * and appends them to the menu items grid in the DOM.
+         * Each item is created as a div with necessary classes and data attributes.
+         */
+        function generateAllMenuItems() {
+            menuItemsData.forEach(item => {
+                // Create a new div element for each menu item
+                const menuItemDiv = document.createElement('div');
+                menuItemDiv.classList.add('menu-item');
+                // Store the category as a data attribute for easy filtering
+                menuItemDiv.setAttribute('data-category', item.category);
+                // Populate the inner HTML of the menu item div
+                menuItemDiv.innerHTML = `
+                    <h3 class="item-name">${item.name}</h3>
+                    <p class="item-description">${item.description}</p>
+                    <span class="item-price">$${item.price}</span>
+                `;
+                // Append the created menu item to the grid container
+                menuItemsGrid.appendChild(menuItemDiv);
+            });
+        }
+
+        /**
+         * Filters the displayed menu items based on the selected category.
+         * It iterates through all currently existing menu items in the DOM
+         * and shows/hides them based on whether their data-category matches
+         * the selected category, or if 'all' category is selected.
+         * @param {string} selectedCategory - The category to filter by (e.g., 'appetizers', 'all').
+         */
+        function filterMenu(selectedCategory) {
+            // Get all menu item elements currently in the DOM
+            const allMenuItemsInDOM = document.querySelectorAll('.menu-item');
+            allMenuItemsInDOM.forEach(item => {
+                const itemCategory = item.dataset.category; // Get category from data attribute
+                // Show item if category matches or if 'all' is selected
+                if (selectedCategory === 'all' || itemCategory === selectedCategory) {
+                    item.style.display = 'flex'; // Use flex display to maintain internal layout
+                } else {
+                    item.style.display = 'none'; // Hide item
+                }
+            });
+        }
+
+        // Add event listeners to all filter buttons
+        filterButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                // Remove 'active' class from all filter buttons
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                // Add 'active' class to the clicked button
+                e.currentTarget.classList.add('active');
+
+                // Get the category from the clicked button's data-category attribute
+                const categoryToFilter = e.currentTarget.dataset.category;
+                // Apply the filter to display relevant menu items
+                filterMenu(categoryToFilter);
+            });
+        });
+
+        // Initialize the menu when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            generateAllMenuItems(); // First, populate the grid with all menu items
+            filterMenu('all');      // Then, ensure all items are displayed initially (or filtered to 'all')
+        });
+    </script>
+</body>
+</html>
