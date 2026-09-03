@@ -1,0 +1,6 @@
+This is the first line.
+This is the second line, but it's changed.
+This line is common.
+This line was added instead.
+One more common line.
+And a brand new line at the end.

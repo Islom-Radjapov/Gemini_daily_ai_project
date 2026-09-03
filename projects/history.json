@@ -77,6 +77,7 @@
     "python_cli::Valyuta konvertori",
     "web_page::Portfolio sahifa",
     "js_game::Whack-a-mole o'yini",
-    "web_page::Restoran menyusi"
+    "web_page::Restoran menyusi",
+    "python_api::Matn diff vositasi"
   ]
 }
