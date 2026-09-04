@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starry Sky Animation</title>
+    <style>
+        /* Base styles for the entire page */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Hide scrollbars, essential for full-screen effect */
+            background-color: #000a1a; /* Very dark blue for a night sky */
+            font-family: Arial, sans-serif; /* A fallback font */
+        }
+
+        /* Container for the starry sky */
+        #sky {
+            position: relative; /* Essential for positioning stars absolutely within it */
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%); /* Subtle gradient for depth */
+        }
+
+        /* Styling for individual stars */
+        .star {
+            position: absolute; /* Allows precise positioning */
+            background-color: #fdfdfd; /* Off-white color for stars */
+            border-radius: 50%; /* Makes the div a perfect circle */
+            box-shadow: 0 0 4px 2px rgba(255, 255, 255, 0.2); /* Subtle glow effect */
+            animation: twinkle var(--star-duration) ease-in-out infinite alternate var(--star-delay);
+            /* Using CSS variables for animation properties allows dynamic overrides from JS */
+        }
+
+        /* Keyframe animation for twinkling effect */
+        @keyframes twinkle {
+            0% {
+                opacity: 0.4;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05); /* Slightly bigger for a breath effect */
+            }
+            100% {
+                opacity: 0.4;
+                transform: scale(1);
+            }
+        }
+
+        /* Optional keyframe animation for stars to appear and disappear */
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            25% { opacity: 0.8; }
+            50% { opacity: 0.6; }
+            75% { opacity: 0.9; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="sky"></div>
+
+    <script>
+        // Get the sky container element
+        const sky = document.getElementById('sky');
+
+        // Number of stars to generate
+        const numberOfStars = 300; // A good balance for performance and visual density
+
+        // Function to generate a random number within a range
+        function getRandom(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        // Loop to create and append stars
+        for (let i = 0; i < numberOfStars; i++) {
+            // Create a new div element for each star
+            const star = document.createElement('div');
+            star.classList.add('star'); // Add the 'star' class for styling
+
+            // Set random position (percentage of viewport width/height)
+            star.style.left = `${getRandom(0, 100)}vw`;
+            star.style.top = `${getRandom(0, 100)}vh`;
+
+            // Set random size for the star (1px to 4px)
+            const size = getRandom(1, 4);
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+
+            // Set random animation delay for variety in twinkling
+            star.style.setProperty('--star-delay', `${getRandom(0, 5)}s`);
+
+            // Set random animation duration for variety in twinkling speed
+            star.style.setProperty('--star-duration', `${getRandom(4, 10)}s`);
+
+            // Optionally, some stars can have a different animation (fade in/out)
+            if (Math.random() < 0.2) { // 20% of stars will use fadeInOut animation
+                 star.style.animation = `fadeInOut ${getRandom(10, 20)}s ease-in-out infinite alternate ${getRandom(0, 10)}s`;
+            }
+
+            // Append the created star to the sky container
+            sky.appendChild(star);
+        }
+    </script>
+</body>
+</html>
