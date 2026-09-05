@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Analog Clock Visualization</title>
+    <style>
+        /*
+         * Global body styles:
+         * Sets up a flexbox container to center content, defines background color, font, and text color.
+         */
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: hsl(220, 15%, 15%); /* Dark desaturated blue background */
+            color: hsl(0, 0%, 95%); /* Off-white text color */
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased; /* Smoother fonts for WebKit browsers */
+            -moz-osx-font-smoothing: grayscale; /* Smoother fonts for Firefox */
+        }
+
+        /*
+         * Container for the clock and digital display:
+         * Provides styling for the overall project wrapper.
+         */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+            background-color: hsl(220, 15%, 20%); /* Slightly lighter than body background */
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 0 2px hsl(220, 15%, 25%) inset; /* Soft shadow and inner border */
+            max-width: 90%;
+            text-align: center;
+        }
+
+        /*
+         * Heading (H1) styles:
+         * Defines the appearance of the project title.
+         */
+        h1 {
+            color: hsl(0, 0%, 100%); /* Pure white for heading */
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle text shadow */
+        }
+
+        /*
+         * Canvas element styles:
+         * Defines the background and border for the analog clock canvas.
+         */
+        #clockCanvas {
+            background-color: hsl(220, 15%, 25%); /* Canvas background color */
+            border-radius: 50%; /* Makes the canvas a perfect circle visually */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4), 0 0 0 5px hsl(220, 15%, 30%) inset; /* Shadow and inset border for depth */
+            margin-bottom: 30px;
+        }
+
+        /*
+         * Digital time display styles:
+         * Defines the appearance of the digital time text.
+         */
+        .digital-time {
+            font-size: 2em;
+            font-weight: bold;
+            color: hsl(20, 80%, 70%); /* Warm orange for digital time */
+            letter-spacing: 2px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Subtle text shadow */
+            min-width: 200px; /* Prevents layout shifts during time updates */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Digital Analog Clock</h1>
+        <canvas id="clockCanvas" width="400" height="400"></canvas>
+        <div id="digitalTime" class="digital-time"></div>
+    </div>
+
+    <script>
+        // Get references to the canvas and digital time display elements
+        const canvas = document.getElementById('clockCanvas');
+        const ctx = canvas.getContext('2d');
+        const digitalTimeDisplay = document.getElementById('digitalTime');
+
+        // Define canvas dimensions and clock properties
+        const canvasSize = 400; // The canvas width and height
+        const clockRadius = canvasSize / 2 * 0.9; // Radius of the clock face, slightly smaller than half canvas
+        const centerX = canvasSize / 2; // X-coordinate of the center of the canvas
+        const centerY = canvasSize / 2; // Y-coordinate of the center of the canvas
+
+        /**
+         * Draws the main clock face, including the outer circle, minute/hour ticks, and a central pin.
+         * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the canvas.
+         * @param {number} radius - The radius of the clock face.
+         */
+        function drawFace(ctx, radius) {
+            // Draw the main outer circle of the clock
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = 'hsl(220, 10%, 35%)'; // Darker gray for face background
+            ctx.fill();
+            ctx.strokeStyle = 'hsl(220, 10%, 45%)'; // Slightly lighter border for the face
+            ctx.lineWidth = 8;
+            ctx.stroke();
+
+            // Draw the central pin (pivot for hands)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.05, 0, 2 * Math.PI);
+            ctx.fillStyle = 'hsl(0, 0%, 100%)'; // White pin
+            ctx.fill();
+            ctx.strokeStyle = 'hsl(0, 0%, 70%)'; // Gray border for the pin
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw hour and minute tick marks
+            for (let i = 0; i < 60; i++) {
+                let angle = (i / 60) * 2 * Math.PI; // Calculate angle for each tick
+                let isHour = (i % 5 === 0); // Check if it's an hour tick (every 5 minutes/seconds)
+                let tickLength = isHour ? radius * 0.15 : radius * 0.08; // Longer for hour ticks
+                let tickWidth = isHour ? 4 : 2; // Thicker for hour ticks
+                let tickColor = isHour ? 'hsl(0, 0%, 90%)' : 'hsl(0, 0%, 70%)'; // Different color for hour ticks
+
+                ctx.beginPath();
+                ctx.strokeStyle = tickColor;
+                ctx.lineWidth = tickWidth;
+                ctx.lineCap = 'round'; // Rounded ends for ticks
+
+                // Calculate start and end points of the tick line
+                let startX = centerX + Math.cos(angle) * (radius - tickLength);
+                let startY = centerY + Math.sin(angle) * (radius - tickLength);
+                let endX = centerX + Math.cos(angle) * radius;
+                let endY = centerY + Math.sin(angle) * radius;
+
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        }
+
+        /**
+         * Draws the hour numbers (1-12) on the clock face.
+         * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the canvas.
+         * @param {number} radius - The radius of the clock face.
+         */
+        function drawNumbers(ctx, radius) {
+            ctx.font = radius * 0.15 + 'px Arial, sans-serif'; // Font size relative to clock radius
+            ctx.textAlign = 'center'; // Center the text horizontally
+            ctx.textBaseline = 'middle'; // Center the text vertically
+            ctx.fillStyle = 'hsl(0, 0%, 100%)'; // White numbers
+
+            for (let num = 1; num <= 12; num++) {
+                // Calculate angle for each number. Subtract Math.PI / 2 to align 12 o'clock with the top.
+                let angle = (num * Math.PI / 6) - (Math.PI / 2);
+                // Position numbers slightly inside the tick marks
+                let x = centerX + Math.cos(angle) * (radius * 0.8);
+                let y = centerY + Math.sin(angle) * (radius * 0.8);
+                ctx.fillText(num.toString(), x, y);
+            }
+        }
+
+        /**
+         * Draws a single clock hand.
+         * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the canvas.
+         * @param {number} pos - The angular position of the hand (in radians).
+         * @param {number} length - The length of the hand.
+         * @param {number} width - The width (thickness) of the hand.
+         * @param {string} color - The color of the hand.
+         */
+        function drawHand(ctx, pos, length, width, color) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round'; // Rounded ends for hands
+            ctx.moveTo(centerX, centerY); // Start from the center
+            // End point calculated using trigonometry
+            ctx.lineTo(centerX + Math.cos(pos) * length, centerY + Math.sin(pos) * length);
+            ctx.stroke();
+        }
+
+        /**
+         * Updates and draws the current time, including analog hands and the digital display.
+         * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the canvas.
+         * @param {number} radius - The radius of the clock face.
+         */
+        function drawTime(ctx, radius) {
+            const now = new Date(); // Get current date and time
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            let second = now.getSeconds();
+            let millisecond = now.getMilliseconds();
+
+            // Calculate angles for hands in radians.
+            // Subtract Math.PI / 2 to make 0 degrees point upwards (12 o'clock / 0 seconds).
+            // Second hand moves smoothly with milliseconds.
+            let secondAngle = ((second + (millisecond / 1000)) / 60) * 2 * Math.PI - (Math.PI / 2);
+            // Minute hand moves smoothly with seconds.
+            let minuteAngle = ((minute + (second / 60)) / 60) * 2 * Math.PI - (Math.PI / 2);
+            // Hour hand moves smoothly with minutes.
+            let hourAngle = ((hour % 12 + (minute / 60)) / 12) * 2 * Math.PI - (Math.PI / 2);
+
+            // Draw hour hand
+            drawHand(ctx, hourAngle, radius * 0.5, 8, 'hsl(0, 0%, 90%)'); // Shorter, thicker, silver-white
+
+            // Draw minute hand
+            drawHand(ctx, minuteAngle, radius * 0.8, 6, 'hsl(0, 0%, 90%)'); // Longer, thinner, silver-white
+
+            // Draw second hand
+            drawHand(ctx, secondAngle, radius * 0.9, 3, 'hsl(10, 80%, 60%)'); // Longest, thinnest, red-orange accent
+
+            // Update digital time display
+            const formatTime = (unit) => unit < 10 ? '0' + unit : unit; // Helper for padding single digits
+            const digitalTime = `${formatTime(hour)}:${formatTime(minute)}:${formatTime(second)}`;
+            digitalTimeDisplay.textContent = digitalTime;
+        }
+
+        /**
+         * Main function to draw the entire clock and schedule the next animation frame.
+         * This function is called recursively using requestAnimationFrame for smooth updates.
+         */
+        function drawClock() {
+            ctx.clearRect(0, 0, canvasSize, canvasSize); // Clear the entire canvas before drawing each frame
+            drawFace(ctx, clockRadius); // Draw the clock face and ticks
+            drawNumbers(ctx, clockRadius); // Draw the hour numbers
+            drawTime(ctx, clockRadius); // Draw the hands and update digital time
+
+            // Request the browser to call drawClock again before the next repaint
+            requestAnimationFrame(drawClock);
+        }
+
+        // Initialize the clock by calling the main drawing function
+        drawClock();
+    </script>
+</body>
+</html>
