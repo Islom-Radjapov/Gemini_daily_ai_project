@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uzunlik Konvertori</title>
+    <style>
+        /* Basic reset and box-sizing */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Body styling for a centered layout */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5; /* Light grey background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Container for the converter app */
+        .converter-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out; /* Simple fade-in animation */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #2c3e50; /* Darker blue-grey for heading */
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+
+        /* Styling for input groups (label + input/select) */
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        /* Styling for input fields and select dropdowns */
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            color: #333;
+            background-color: #fdfdfd;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            -webkit-appearance: none; /* Remove default browser styling for select */
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #3498db; /* Blue focus border */
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Specific styling for select dropdown arrows */
+        select {
+            cursor: pointer;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%233498db%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-6.5%200-12.3%203.2-16.1%208.1-3.8%204.9-4.7%2011.2-2.7%2017.6l131.5%20220c3.5%205.9%209.7%209.4%2016.4%209.4s12.9-3.5%2016.4-9.4l131.5-220c2-6.4%201.1-12.7-2.7-17.6z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat, repeat;
+            background-position: right .7em top 50%, 0 0;
+            background-size: .65em auto, 100%;
+        }
+
+        /* Result display area */
+        .result-output {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e8f7ff; /* Light blue background for result */
+            border-radius: 8px;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #2980b9; /* Stronger blue for result text */
+            min-height: 70px; /* Ensure consistent height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            word-break: break-all; /* Prevent overflow of long numbers */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .converter-container {
+                margin: 20px;
+                padding: 30px 25px;
+            }
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 25px;
+            }
+            input[type="number"],
+            select {
+                font-size: 1em;
+                padding: 10px 12px;
+            }
+            .result-output {
+                font-size: 1.2em;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="converter-container">
+        <h1>Uzunlik Konvertori</h1>
+
+        <div class="input-group">
+            <label for="input_value">Qiymat:</label>
+            <input type="number" id="input_value" value="1" step="any" min="0">
+        </div>
+
+        <div class="input-group">
+            <label for="from_unit">Dan:</label>
+            <select id="from_unit">
+                <option value="meter">Metr (m)</option>
+                <option value="kilometer">Kilometr (km)</option>
+                <option value="centimeter">Santimetr (cm)</option>
+                <option value="millimeter">Millimetr (mm)</option>
+                <option value="mile">Mil (mi)</option>
+                <option value="foot">Fut (ft)</option>
+                <option value="inch">Dyuym (in)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="to_unit">Ga:</label>
+            <select id="to_unit">
+                <option value="centimeter">Santimetr (cm)</option>
+                <option value="meter">Metr (m)</option>
+                <option value="kilometer">Kilometr (km)</option>
+                <option value="millimeter">Millimetr (mm)</option>
+                <option value="mile">Mil (mi)</option>
+                <option value="foot">Fut (ft)</option>
+                <option value="inch">Dyuym (in)</option>
+            </select>
+        </div>
+
+        <div class="result-output">
+            <span id="result_value">0</span>
+        </div>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const inputValue = document.getElementById('input_value');
+        const fromUnitSelect = document.getElementById('from_unit');
+        const toUnitSelect = document.getElementById('to_unit');
+        const resultValueSpan = document.getElementById('result_value');
+
+        // Define conversion factors relative to a base unit (meter).
+        // Each value represents how many meters are in 1 unit of that type.
+        const conversionFactors = {
+            meter: 1,
+            kilometer: 1000,        // 1 km = 1000 m
+            centimeter: 0.01,       // 1 cm = 0.01 m
+            millimeter: 0.001,      // 1 mm = 0.001 m
+            mile: 1609.34,          // 1 mi = 1609.34 m
+            foot: 0.3048,           // 1 ft = 0.3048 m
+            inch: 0.0254            // 1 in = 0.0254 m
+        };
+
+        /**
+         * Performs the length conversion based on user input and selected units.
+         */
+        function convertLength() {
+            const value = parseFloat(inputValue.value);
+            const fromUnit = fromUnitSelect.value;
+            const toUnit = toUnitSelect.value;
+
+            // Handle invalid or empty input
+            if (isNaN(value) || value < 0) {
+                resultValueSpan.textContent = 'Invalid Input';
+                return;
+            }
+
+            // Convert the input value to the base unit (meters)
+            const valueInMeters = value * conversionFactors[fromUnit];
+
+            // Convert from meters to the target unit
+            let result = valueInMeters / conversionFactors[toUnit];
+
+            // Display the result, rounded to a reasonable number of decimal places
+            // Avoid unnecessary long decimals for exact integers
+            if (Number.isInteger(result)) {
+                resultValueSpan.textContent = result;
+            } else {
+                resultValueSpan.textContent = result.toFixed(6); // Show up to 6 decimal places
+            }
+        }
+
+        // Add event listeners for real-time conversion
+        inputValue.addEventListener('input', convertLength);
+        fromUnitSelect.addEventListener('change', convertLength);
+        toUnitSelect.addEventListener('change', convertLength);
+
+        // Perform an initial conversion when the page loads to display default values
+        document.addEventListener('DOMContentLoaded', convertLength);
+    </script>
+</body>
+</html>
