@@ -82,6 +82,7 @@
     "css_animation::Yulduzli osmon animatsiyasi",
     "data_viz::Soat vizualizatsiyasi",
     "calculator::Uzunlik konvertori",
-    "python_cli::Tasodifiy iqtibos generatori"
+    "python_cli::Tasodifiy iqtibos generatori",
+    "quiz_app::Mantiqiy savolar"
   ]
 }

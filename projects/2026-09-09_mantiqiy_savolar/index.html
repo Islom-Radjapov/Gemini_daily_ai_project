@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mantiqiy Viktorina</title>
+    <style>
+        /* CSS styles for the quiz application */
+        /* Define custom CSS variables for easy theme management */
+        :root {
+            --primary-color: #007bff; /* Main accent color */
+            --primary-hover-color: #0056b3; /* Darker shade for hover states */
+            --success-color: #28a745; /* Color for correct answers/feedback */
+            --danger-color: #dc3545; /* Color for incorrect answers/feedback */
+            --info-color: #17a2b8; /* Color for informational text */
+            --text-color: #333; /* Default text color */
+            --bg-color: #f8f9fa; /* Background color of the page */
+            --card-bg-color: #ffffff; /* Background color of the quiz card */
+            --border-color: #dee2e6; /* Border color for elements */
+            --shadow-color: rgba(0, 0, 0, 0.1); /* Shadow color for card */
+        }
+
+        /* Reset default browser styles for consistency */
+        * {
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            margin: 0; /* Remove default margins */
+            padding: 0; /* Remove default paddings */
+        }
+
+        /* Body styling: full viewport height, centered content */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern, clean font stack */
+            background-color: var(--bg-color); /* Use defined background color */
+            color: var(--text-color); /* Use defined text color */
+            display: flex; /* Use flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Ensure body takes at least full viewport height */
+            padding: 20px; /* Padding around the content */
+        }
+
+        /* Main application container styling */
+        #app {
+            background-color: var(--card-bg-color); /* White background for the card */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 4px 12px var(--shadow-color); /* Soft shadow for depth */
+            padding: 30px; /* Inner padding */
+            max-width: 600px; /* Maximum width for readability */
+            width: 100%; /* Take full width on smaller screens */
+            text-align: center; /* Center text within the app container */
+            animation: fadeIn 0.5s ease-out; /* Fade-in animation on load */
+        }
+
+        /* Keyframe animation for a smooth fade-in effect */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); } /* Start invisible and slightly above */
+            to { opacity: 1; transform: translateY(0); } /* End visible and at original position */
+        }
+
+        /* Styling for headings */
+        h1, h2 {
+            color: var(--primary-color); /* Use primary color for headings */
+            margin-bottom: 20px; /* Space below headings */
+        }
+
+        /* Styling for paragraphs */
+        p {
+            margin-bottom: 15px; /* Space below paragraphs */
+            line-height: 1.6; /* Improved readability for text */
+        }
+
+        /* General button styling */
+        button {
+            background-color: var(--primary-color); /* Primary color background */
+            color: white; /* White text */
+            border: none; /* No border */
+            border-radius: 5px; /* Slightly rounded corners */
+            padding: 12px 25px; /* Padding inside buttons */
+            font-size: 1rem; /* Standard font size */
+            cursor: pointer; /* Pointer cursor on hover */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions for hover effects */
+            margin: 10px 5px; /* Margin around buttons */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Soft shadow for buttons */
+        }
+
+        /* Button hover effect */
+        button:hover:not(:disabled) {
+            background-color: var(--primary-hover-color); /* Darker background on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        /* Styling for disabled buttons */
+        button:disabled {
+            background-color: #cccccc; /* Gray background */
+            cursor: not-allowed; /* Not-allowed cursor */
+            box-shadow: none; /* No shadow */
+        }
+
+        /* Margin for different screens */
+        #welcome-screen, #quiz-container, #results-screen {
+            margin-top: 20px; /* Space above these sections */
+        }
+
+        /* Question counter styling */
+        #question-counter {
+            font-size: 1.1rem; /* Larger font size */
+            color: var(--info-color); /* Info color */
+            margin-bottom: 15px; /* Space below */
+            font-weight: bold; /* Bold text */
+        }
+
+        /* Question text styling */
+        #question-text {
+            font-size: 1.3rem; /* Larger font for questions */
+            margin-bottom: 25px; /* Space below question */
+            min-height: 80px; /* Ensures consistent height, preventing layout shifts */
+            display: flex; /* Use flexbox to center text vertically */
+            align-items: center; /* Center text vertically */
+            justify-content: center; /* Center text horizontally */
+            text-align: center; /* Ensure text is centered */
+            padding: 10px; /* Padding for question text */
+        }
+
+        /* Options container styling */
+        #options-container {
+            display: flex; /* Flexbox for options */
+            flex-direction: column; /* Stack options vertically */
+            gap: 10px; /* Space between option buttons */
+            margin-bottom: 20px; /* Space below options */
+        }
+
+        /* Individual option button styling */
+        .option-button {
+            background-color: #f0f0f0; /* Light gray background */
+            color: var(--text-color); /* Default text color */
+            border: 1px solid var(--border-color); /* Light border */
+            text-align: left; /* Align text to the left */
+            padding: 15px 20px; /* Padding inside option buttons */
+            font-size: 1rem; /* Standard font size */
+            border-radius: 8px; /* Slightly more rounded corners */
+            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease; /* Smooth transitions */
+            box-shadow: 0 1px 3px var(--shadow-color); /* Subtle shadow */
+            width: 100%; /* Take full width */
+        }
+
+        /* Option button hover effect */
+        .option-button:hover:not(:disabled) {
+            background-color: #e9ecef; /* Slightly darker gray on hover */
+            border-color: var(--primary-color); /* Primary color border on hover */
+            transform: translateY(-1px); /* Slight lift effect */
+        }
+
+        /* Styling for a correctly selected option */
+        .option-button.selected-correct {
+            background-color: var(--success-color); /* Green background */
+            color: white; /* White text */
+            border-color: var(--success-color); /* Green border */
+        }
+
+        /* Styling for an incorrectly selected option */
+        .option-button.selected-wrong {
+            background-color: var(--danger-color); /* Red background */
+            color: white; /* White text */
+            border-color: var(--danger-color); /* Red border */
+        }
+
+        /* Styling for the correct answer button (shown after selection) */
+        .option-button.correct-answer {
+            background-color: var(--success-color); /* Green background */
+            color: white; /* White text */
+            border-color: var(--success-color); /* Green border */
+            opacity: 0.8; /* Slightly less opaque to distinguish from actively selected correct */
+        }
+        
+        /* Styling for the explanation feedback */
+        .feedback-explanation {
+            margin-top: 15px; /* Space above */
+            margin-bottom: 15px; /* Space below */
+            padding: 15px; /* Inner padding */
+            background-color: #e9f7ef; /* Light green background */
+            border: 1px solid var(--success-color); /* Green border */
+            border-radius: 8px; /* Rounded corners */
+            text-align: left; /* Align text to the left */
+            font-size: 0.95rem; /* Slightly smaller font */
+            color: #333; /* Dark text color */
+            animation: slideInUp 0.3s ease-out; /* Slide-in animation for explanation */
+        }
+
+        /* Keyframe animation for slide-in effect */
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(10px); } /* Start invisible and slightly below */
+            to { opacity: 1; transform: translateY(0); } /* End visible and at original position */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 480px) {
+            #app {
+                padding: 20px; /* Reduce padding on smaller screens */
+            }
+            button {
+                padding: 10px 20px; /* Adjust button padding */
+                font-size: 0.9rem; /* Adjust button font size */
+            }
+            .option-button {
+                padding: 12px 15px; /* Adjust option button padding */
+                font-size: 0.9rem; /* Adjust option button font size */
+            }
+            h1 {
+                font-size: 1.8rem; /* Adjust heading 1 font size */
+            }
+            h2 {
+                font-size: 1.5rem; /* Adjust heading 2 font size */
+            }
+            #question-text {
+                font-size: 1.1rem; /* Adjust question text font size */
+                min-height: 60px; /* Adjust minimum height */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1 id="quiz-title">Mantiqiy Viktorina</h1>
+
+        <!-- Welcome Screen: displayed at the start -->
+        <div id="welcome-screen">
+            <p>Mantiqiy savollar dunyosiga xush kelibsiz! Savollarga javob berib, mantiqingizni sinang.</p>
+            <button id="start-quiz-btn">Viktorinani Boshlash</button>
+        </div>
+
+        <!-- Quiz Container: displayed during the quiz -->
+        <div id="quiz-container" style="display: none;">
+            <div id="question-counter">Savol 1 / 10</div>
+            <div id="question-text"></div>
+            <div id="options-container"></div>
+            <div id="feedback"></div>
+            <button id="next-question-btn" disabled>Keyingi Savol</button>
+        </div>
+
+        <!-- Results Screen: displayed after the quiz ends -->
+        <div id="results-screen" style="display: none;">
+            <h2>Natijalar</h2>
+            <p id="final-score"></p>
+            <button id="restart-quiz-btn">Qayta Boshlash</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for the quiz logic
+
+        // Array containing all quiz questions, options, correct answers, and explanations.
+        const questions = [
+            {
+                question: "Agar qizil uy qizil g'ishtdan, ko'k uy ko'k g'ishtdan qurilgan bo'lsa, yashil uy nimadan quriladi?",
+                options: ["Yashil g'ishtdan", "Shishadan", "Brilliantdan", "Qishloq xo'jaligi maxsulotlaridan"],
+                correctAnswer: "Qishloq xo'jaligi maxsulotlaridan",
+                explanation: "Yashil uy (greenhouse) o'simliklar o'stirish uchun mo'ljallangan va odatda shisha yoki shaffof plastmassadan quriladi."
+            },
+            {
+                question: "Siz uch xonada bo'lishingiz mumkin: birinchi xonada olov bor, ikkinchi xonada qurollangan qotil bor, uchinchi xonada esa och va yirtqich sherlar bor (ular 3 yildan beri ovqatlanmagan). Siz qaysi xonaga kirishni tanlaysiz?",
+                options: ["Birinchi xonaga", "Ikkinchi xonaga", "Uchinchi xonaga", "Hech biriga"],
+                correctAnswer: "Uchinchi xonaga",
+                explanation: "3 yildan beri ovqatlanmagan sherlar allaqachon o'lgan bo'lar edi."
+            },
+            {
+                question: "Har kuni ovqat yeydi, lekin hech qachon qorni to'ymaydi. Bu nima?",
+                options: ["Olov", "Suv", "Shamol", "Erdagi chuqur"],
+                correctAnswer: "Olov",
+                explanation: "Olov yonish uchun doim yoqilg'i talab qiladi va uni iste'mol qilib, hech qachon to'ymasdan katta bo'laveradi."
+            },
+            {
+                question: "Besh alma besh kishi tomonidan 5 daqiqada yeyilsa, 100 ta alma 100 kishi tomonidan qancha vaqtda yeyiladi?",
+                options: ["100 daqiqa", "5 daqiqa", "1 daqiqa", "50 daqiqa"],
+                correctAnswer: "5 daqiqa",
+                explanation: "Har bir odamga bitta olma uchun 5 daqiqa vaqt ketadi, shuning uchun 100 kishiga ham 5 daqiqa vaqt ketadi, agar har kim o'z olmasini yesa."
+            },
+            {
+                question: "Oldingizda ikkita eshik bor. Bir eshik jannatga, ikkinchisi do'zaxga olib boradi. Har bir eshik oldida bittadan qo'riqchi turibdi. Ulardan biri doim rost gapiradi, ikkinchisi doim yolg'on gapiradi. Siz ulardan biriga faqat bitta savol berishingiz mumkin. Qanday savol berishingiz kerak?",
+                options: ["'Boshqa qo'riqchi jannatga olib boradigan eshik qaysi deb aytadi?'", "'Sen doim rost gapirasanmi?'", "'Bu eshik jannatga olib boradimi?'", "'Jannat eshigiga olib boradigan yo'l qaysi?'"],
+                correctAnswer: "'Boshqa qo'riqchi jannatga olib boradigan eshik qaysi deb aytadi?'",
+                explanation: "Agar rostgo'yga murojaat qilsangiz, u yolg'onchining jannat eshigi deb aytadigan (ya'ni do'zax eshigi) eshikni aytadi. Agar yolg'onchiga murojaat qilsangiz, u rostgo'yning jannat eshigi deb aytadigan eshik haqida yolg'on gapirib, yana do'zax eshigini ko'rsatadi. Har ikki holatda ham sizga ko'rsatilgan eshik do'zaxga olib boradi, shuning uchun siz boshqa eshikni tanlashingiz kerak."
+            },
+            {
+                question: "Bir ayol to'qqizta farzandini tug'di va ularning yarmi qiz edi. Bu qanday mumkin?",
+                options: ["Chunki qolgan yarmi o'g'il edi", "Chunki ular to'qqizta emas, balki sakkizta edi", "Chunki farzandlarning barchasi qiz edi", "Chunki bu imkonsiz."],
+                correctAnswer: "Chunki farzandlarning barchasi qiz edi",
+                explanation: "Agar farzandlarning barchasi qiz bo'lsa, ularning yarmi ham qiz bo'ladi."
+            },
+            {
+                question: "Men doim ochman, meni ovqatlantirsangiz yashayman, menga suv bersangiz o'laman. Men kimman?",
+                options: ["Olov", "O'simlik", "Baliq", "Och odam"],
+                correctAnswer: "Olov",
+                explanation: "Olovga yoqilg'i (ovqat) berilsa yanada kuchayadi, suv esa uni o'chiradi."
+            },
+            {
+                question: "Siz har doim oldingizda ko'rasiz, lekin uni hech qachon ushlab bo'lmaydi. Bu nima?",
+                options: ["Kelajak", "Oy", "Orzu", "Soyangiz"],
+                correctAnswer: "Kelajak",
+                explanation: "Kelajak doim oldimizda, lekin unga yetib bo'lmaydi."
+            },
+            {
+                question: "Ikki ota va ikki o'g'il bor. Lekin ular atigi uch kishi. Bu qanday mumkin?",
+                options: ["Chunki ulardan biri xola edi", "Chunki ular bobo, ota va o'g'il edi", "Chunki bu tasodif edi", "Chunki ular egizaklar edi"],
+                correctAnswer: "Chunki ular bobo, ota va o'g'il edi",
+                explanation: "Bobo (bir ota), ota (ikkinchi ota va birinchi o'g'il), va o'g'il (ikkinchi o'g'il). Jami uch kishi."
+            },
+            {
+                question: "Ikki olma va uch banan bor. Hammasi bo'lib nechta meva bor?",
+                options: ["Beshta", "Ikki dona", "Uch dona", "Imkonsiz"],
+                correctAnswer: "Beshta",
+                explanation: "Ikki olma va uch banan qo'shilsa jami beshta meva bo'ladi."
+            }
+        ];
+
+        // Get references to DOM elements
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsScreen = document.getElementById('results-screen');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const questionCounter = document.getElementById('question-counter');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackDiv = document.getElementById('feedback');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const finalScoreP = document.getElementById('final-score');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+
+        // Quiz state variables
+        let currentQuestionIndex = 0; // Tracks the current question number
+        let score = 0; // Stores the user's score
+        let answerSelected = false; // Flag to prevent multiple selections for one question
+
+        /**
+         * Initializes the quiz by setting up event listeners for buttons and
+         * ensuring the welcome screen is visible on initial load.
+         */
+        function initQuiz() {
+            // Add event listeners to the main action buttons
+            startQuizBtn.addEventListener('click', startQuiz);
+            nextQuestionBtn.addEventListener('click', nextQuestion);
+            restartQuizBtn.addEventListener('click', restartQuiz);
+            
+            // Set initial screen visibility
+            welcomeScreen.style.display = 'block';
+            quizContainer.style.display = 'none';
+            resultsScreen.style.display = 'none';
+        }
+
+        /**
+         * Starts the quiz sequence. Hides the welcome screen, shows the quiz container,
+         * resets quiz state, and loads the first question.
+         */
+        function startQuiz() {
+            // Update screen visibility
+            welcomeScreen.style.display = 'none';
+            quizContainer.style.display = 'block';
+            resultsScreen.style.display = 'none'; 
+
+            // Reset quiz state for a fresh start
+            currentQuestionIndex = 0;
+            score = 0;
+            loadQuestion(); // Load the very first question
+        }
+
+        /**
+         * Loads and displays the current question and its associated options.
+         * If all questions are answered, it transitions to the results screen.
+         */
+        function loadQuestion() {
+            // Reset state for the new question
+            answerSelected = false; // Allow new answer selection
+            nextQuestionBtn.disabled = true; // Disable 'Next' button until an answer is chosen
+            feedbackDiv.innerHTML = ''; // Clear any previous feedback and explanation
+
+            // Check if there are more questions to display
+            if (currentQuestionIndex < questions.length) {
+                const question = questions[currentQuestionIndex];
+                
+                // Update question counter and text
+                questionCounter.textContent = `Savol ${currentQuestionIndex + 1} / ${questions.length}`;
+                questionText.textContent = question.question;
+                optionsContainer.innerHTML = ''; // Clear previous options from the container
+
+                // Create and display option buttons for the current question
+                question.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option-button');
+                    // Add an event listener to each option button to handle user selection
+                    button.addEventListener('click', () => selectOption(button, option, question.correctAnswer, question.explanation));
+                    optionsContainer.appendChild(button);
+                });
+            } else {
+                // If no more questions, show the results
+                showResults();
+            }
+        }
+
+        /**
+         * Handles the user's selection of an option. It checks if the answer is correct,
+         * updates the score, provides visual feedback, and shows an explanation.
+         * @param {HTMLButtonElement} selectedButton - The button element that was clicked.
+         * @param {string} selectedOption - The text content of the selected option.
+         * @param {string} correctAnswer - The correct answer for the current question.
+         * @param {string} explanation - The explanation for the answer.
+         */
+        function selectOption(selectedButton, selectedOption, correctAnswer, explanation) {
+            // Prevent multiple selections for the same question
+            if (answerSelected) return;
+
+            answerSelected = true; // Mark an answer as selected
+            nextQuestionBtn.disabled = false; // Enable the 'Next Question' button
+
+            // Disable all option buttons and highlight the correct answer
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = true; // Disable click for all options
+                if (button.textContent === correctAnswer) {
+                    button.classList.add('correct-answer'); // Highlight the correct answer
+                }
+            });
+
+            // Provide feedback based on the selection
+            if (selectedOption === correctAnswer) {
+                score++; // Increment score if correct
+                selectedButton.classList.add('selected-correct'); // Style for correct choice
+                feedbackDiv.innerHTML = `<p style="color: var(--success-color); font-weight: bold;">To'g'ri javob!</p>`;
+            } else {
+                selectedButton.classList.add('selected-wrong'); // Style for incorrect choice
+                feedbackDiv.innerHTML = `<p style="color: var(--danger-color); font-weight: bold;">Noto'g'ri javob.</p>`;
+            }
+            
+            // Always show the explanation after an answer has been made
+            feedbackDiv.innerHTML += `<div class="feedback-explanation"><strong>Tushuntirish:</strong> ${explanation}</div>`;
+        }
+
+        /**
+         * Advances the quiz to the next question.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++; // Move to the next question
+            loadQuestion(); // Load the new question
+        }
+
+        /**
+         * Displays the final results screen, showing the user's score.
+         */
+        function showResults() {
+            quizContainer.style.display = 'none'; // Hide the quiz container
+            resultsScreen.style.display = 'block'; // Show the results screen
+            finalScoreP.textContent = `Siz ${questions.length} savoldan ${score} tasiga to'g'ri javob berdingiz.`; // Display final score
+        }
+
+        /**
+         * Resets the quiz to its initial state, allowing the user to start over.
+         * It calls `initQuiz()` to go back to the welcome screen.
+         */
+        function restartQuiz() {
+            initQuiz(); // Re-initialize the quiz
+        }
+
+        // Ensure the quiz initializes only after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initQuiz);
+    </script>
+</body>
+</html>
