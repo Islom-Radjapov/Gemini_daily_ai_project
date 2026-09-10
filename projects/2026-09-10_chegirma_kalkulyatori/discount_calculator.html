@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chegirma Kalkulyatori</title>
+    <style>
+        /* Global styles for the body to center the calculator and define basic typography */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            background-color: #f0f2f5; /* Light gray background for a modern look */
+            color: #333; /* Dark gray for text */
+            line-height: 1.6;
+            padding: 20px; /* Padding for small screens */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Styling for the main calculator container */
+        .calculator-container {
+            background-color: #ffffff; /* White background for the calculator card */
+            padding: 30px;
+            border-radius: 12px; /* Rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+            width: 100%;
+            max-width: 400px; /* Maximum width to prevent it from getting too wide on large screens */
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Styling for the main heading */
+        h1 {
+            color: #2c3e50; /* Darker blue-gray for heading */
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            font-weight: 600; /* Semi-bold */
+        }
+
+        /* Styling for each input group (label + input) */
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left; /* Align labels and inputs to the left */
+        }
+
+        .input-group label {
+            display: block; /* Make label take full width */
+            margin-bottom: 8px;
+            font-weight: 500; /* Medium weight */
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        /* Styling for number input fields */
+        .input-group input[type="number"] {
+            width: calc(100% - 24px); /* Full width minus padding to fit inside container */
+            padding: 12px;
+            border: 1px solid #ddd; /* Light gray border */
+            border-radius: 8px;
+            font-size: 1.1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for focus effect */
+            -moz-appearance: textfield; /* Remove number input arrows for Firefox */
+        }
+
+        /* Remove number input arrows for Chrome, Safari, Edge */
+        .input-group input[type="number"]::-webkit-outer-spin-button,
+        .input-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Focus state for input fields */
+        .input-group input[type="number"]:focus {
+            border-color: #007bff; /* Primary blue border on focus */
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); /* Soft blue shadow on focus */
+            outline: none; /* Remove default outline */
+        }
+
+        /* Styling for the calculate button */
+        #calculateButton {
+            background-color: #007bff; /* Primary blue background */
+            color: white; /* White text */
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer; /* Pointer cursor on hover */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth hover and active effects */
+            width: 100%;
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 25px;
+        }
+
+        /* Hover state for the button */
+        #calculateButton:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        /* Active state for the button */
+        #calculateButton:active {
+            background-color: #004085;
+            transform: translateY(0); /* Return to original position */
+        }
+
+        /* Styling for the results display area */
+        .results-container {
+            margin-top: 25px;
+            border-top: 1px solid #eee; /* Light gray top border to separate results */
+            padding-top: 20px;
+            text-align: left;
+        }
+
+        /* Styling for individual result items (label + value) */
+        .result-item {
+            display: flex; /* Use flexbox for label and value alignment */
+            justify-content: space-between; /* Space out label and value */
+            margin-bottom: 12px;
+            font-size: 1.05em;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee; /* Dashed separator */
+        }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none; /* No border for the last item */
+        }
+
+        .result-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .result-value {
+            color: #28a745; /* Success green for discount amount */
+            font-weight: 600;
+        }
+
+        /* Specific styling for the final price value to make it stand out */
+        .final-price-item .result-value {
+            color: #007bff; /* Primary blue for final price */
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px; /* Reduce overall padding */
+            }
+            .calculator-container {
+                margin: 0 10px; /* Small horizontal margin */
+                padding: 25px; /* Slightly reduced padding */
+            }
+
+            h1 {
+                font-size: 1.6em;
+                margin-bottom: 25px;
+            }
+
+            #calculateButton {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+
+            .result-item {
+                font-size: 1em;
+            }
+
+            .final-price-item .result-value {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Chegirma Kalkulyatori</h1>
+
+        <div class="input-group">
+            <label for="originalPrice">Asl narx:</label>
+            <input type="number" id="originalPrice" placeholder="Misol: 100.00" min="0" step="0.01">
+        </div>
+
+        <div class="input-group">
+            <label for="discountPercentage">Chegirma (%):</label>
+            <input type="number" id="discountPercentage" placeholder="Misol: 15" min="0" max="100" step="0.01">
+        </div>
+
+        <button id="calculateButton">Hisoblash</button>
+
+        <div class="results-container">
+            <div class="result-item">
+                <span class="result-label">Chegirma miqdori:</span>
+                <span id="discountAmount" class="result-value">0.00</span>
+            </div>
+            <div class="result-item final-price-item">
+                <span class="result-label">Yakuniy narx:</span>
+                <span id="finalPrice" class="result-value">0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const originalPriceInput = document.getElementById('originalPrice');
+        const discountPercentageInput = document.getElementById('discountPercentage');
+        const calculateButton = document.getElementById('calculateButton');
+        const discountAmountSpan = document.getElementById('discountAmount');
+        const finalPriceSpan = document.getElementById('finalPrice');
+
+        /**
+         * Calculates the discount amount and final price based on original price and discount percentage.
+         */
+        function calculateDiscount() {
+            // Parse input values as floating-point numbers
+            const originalPrice = parseFloat(originalPriceInput.value);
+            const discountPercentage = parseFloat(discountPercentageInput.value);
+
+            // Input validation
+            if (isNaN(originalPrice) || originalPrice < 0) {
+                alert("Iltimos, haqiqiy asl narx kiriting (musbat son)."); // Please enter a valid original price (positive number).
+                originalPriceInput.focus(); // Focus back to the original price input
+                return; // Stop function execution
+            }
+
+            if (isNaN(discountPercentage) || discountPercentage < 0 || discountPercentage > 100) {
+                alert("Iltimos, haqiqiy chegirma foizini kiriting (0-100 oralig'ida)."); // Please enter a valid discount percentage (between 0-100).
+                discountPercentageInput.focus(); // Focus back to the discount percentage input
+                return; // Stop function execution
+            }
+
+            // Calculate discount amount
+            const discountAmount = originalPrice * (discountPercentage / 100);
+
+            // Calculate final price
+            const finalPrice = originalPrice - discountAmount;
+
+            // Display results, formatted to two decimal places for currency
+            discountAmountSpan.textContent = discountAmount.toFixed(2);
+            finalPriceSpan.textContent = finalPrice.toFixed(2);
+        }
+
+        // Add event listener to the calculate button for click events
+        calculateButton.addEventListener('click', calculateDiscount);
+
+        // Optional: Add event listeners for 'keyup' on input fields to allow calculation on 'Enter' key press
+        originalPriceInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                calculateDiscount();
+            }
+        });
+        discountPercentageInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                calculateDiscount();
+            }
+        });
+
+        // Initialize values to 0.00 on page load for a clean start
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default values for inputs if they are empty.
+            // This ensures a calculation can run immediately without user input
+            if (!originalPriceInput.value) originalPriceInput.value = '0';
+            if (!discountPercentageInput.value) discountPercentageInput.value = '0';
+            
+            // Perform an initial calculation to display 0.00 in result fields
+            calculateDiscount();
+        });
+    </script>
+</body>
+</html>

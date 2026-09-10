@@ -83,6 +83,7 @@
     "data_viz::Soat vizualizatsiyasi",
     "calculator::Uzunlik konvertori",
     "python_cli::Tasodifiy iqtibos generatori",
-    "quiz_app::Mantiqiy savolar"
+    "quiz_app::Mantiqiy savolar",
+    "calculator::Chegirma kalkulyatori"
   ]
 }
