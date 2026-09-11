@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandelbrot Explorer</title>
+    <style>
+        /*
+         * General body styling
+         * Sets up a dark background, centers content, and defines a default font.
+         */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align content to the top of the viewport */
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1a2e; /* Deep purple-blue dark background */
+            color: #e0e0e0; /* Light gray text for contrast */
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /*
+         * Main application container styling
+         * Provides a slightly lighter dark background, padding, rounded corners, and a subtle shadow.
+         */
+        #app {
+            background-color: #2a2a4a; /* Lighter shade of the background color */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* Soft shadow for depth */
+            text-align: center;
+            max-width: 900px; /* Limits the maximum width of the app container */
+            width: 100%; /* Ensures it takes full width up to max-width */
+        }
+
+        /*
+         * Heading styling
+         * Uses a vibrant light blue color for emphasis.
+         */
+        h1 {
+            color: #8be9fd; /* A vibrant light blue, similar to Dracula theme's cyan */
+            margin-bottom: 25px;
+            font-size: 2.5em; /* Larger font size for the main title */
+        }
+
+        /*
+         * Canvas styling
+         * Adds a subtle border, black background, and centers it.
+         * Sets specific display dimensions for clarity and provides a custom cursor.
+         */
+        #mandelbrotCanvas {
+            border: 2px solid #6272a4; /* A subtle blue-gray border */
+            background-color: #000; /* Black background for the canvas itself */
+            display: block; /* Removes extra space below inline-block elements */
+            margin: 0 auto 25px auto; /* Centers the canvas horizontally and adds margin below */
+            cursor: grab; /* Indicates that the canvas is draggable */
+            width: 800px; /* Explicitly set canvas display width */
+            height: 600px; /* Explicitly set canvas display height */
+            max-width: 100%; /* Ensure canvas scales down on smaller screens */
+            box-sizing: border-box;
+        }
+
+        /*
+         * Cursor change when dragging the canvas
+         */
+        #mandelbrotCanvas:active {
+            cursor: grabbing; /* Changes cursor to 'grabbing' when clicked and held */
+        }
+
+        /*
+         * Controls information box styling
+         * Provides a distinct background, padding, rounded corners, and an inner shadow.
+         */
+        #controls-info {
+            background-color: #38385e; /* Slightly darker shade for the info box */
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: left; /* Aligns text to the left within the box */
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2); /* Inner shadow for depth */
+        }
+
+        /*
+         * Paragraph styling within controls info
+         */
+        #controls-info p {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #f8f8f2; /* Lighter text for important information */
+        }
+
+        /*
+         * Unordered list styling within controls info
+         * Removes default list styling and uses a CSS grid for a responsive layout.
+         */
+        #controls-info ul {
+            list-style: none; /* Removes bullet points */
+            padding: 0;
+            margin: 0;
+            display: grid; /* Enables CSS Grid layout */
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive columns */
+            gap: 10px; /* Space between grid items */
+        }
+
+        /*
+         * List item styling within controls info
+         * Provides a background, padding, rounded corners, and distinct text color.
+         */
+        #controls-info li {
+            background-color: #44475a; /* Darker background for individual list items */
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 0.95em;
+            color: #bd93f9; /* A distinct purple color for control descriptions */
+            display: flex; /* Use flexbox for alignment within list item */
+            align-items: center; /* Vertically centers content */
+        }
+
+        /*
+         * Strong tag (key names) styling within list items
+         * Uses a vibrant pink color for key names.
+         */
+        #controls-info li strong {
+            color: #ff79c6; /* A vibrant pink for the key names */
+            margin-right: 8px; /* Space between key name and description */
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Mandelbrot Explorer</h1>
+        <canvas id="mandelbrotCanvas"></canvas>
+        <div id="controls-info">
+            <p><strong>Controls:</strong></p>
+            <ul>
+                <li><strong>Mouse Scroll:</strong> Zoom In/Out (at cursor)</li>
+                <li><strong>Click & Drag:</strong> Pan the view</li>
+                <li><strong>Arrow Keys:</strong> Pan the view (&#8592; &#8593; &#8594; &#8595;)</li>
+                <li><strong>'+' / '-':</strong> Zoom In/Out (at center)</li>
+                <li><strong>'R' Key:</strong> Reset View</li>
+                <li><strong>'I' Key:</strong> Increase Iterations</li>
+                <li><strong>'D' Key:</strong> Decrease Iterations</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Get canvas element and its 2D rendering context
+        const canvas = document.getElementById('mandelbrotCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Define internal canvas dimensions for calculations.
+        // These are distinct from the CSS display dimensions.
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+
+        // Set the internal resolution of the canvas
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+
+        // Mandelbrot set parameters
+        let maxIterations = 100; // Initial maximum iterations for calculation detail
+
+        // Complex plane view window coordinates
+        let minRe, maxRe, minIm, maxIm;
+
+        // Panning state variables
+        let isDragging = false;
+        let dragStartX, dragStartY; // Canvas coordinates where the drag operation started
+
+        // Initial complex plane view (standard Mandelbrot set bounds)
+        const initialMinRe = -2.5;
+        const initialMaxRe = 1.0;
+        let initialMinIm_calculated, initialMaxIm_calculated; // Will be set based on aspect ratio
+
+        /**
+         * Converts HSL (Hue, Saturation, Lightness) color values to RGB (Red, Green, Blue).
+         * H, S, L are expected to be in the range [0, 1].
+         * @param {number} h Hue component [0, 1].
+         * @param {number} s Saturation component [0, 1].
+         * @param {number} l Lightness component [0, 1].
+         * @returns {Object} An object {r, g, b} with RGB components in the range [0, 255].
+         */
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+
+            if (s === 0) {
+                r = g = b = l; // Achromatic (gray)
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1 / 6) return p + (q - p) * 6 * t;
+                    if (t < 1 / 2) return q;
+                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                };
+
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1 / 3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1 / 3);
+            }
+
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        /**
+         * Resets the view of the Mandelbrot set to its initial, default state.
+         * This includes setting initial complex plane bounds and redrawing the set.
+         */
+        function resetView() {
+            minRe = initialMinRe;
+            maxRe = initialMaxRe;
+
+            // Calculate initial imaginary bounds maintaining the aspect ratio of the canvas
+            const aspectRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
+            const complexWidth = initialMaxRe - initialMinRe;
+            const complexHeight = complexWidth / aspectRatio; // Adjust height to match aspect ratio
+            minIm = -complexHeight / 2;
+            maxIm = complexHeight / 2;
+
+            drawMandelbrot();
+        }
+
+        /**
+         * Maps a pixel coordinate from the canvas to a complex number in the current view.
+         * @param {number} px X-coordinate of the pixel on the canvas.
+         * @param {number} py Y-coordinate of the pixel on the canvas.
+         * @returns {Object} An object {re, im} representing the complex number.
+         */
+        function mapPixelToComplex(px, py) {
+            const re = minRe + (px / CANVAS_WIDTH) * (maxRe - minRe);
+            // Y-axis in complex plane is typically positive upwards, while canvas Y is positive downwards
+            const im = maxIm - (py / CANVAS_HEIGHT) * (maxIm - minIm);
+            return { re, im };
+        }
+
+        /**
+         * Draws the Mandelbrot set onto the canvas using the current view parameters.
+         * This function iterates over each pixel, performs the Mandelbrot calculation,
+         * and sets the pixel color based on the number of iterations.
+         */
+        function drawMandelbrot() {
+            // Create an ImageData object to directly manipulate pixel data for performance
+            const imageData = ctx.createImageData(CANVAS_WIDTH, CANVAS_HEIGHT);
+            const data = imageData.data; // This is a Uint8ClampedArray representing pixel data
+
+            // Loop over each pixel in the canvas's internal resolution
+            for (let px = 0; px < CANVAS_WIDTH; px++) {
+                for (let py = 0; py < CANVAS_HEIGHT; py++) {
+                    // Map the current pixel (px, py) to a complex number c in the complex plane
+                    const c = mapPixelToComplex(px, py);
+                    const c_re = c.re;
+                    const c_im = c.im;
+
+                    let z_re = 0.0; // Real part of z
+                    let z_im = 0.0; // Imaginary part of z
+                    let iterations = 0;
+
+                    // Perform Mandelbrot iteration: z = z*z + c
+                    // Stop if magnitude squared of z exceeds 4 (escape condition) or max iterations reached
+                    while (z_re * z_re + z_im * z_im <= 4 && iterations < maxIterations) {
+                        const z_re_new = z_re * z_re - z_im * z_im + c_re;
+                        const z_im_new = 2 * z_re * z_im + c_im;
+                        z_re = z_re_new;
+                        z_im = z_im_new;
+                        iterations++;
+                    }
+
+                    // Determine color based on the number of iterations
+                    let r = 0, g = 0, b = 0;
+
+                    if (iterations === maxIterations) {
+                        // If iterations reached maximum, the point is likely in the set, color it black
+                        r = 0;
+                        g = 0;
+                        b = 0;
+                    } else {
+                        // If the point escaped, color it based on the iteration count for a gradient effect
+                        // Smooth coloring algorithm for better visual appearance
+                        const log_zn = Math.log(z_re * z_re + z_im * z_im) / 2; // log of magnitude
+                        const nu = Math.log(log_zn / Math.log(2)) / Math.log(2);
+                        const smoothedIterations = iterations + 1 - nu; // Normalized iteration count
+
+                        // HSL (Hue, Saturation, Lightness) parameters for coloring
+                        // Adjust multiplier (e.g., 5) for different color cycle speeds
+                        const hue = (smoothedIterations * 5) % 360;
+                        const saturation = 100;
+                        // Vary lightness slightly to create more distinct bands
+                        const lightness = 20 + (smoothedIterations % 2) * 20;
+
+                        // Convert HSL values (0-360 for H, 0-100 for S/L) to RGB values (0-255)
+                        const rgb = hslToRgb(hue / 360, saturation / 100, lightness / 100);
+                        r = rgb.r;
+                        g = rgb.g;
+                        b = rgb.b;
+                    }
+
+                    // Calculate the starting index for the current pixel in the imageData.data array
+                    // Each pixel requires 4 bytes (Red, Green, Blue, Alpha)
+                    const index = (py * CANVAS_WIDTH + px) * 4;
+                    data[index] = r;     // Red component
+                    data[index + 1] = g; // Green component
+                    data[index + 2] = b; // Blue component
+                    data[index + 3] = 255; // Alpha component (fully opaque)
+                }
+            }
+            ctx.putImageData(imageData, 0, 0); // Put the generated image data onto the canvas
+        }
+
+        // --- Event Handlers ---
+
+        /**
+         * Handles mouse wheel events for zooming in and out.
+         * Zooms at the cursor's current position.
+         * @param {WheelEvent} event The mouse wheel event object.
+         */
+        canvas.addEventListener('wheel', (event) => {
+            event.preventDefault(); // Prevent default page scrolling
+
+            // Get canvas's display size and position on the page
+            const rect = canvas.getBoundingClientRect();
+            // Calculate mouse position relative to the canvas display area
+            const mouseX_display = event.clientX - rect.left;
+            const mouseY_display = event.clientY - rect.top;
+
+            // Scale mouse position from display coordinates to internal canvas resolution
+            const mouseX_canvas = mouseX_display * (CANVAS_WIDTH / rect.width);
+            const mouseY_canvas = mouseY_display * (CANVAS_HEIGHT / rect.height);
+
+            // Map the scaled mouse position to a complex number
+            const complexAtMouse = mapPixelToComplex(mouseX_canvas, mouseY_canvas);
+
+            const zoomFactor = 1.2; // How much to zoom in or out with each scroll event
+
+            // Calculate current width and height of the complex plane view
+            const currentComplexWidth = maxRe - minRe;
+            const currentComplexHeight = maxIm - minIm;
+
+            let newComplexWidth, newComplexHeight;
+
+            if (event.deltaY < 0) { // Mouse wheel up: Zoom in
+                newComplexWidth = currentComplexWidth / zoomFactor;
+                newComplexHeight = currentComplexHeight / zoomFactor;
+            } else { // Mouse wheel down: Zoom out
+                newComplexWidth = currentComplexWidth * zoomFactor;
+                newComplexHeight = currentComplexHeight * zoomFactor;
+            }
+
+            // Update min/max real and imaginary parts to zoom around the mouse position
+            // This calculation ensures the point under the mouse remains stationary
+            minRe = complexAtMouse.re - (complexAtMouse.re - minRe) * (newComplexWidth / currentComplexWidth);
+            maxRe = complexAtMouse.re + (maxRe - complexAtMouse.re) * (newComplexWidth / currentComplexWidth);
+            minIm = complexAtMouse.im - (complexAtMouse.im - minIm) * (newComplexHeight / currentComplexHeight);
+            maxIm = complexAtMouse.im + (maxIm - complexAtMouse.im) * (newComplexHeight / currentComplexHeight);
+
+            drawMandelbrot(); // Redraw the Mandelbrot set with the new view
+        });
+
+        /**
+         * Handles mouse down event for starting a drag (panning) operation.
+         * @param {MouseEvent} event The mouse down event object.
+         */
+        canvas.addEventListener('mousedown', (event) => {
+            isDragging = true; // Set dragging flag to true
+            canvas.style.cursor = 'grabbing'; // Change cursor to 'grabbing'
+            
+            // Get canvas's display size and position
+            const rect = canvas.getBoundingClientRect();
+            // Store starting mouse position relative to the canvas display area
+            dragStartX = event.clientX - rect.left;
+            dragStartY = event.clientY - rect.top;
+        });
+
+        /**
+         * Handles mouse up event for ending a drag (panning) operation.
+         */
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false; // Set dragging flag to false
+            canvas.style.cursor = 'grab'; // Change cursor back to 'grab'
+        });
+
+        /**
+         * Handles mouse move event for continuously panning the view during a drag.
+         * @param {MouseEvent} event The mouse move event object.
+         */
+        canvas.addEventListener('mousemove', (event) => {
+            if (!isDragging) return; // Only pan if currently dragging
+
+            // Get canvas's display size and position
+            const rect = canvas.getBoundingClientRect();
+            // Calculate current mouse position relative to the canvas display area
+            const mouseX_display = event.clientX - rect.left;
+            const mouseY_display = event.clientY - rect.top;
+
+            // Calculate change in mouse position in display coordinates
+            const deltaX_display = mouseX_display - dragStartX;
+            const deltaY_display = mouseY_display - dragStartY;
+
+            // Convert change in display coordinates to change in complex plane coordinates
+            const complexWidth = maxRe - minRe;
+            const complexHeight = maxIm - minIm;
+
+            // Scale delta by the ratio of complex plane width to canvas display width
+            const deltaRe = (deltaX_display / rect.width) * complexWidth;
+            const deltaIm = (deltaY_display / rect.height) * complexHeight; // Y-axis inverted for panning logic
+
+            // Update complex plane view bounds
+            minRe -= deltaRe;
+            maxRe -= deltaRe;
+            minIm += deltaIm; // Add deltaIm because moving mouse down (positive deltaY) should move complex plane up (positive deltaIm change in current view bounds)
+            maxIm += deltaIm;
+
+            // Update drag start position for the next mouse move event
+            dragStartX = mouseX_display;
+            dragStartY = mouseY_display;
+
+            drawMandelbrot(); // Redraw the Mandelbrot set with the new view
+        });
+
+        /**
+         * Handles keyboard keydown events for panning, zooming, and resetting the view.
+         * @param {KeyboardEvent} event The keyboard event object.
+         */
+        document.addEventListener('keydown', (event) => {
+            const currentComplexWidth = maxRe - minRe;
+            const currentComplexHeight = maxIm - minIm;
+            const panStep = currentComplexWidth * 0.1; // Pan by 10% of current view width/height
+            const zoomFactor = 1.2; // Zoom in/out factor
+
+            switch (event.key) {
+                case 'ArrowLeft': // Pan left
+                    minRe -= panStep;
+                    maxRe -= panStep;
+                    break;
+                case 'ArrowRight': // Pan right
+                    minRe += panStep;
+                    maxRe += panStep;
+                    break;
+                case 'ArrowUp': // Pan up
+                    // Adjust pan step for Y-axis to maintain aspect ratio of the view
+                    minIm += panStep / (CANVAS_WIDTH / CANVAS_HEIGHT);
+                    maxIm += panStep / (CANVAS_WIDTH / CANVAS_HEIGHT);
+                    break;
+                case 'ArrowDown': // Pan down
+                    // Adjust pan step for Y-axis to maintain aspect ratio of the view
+                    minIm -= panStep / (CANVAS_WIDTH / CANVAS_HEIGHT);
+                    maxIm -= panStep / (CANVAS_WIDTH / CANVAS_HEIGHT);
+                    break;
+                case '+': // Zoom in (at center of view)
+                case '=': // Also for '+' on some keyboards without shift
+                    const centerReZoomIn = (minRe + maxRe) / 2;
+                    const centerImZoomIn = (minIm + maxIm) / 2;
+                    minRe = centerReZoomIn - (currentComplexWidth / 2) / zoomFactor;
+                    maxRe = centerReZoomIn + (currentComplexWidth / 2) / zoomFactor;
+                    minIm = centerImZoomIn - (currentComplexHeight / 2) / zoomFactor;
+                    maxIm = centerImZoomIn + (currentComplexHeight / 2) / zoomFactor;
+                    break;
+                case '-': // Zoom out (at center of view)
+                    const centerReZoomOut = (minRe + maxRe) / 2;
+                    const centerImZoomOut = (minIm + maxIm) / 2;
+                    minRe = centerReZoomOut - (currentComplexWidth / 2) * zoomFactor;
+                    maxRe = centerReZoomOut + (currentComplexWidth / 2) * zoomFactor;
+                    minIm = centerImZoomOut - (currentComplexHeight / 2) * zoomFactor;
+                    maxIm = centerImZoomOut + (currentComplexHeight / 2) * zoomFactor;
+                    break;
+                case 'r': // Reset view to initial state
+                case 'R':
+                    resetView();
+                    return; // Don't redraw twice, resetView already calls drawMandelbrot
+                case 'i': // Increase max iterations
+                case 'I':
+                    maxIterations += 50;
+                    if (maxIterations > 1000) maxIterations = 1000; // Cap max iterations
+                    console.log('Max Iterations:', maxIterations);
+                    break;
+                case 'd': // Decrease max iterations
+                case 'D':
+                    maxIterations -= 50;
+                    if (maxIterations < 50) maxIterations = 50; // Minimum iterations to avoid too low detail
+                    console.log('Max Iterations:', maxIterations);
+                    break;
+                default:
+                    return; // Ignore other key presses
+            }
+            drawMandelbrot(); // Redraw the Mandelbrot set after any view change
+        });
+
+        // Initialize the Mandelbrot set view when the page loads
+        resetView();
+    </script>
+</body>
+</html>

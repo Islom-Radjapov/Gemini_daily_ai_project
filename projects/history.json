@@ -84,6 +84,7 @@
     "calculator::Uzunlik konvertori",
     "python_cli::Tasodifiy iqtibos generatori",
     "quiz_app::Mantiqiy savolar",
-    "calculator::Chegirma kalkulyatori"
+    "calculator::Chegirma kalkulyatori",
+    "interactive_art::Mandelbrot to'plami"
   ]
 }
