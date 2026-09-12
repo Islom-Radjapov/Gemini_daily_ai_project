@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Interactive Blog</title>
+    <!-- Inline CSS starts here -->
+    <style>
+        /* General body styling, font, and background */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6; /* Light gray background */
+            color: #333; /* Dark gray text color */
+            line-height: 1.6;
+        }
+
+        /* Container for main content, centering and adding shadow */
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #ffffff; /* White background for content */
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Subtle shadow */
+        }
+
+        /* Header styling for the blog title */
+        header {
+            background-color: #4CAF50; /* A fresh green color */
+            color: white;
+            padding: 25px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            letter-spacing: 1px;
+        }
+
+        /* Styling for the section containing blog posts */
+        .blog-posts-section h2, .add-post-section h2 {
+            color: #4CAF50; /* Green heading for sections */
+            margin-bottom: 25px;
+            font-size: 2em;
+            border-bottom: 2px solid #e0e0e0; /* Light gray separator */
+            padding-bottom: 10px;
+        }
+
+        /* Styling for individual blog post cards */
+        .blog-post {
+            background-color: #f9f9f9; /* Off-white background for posts */
+            border: 1px solid #e0e0e0; /* Light gray border */
+            border-radius: 6px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Soft shadow */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Smooth hover effect */
+        }
+
+        .blog-post:hover {
+            transform: translateY(-5px); /* Lift effect on hover */
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); /* Enhanced shadow on hover */
+        }
+
+        .blog-post h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .blog-post p {
+            color: #555;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        /* Styling for post metadata (e.g., date) */
+        .blog-post .meta {
+            font-size: 0.9em;
+            color: #888;
+            text-align: right;
+            border-top: 1px dashed #eee; /* Dashed separator for meta info */
+            padding-top: 10px;
+            margin-top: 15px;
+        }
+
+        /* Styling for the "Add New Post" form */
+        .add-post-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .add-post-form input[type="text"],
+        .add-post-form textarea {
+            width: calc(100% - 22px); /* Full width minus padding and border */
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc; /* Light gray border */
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box; /* Include padding in element's total width/height */
+            transition: border-color 0.2s ease; /* Smooth transition for focus effect */
+        }
+
+        .add-post-form input[type="text"]:focus,
+        .add-post-form textarea:focus {
+            border-color: #4CAF50; /* Green border on focus */
+            outline: none; /* Remove default outline */
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); /* Subtle shadow on focus */
+        }
+
+        .add-post-form textarea {
+            resize: vertical; /* Allow vertical resizing of textarea */
+            min-height: 120px;
+        }
+
+        .add-post-form button {
+            background-color: #2196F3; /* A vibrant blue for the button */
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.2s ease, transform 0.1s ease; /* Smooth hover and active effects */
+        }
+
+        .add-post-form button:hover {
+            background-color: #1976D2; /* Darker blue on hover */
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+
+        .add-post-form button:active {
+            transform: translateY(0); /* Return to original position on click */
+        }
+
+        /* Footer styling */
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 50px;
+            color: #888;
+            font-size: 0.9em;
+            border-top: 1px solid #eee; /* Light gray top border */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            .container {
+                margin: 20px; /* Smaller margins on mobile */
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 2em; /* Smaller header font */
+            }
+
+            .blog-post h2 {
+                font-size: 1.5em; /* Smaller post title font */
+            }
+
+            .blog-post p {
+                font-size: 1em; /* Smaller post content font */
+            }
+
+            .add-post-form input[type="text"],
+            .add-post-form textarea {
+                width: calc(100% - 20px); /* Adjust width for smaller padding */
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>My Interactive Blog</h1>
+    </header>
+
+    <div class="container">
+        <!-- Section for displaying existing blog posts -->
+        <section class="blog-posts-section">
+            <h2>Recent Posts</h2>
+            <div id="blog-posts-container">
+                <!-- Blog posts will be loaded here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Section for adding new blog posts -->
+        <section class="add-post-section">
+            <h2>Add a New Post</h2>
+            <form id="add-post-form" class="add-post-form">
+                <label for="post-title">Post Title:</label>
+                <input type="text" id="post-title" name="postTitle" required>
+
+                <label for="post-content">Post Content:</label>
+                <textarea id="post-content" name="postContent" required></textarea>
+
+                <button type="submit">Add Post</button>
+            </form>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Simple Interactive Blog. All rights reserved.</p>
+    </footer>
+
+    <!-- Inline JavaScript starts here -->
+    <script>
+        // Data structure for initial blog posts
+        // In a real application, this data would come from a server/database.
+        const initialBlogPosts = [
+            {
+                title: "Welcome to My Blog!",
+                content: "This is the very first post on our new interactive blog. We hope you enjoy the dynamic content experience and find it easy to add your own thoughts!",
+                date: "October 26, 2023 at 10:00 AM"
+            },
+            {
+                title: "Understanding Web Development Basics",
+                content: "Web development involves a combination of HTML for structuring content, CSS for styling its appearance, and JavaScript for adding interactivity. Mastering these three is fundamental to building modern web applications.",
+                date: "October 26, 2023 at 11:30 AM"
+            },
+            {
+                title: "The Power of Single-Page Applications",
+                content: "Single-Page Applications (SPAs) offer a fluid user experience by dynamically rewriting the current page rather than loading entire new pages from the server. This project, though simple, showcases a mini-SPA concept by updating content without full page reloads.",
+                date: "October 26, 2023 at 01:45 PM"
+            }
+        ];
+
+        // Get references to HTML elements using their IDs
+        const blogPostsContainer = document.getElementById('blog-posts-container');
+        const addPostForm = document.getElementById('add-post-form');
+        const postTitleInput = document.getElementById('post-title');
+        const postContentInput = document.getElementById('post-content');
+
+        /**
+         * Creates an HTML element for a single blog post.
+         * This function dynamically generates the structure for each post.
+         * @param {Object} postData - An object containing title, content, and date properties.
+         * @returns {HTMLElement} The created blog post div element.
+         */
+        function createBlogPostElement(postData) {
+            const postDiv = document.createElement('div');
+            postDiv.classList.add('blog-post'); // Add the CSS class for styling
+
+            const titleElement = document.createElement('h2');
+            titleElement.textContent = postData.title;
+
+            const contentElement = document.createElement('p');
+            contentElement.textContent = postData.content;
+
+            const metaElement = document.createElement('div');
+            metaElement.classList.add('meta'); // Add CSS class for metadata styling
+            metaElement.textContent = `Posted on: ${postData.date}`;
+
+            // Append all created elements to the main post div
+            postDiv.appendChild(titleElement);
+            postDiv.appendChild(contentElement);
+            postDiv.appendChild(metaElement);
+
+            return postDiv;
+        }
+
+        /**
+         * Renders all blog posts from an array into the blog posts container.
+         * This function clears the container and re-renders all posts,
+         * ensuring the most recent posts appear at the top.
+         * @param {Array<Object>} posts - An array of blog post objects to be rendered.
+         */
+        function renderBlogPosts(posts) {
+            // Clear any existing posts in the container to avoid duplicates
+            blogPostsContainer.innerHTML = '';
+            // Iterate over the posts array and add each post to the container
+            posts.forEach(post => {
+                const postElement = createBlogPostElement(post);
+                blogPostsContainer.prepend(postElement); // Add new posts at the beginning (top)
+            });
+        }
+
+        /**
+         * Handles the submission of the "Add New Post" form.
+         * Prevents default form submission, validates input, creates a new post object,
+         * adds it to the data array, and then re-renders the posts.
+         * @param {Event} event - The form submission event.
+         */
+        function handleAddPost(event) {
+            event.preventDefault(); // Prevent the default form submission behavior (which reloads the page)
+
+            // Get trimmed values from the input fields
+            const title = postTitleInput.value.trim();
+            const content = postContentInput.value.trim();
+
+            // Basic validation: check if fields are empty
+            if (title === "" || content === "") {
+                alert("Please fill in both the title and content fields to add a new post.");
+                return; // Stop function execution if validation fails
+            }
+
+            // Get the current date and time and format it nicely
+            const currentDate = new Date();
+            const options = {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit', hour12: true
+            };
+            const formattedDate = currentDate.toLocaleDateString('en-US', options);
+
+            // Create a new post object
+            const newPost = {
+                title: title,
+                content: content,
+                date: formattedDate
+            };
+
+            // Add the new post to the beginning of our `initialBlogPosts` array.
+            // This simulates saving new data to a collection (client-side only for this project).
+            initialBlogPosts.unshift(newPost);
+
+            // Re-render all posts to include the newly added one
+            renderBlogPosts(initialBlogPosts);
+
+            // Clear the form fields after successful submission
+            postTitleInput.value = '';
+            postContentInput.value = '';
+        }
+
+        // Event Listeners:
+        // 1. When the entire HTML document has been completely loaded and parsed
+        document.addEventListener('DOMContentLoaded', () => {
+            // Render the initial set of blog posts
+            renderBlogPosts(initialBlogPosts);
+        });
+
+        // 2. When the "Add New Post" form is submitted
+        addPostForm.addEventListener('submit', handleAddPost);
+    </script>
+</body>
+</html>

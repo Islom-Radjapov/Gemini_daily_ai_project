@@ -85,6 +85,7 @@
     "python_cli::Tasodifiy iqtibos generatori",
     "quiz_app::Mantiqiy savolar",
     "calculator::Chegirma kalkulyatori",
-    "interactive_art::Mandelbrot to'plami"
+    "interactive_art::Mandelbrot to'plami",
+    "web_page::Blog sahifa"
   ]
 }
