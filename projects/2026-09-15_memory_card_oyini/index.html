@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Memory Game</title>
+    <style>
+        /* Basic styling for the body and canvas to center the game */
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0; /* Light background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+
+        h1 {
+            color: #2c3e50; /* Dark blue-grey for heading */
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            border: 5px solid #3498db; /* Blue border for the canvas */
+            background-color: #ecf0f1; /* Light grey background for canvas */
+            border-radius: 10px; /* Rounded corners for canvas */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+        }
+
+        #game-info {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <h1>Canvas Memory Game</h1>
+    <canvas id="memoryCanvas"></canvas>
+    <div id="game-info">Moves: 0</div>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('memoryCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameInfoDiv = document.getElementById('game-info');
+
+        // --- Game Configuration Constants ---
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+        const GRID_COLS = 4;
+        const GRID_ROWS = 4;
+        const CARD_WIDTH = 120;
+        const CARD_HEIGHT = 120;
+        const CARD_SPACING = 20; // Space between cards
+        const FLIP_BACK_DELAY = 1000; // ms to show mismatched cards before flipping back
+        const CARD_FACE_FONT_SIZE = 60;
+        const ROUND_RADIUS = 10; // For rounded card corners
+
+        // Set canvas dimensions
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+
+        // --- Game State Variables ---
+        let cards = []; // Array to hold all card objects
+        let flippedCards = []; // Array to store currently flipped cards (max 2)
+        let matchedPairs = 0; // Counter for successfully matched pairs
+        let moves = 0; // Counter for player moves
+        let canFlip = true; // Flag to prevent multiple flips during delays
+        let gameStarted = false; // Flag to track if the game has started
+
+        // Emojis for card faces (duplicated to create pairs)
+        const cardFaces = ['🍎', '🍊', '🍋', '🍉', '🍓', '🍇', '🍒', '🍑'];
+
+        // --- Card Class Definition ---
+        class Card {
+            constructor(id, x, y, width, height, face) {
+                this.id = id; // Unique identifier for the card instance
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.face = face; // The emoji/symbol on the card
+                this.isFlipped = false; // Is the card currently face up?
+                this.isMatched = false; // Is the card part of a matched pair?
+            }
+
+            // Method to draw the card on the canvas
+            draw() {
+                ctx.save(); // Save the current canvas state
+
+                // Draw card background (rounded rectangle)
+                ctx.beginPath();
+                ctx.moveTo(this.x + ROUND_RADIUS, this.y);
+                ctx.lineTo(this.x + this.width - ROUND_RADIUS, this.y);
+                ctx.quadraticCurveTo(this.x + this.width, this.y, this.x + this.width, this.y + ROUND_RADIUS);
+                ctx.lineTo(this.x + this.width, this.y + this.height - ROUND_RADIUS);
+                ctx.quadraticCurveTo(this.x + this.width, this.y + this.height, this.x + this.width - ROUND_RADIUS, this.y + this.height);
+                ctx.lineTo(this.x + ROUND_RADIUS, this.y + this.height);
+                ctx.quadraticCurveTo(this.x, this.y + this.height, this.x, this.y + this.height - ROUND_RADIUS);
+                ctx.lineTo(this.x, this.y + ROUND_RADIUS);
+                ctx.quadraticCurveTo(this.x, this.y, this.x + ROUND_RADIUS, this.y);
+                ctx.closePath();
+
+                // Card styling based on state
+                if (this.isMatched) {
+                    ctx.fillStyle = '#2ecc71'; // Green for matched cards
+                } else if (this.isFlipped) {
+                    ctx.fillStyle = '#f1c40f'; // Yellow for flipped cards
+                } else {
+                    ctx.fillStyle = '#3498db'; // Blue for face-down cards
+                }
+                ctx.fill();
+
+                // Draw card border
+                ctx.strokeStyle = '#2c3e50'; // Dark blue-grey border
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Draw card face if flipped or matched
+                if (this.isFlipped || this.isMatched) {
+                    ctx.font = `${CARD_FACE_FONT_SIZE}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#2c3e50'; // Dark color for emoji
+                    ctx.fillText(this.face, this.x + this.width / 2, this.y + this.height / 2);
+                }
+
+                ctx.restore(); // Restore the canvas state
+            }
+
+            // Method to check if a point (x, y) is inside the card
+            contains(mouseX, mouseY) {
+                return mouseX > this.x && mouseX < this.x + this.width &&
+                       mouseY > this.y && mouseY < this.y + this.height;
+            }
+        }
+
+        // --- Utility Functions ---
+
+        // Fisher-Yates shuffle algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- Game Logic Functions ---
+
+        // Initializes or resets the game
+        function initGame() {
+            cards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            canFlip = true;
+            gameStarted = false; // Game starts on first click
+
+            // Duplicate card faces to create pairs
+            let gameCardFaces = [...cardFaces, ...cardFaces];
+            shuffleArray(gameCardFaces);
+
+            // Calculate starting position to center the grid
+            const totalGridWidth = GRID_COLS * CARD_WIDTH + (GRID_COLS - 1) * CARD_SPACING;
+            const totalGridHeight = GRID_ROWS * CARD_HEIGHT + (GRID_ROWS - 1) * CARD_SPACING;
+            const startX = (CANVAS_WIDTH - totalGridWidth) / 2;
+            const startY = (CANVAS_HEIGHT - totalGridHeight) / 2;
+
+            // Create Card objects and position them
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    const cardIndex = r * GRID_COLS + c;
+                    const x = startX + c * (CARD_WIDTH + CARD_SPACING);
+                    const y = startY + r * (CARD_HEIGHT + CARD_SPACING);
+                    const card = new Card(cardIndex, x, y, CARD_WIDTH, CARD_HEIGHT, gameCardFaces[cardIndex]);
+                    cards.push(card);
+                }
+            }
+
+            drawGame();
+        }
+
+        // Draws all game elements on the canvas
+        function drawGame() {
+            // Clear the entire canvas
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // Draw all cards
+            cards.forEach(card => card.draw());
+
+            // Update moves display
+            gameInfoDiv.textContent = `Moves: ${moves}`;
+
+            // Draw game over message if all pairs are matched
+            if (matchedPairs === cardFaces.length) {
+                drawGameOverScreen();
+            }
+        }
+
+        // Draws the game over message
+        function drawGameOverScreen() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Semi-transparent overlay
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            ctx.font = 'bold 48px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GAME OVER!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
+
+            ctx.font = '24px Arial';
+            ctx.fillText(`You completed the game in ${moves} moves!`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 10);
+
+            ctx.font = 'italic 20px Arial';
+            ctx.fillText('Click anywhere to play again', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 60);
+        }
+
+        // Handles click events on the canvas
+        function handleCanvasClick(event) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // If game is over, restart on any click
+            if (matchedPairs === cardFaces.length) {
+                initGame();
+                return;
+            }
+
+            // Only allow flipping if `canFlip` is true
+            if (!canFlip) return;
+
+            // Start the game on the first valid click
+            if (!gameStarted) {
+                gameStarted = true;
+            }
+
+            // Find which card was clicked
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                // Check if click is inside a card and it's not already flipped/matched
+                if (card.contains(mouseX, mouseY) && !card.isFlipped && !card.isMatched) {
+                    card.isFlipped = true;
+                    flippedCards.push(card);
+                    
+                    // Increment moves only when the first card of a potential pair is flipped
+                    if (flippedCards.length === 1) {
+                         moves++;
+                    }
+                   
+                    drawGame(); // Redraw immediately to show the flipped card
+
+                    // If two cards are flipped, check for a match
+                    if (flippedCards.length === 2) {
+                        canFlip = false; // Prevent further flips temporarily
+                        setTimeout(checkMatch, FLIP_BACK_DELAY);
+                    }
+                    return; // Stop after finding the clicked card
+                }
+            }
+        }
+
+        // Checks if the two flipped cards form a match
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+
+            if (card1.face === card2.face) {
+                // Match found!
+                card1.isMatched = true;
+                card2.isMatched = true;
+                matchedPairs++;
+            } else {
+                // No match, flip them back
+                card1.isFlipped = false;
+                card2.isFlipped = false;
+            }
+
+            flippedCards = []; // Clear the flipped cards array
+            canFlip = true; // Allow flipping again
+            drawGame(); // Redraw to show updated card states
+
+            // Check if all pairs are matched
+            if (matchedPairs === cardFaces.length) {
+                // Game over, handled by drawGame()
+            }
+        }
+
+        // --- Event Listeners ---
+        canvas.addEventListener('click', handleCanvasClick);
+
+        // --- Game Initialization ---
+        initGame();
+
+    </script>
+</body>
+</html>
