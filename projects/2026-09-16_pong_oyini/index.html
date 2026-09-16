@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Pong Game</title>
+    <style>
+        /* Basic styling for the body and game container */
+        body {
+            margin: 0;
+            background-color: #1a1a1a; /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            font-family: 'Press Start 2P', cursive, monospace; /* Retro arcade font feel, fallback to monospace */
+            color: #eee; /* Light text color */
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none; /* For Safari */
+            -moz-user-select: none; /* For Firefox */
+            -ms-user-select: none; /* For Internet Explorer/Edge */
+            overflow: hidden; /* Prevent scrollbars */
+        }
+
+        /* Container for the canvas to add borders and shadow */
+        #game_container {
+            border: 2px solid #888; /* Light gray border */
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.15); /* Subtle white glow */
+            border-radius: 8px; /* Slightly rounded corners */
+            overflow: hidden; /* Ensures shadow/border doesn't clip */
+            position: relative; /* Needed for absolute positioning of text if any */
+        }
+
+        /* Canvas element styling */
+        canvas {
+            display: block; /* Remove extra space below canvas */
+            background-color: #000000; /* Black background for the game area */
+        }
+    </style>
+</head>
+<body>
+    <div id="game_container">
+        <canvas id="pong_canvas"></canvas>
+    </div>
+
+    <script>
+        // --- Canvas Setup ---
+        const canvas = document.getElementById('pong_canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas dimensions
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 500;
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+
+        // --- Game Configuration ---
+        const PADDLE_WIDTH = 10;
+        const PADDLE_HEIGHT = 100;
+        const BALL_RADIUS = 7;
+        const INITIAL_BALL_SPEED_X = 5;
+        const INITIAL_BALL_SPEED_Y = 5;
+        const PADDLE_SPEED = 7;
+        const WINNING_SCORE = 5;
+
+        // --- Game State Variables ---
+        let playerPaddle = {};
+        let computerPaddle = {};
+        let ball = {};
+        let playerScore = 0;
+        let computerScore = 0;
+        let gameRunning = false;
+        let gameOver = false;
+        let gameWinner = ''; // Stores 'Player' or 'Computer' or ''
+
+        // Keyboard input states
+        const keysPressed = {
+            w: false,
+            s: false
+        };
+
+        // --- Initialization Function ---
+        function initGame() {
+            // Reset scores and game state
+            playerScore = 0;
+            computerScore = 0;
+            gameRunning = true;
+            gameOver = false;
+            gameWinner = '';
+
+            // Initialize player paddle
+            playerPaddle = {
+                x: 0,
+                y: (CANVAS_HEIGHT - PADDLE_HEIGHT) / 2,
+                width: PADDLE_WIDTH,
+                height: PADDLE_HEIGHT,
+                dy: 0 // Change in y-position for movement
+            };
+
+            // Initialize computer paddle
+            computerPaddle = {
+                x: CANVAS_WIDTH - PADDLE_WIDTH,
+                y: (CANVAS_HEIGHT - PADDLE_HEIGHT) / 2,
+                width: PADDLE_WIDTH,
+                height: PADDLE_HEIGHT,
+                dy: 0
+            };
+
+            // Initialize ball
+            resetBall();
+        }
+
+        // --- Ball Reset Function ---
+        function resetBall() {
+            ball = {
+                x: CANVAS_WIDTH / 2,
+                y: CANVAS_HEIGHT / 2,
+                radius: BALL_RADIUS,
+                dx: (Math.random() < 0.5 ? 1 : -1) * INITIAL_BALL_SPEED_X, // Random initial horizontal direction
+                dy: (Math.random() * 2 - 1) * INITIAL_BALL_SPEED_Y // Random initial vertical direction between -INITIAL_BALL_SPEED_Y and +INITIAL_BALL_SPEED_Y
+            };
+        }
+
+        // --- Drawing Functions ---
+
+        // Draw a rectangle (used for paddles)
+        function drawRect(x, y, width, height, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, width, height);
+        }
+
+        // Draw a circle (used for ball)
+        function drawCircle(x, y, radius, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+            ctx.fill();
+        }
+
+        // Draw text (used for score and messages)
+        function drawText(text, x, y, color = '#eee', font = '30px monospace') {
+            ctx.fillStyle = color;
+            ctx.font = font;
+            ctx.textAlign = 'center';
+            ctx.fillText(text, x, y);
+        }
+
+        // Draw the dashed net in the middle
+        function drawNet() {
+            ctx.strokeStyle = '#888'; // Light gray for the net
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.setLineDash([10, 10]); // Dashed line pattern
+            ctx.moveTo(CANVAS_WIDTH / 2, 0);
+            ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset line dash for other drawings
+        }
+
+        // Draws all game elements
+        function drawAll() {
+            // Clear canvas
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            drawRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, '#000000'); // Redraw background in case of issues
+
+            // Draw net
+            drawNet();
+
+            // Draw paddles
+            drawRect(playerPaddle.x, playerPaddle.y, playerPaddle.width, playerPaddle.height, '#00ff00'); // Green for player
+            drawRect(computerPaddle.x, computerPaddle.y, computerPaddle.height, computerPaddle.height, '#ff0000'); // Red for computer
+
+            // Draw ball
+            drawCircle(ball.x, ball.y, ball.radius, '#ffff00'); // Yellow for ball
+
+            // Draw scores
+            drawText(playerScore, CANVAS_WIDTH / 4, 50);
+            drawText(computerScore, 3 * CANVAS_WIDTH / 4, 50);
+
+            // Draw game over message if applicable
+            if (gameOver) {
+                drawRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, 'rgba(0, 0, 0, 0.7)'); // Dark overlay
+                drawText(gameWinner + ' WINS!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 30, '#fff', '40px monospace');
+                drawText('Press "R" to restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30, '#fff', '20px monospace');
+            } else if (!gameRunning && !gameOver) {
+                // Initial start screen message
+                drawText('PONG!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 30, '#fff', '40px monospace');
+                drawText('Press "W" or "S" to start', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30, '#fff', '20px monospace');
+            }
+        }
+
+        // --- Game Logic Functions ---
+
+        // Updates game state (positions, collisions, scores)
+        function update() {
+            if (!gameRunning || gameOver) {
+                return; // Do not update if game is paused or over
+            }
+
+            // --- Move Player Paddle ---
+            if (keysPressed.w) {
+                playerPaddle.dy = -PADDLE_SPEED;
+            } else if (keysPressed.s) {
+                playerPaddle.dy = PADDLE_SPEED;
+            } else {
+                playerPaddle.dy = 0;
+            }
+            playerPaddle.y += playerPaddle.dy;
+            // Keep player paddle within canvas bounds
+            if (playerPaddle.y < 0) {
+                playerPaddle.y = 0;
+            }
+            if (playerPaddle.y + playerPaddle.height > CANVAS_HEIGHT) {
+                playerPaddle.y = CANVAS_HEIGHT - playerPaddle.height;
+            }
+
+            // --- Move Computer Paddle (Simple AI) ---
+            const computerPaddleCenter = computerPaddle.y + computerPaddle.height / 2;
+            if (computerPaddleCenter < ball.y - 35) { // Lagging behind ball, move down
+                computerPaddle.dy = PADDLE_SPEED * 0.7; // Slightly slower than player
+            } else if (computerPaddleCenter > ball.y + 35) { // Ahead of ball, move up
+                computerPaddle.dy = -PADDLE_SPEED * 0.7;
+            } else {
+                computerPaddle.dy = 0; // Ball is within paddle's "dead zone"
+            }
+            computerPaddle.y += computerPaddle.dy;
+            // Keep computer paddle within canvas bounds
+            if (computerPaddle.y < 0) {
+                computerPaddle.y = 0;
+            }
+            if (computerPaddle.y + computerPaddle.height > CANVAS_HEIGHT) {
+                computerPaddle.y = CANVAS_HEIGHT - computerPaddle.height;
+            }
+
+            // --- Move Ball ---
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collision with top/bottom walls
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > CANVAS_HEIGHT) {
+                ball.dy *= -1; // Reverse vertical direction
+            }
+
+            // Ball collision with paddles
+            // Player paddle collision
+            if (ball.dx < 0 && // Moving left
+                ball.x - ball.radius < playerPaddle.x + playerPaddle.width && // Ball is at or past paddle's right edge
+                ball.y + ball.radius > playerPaddle.y && // Ball's bottom edge is below paddle's top edge
+                ball.y - ball.radius < playerPaddle.y + playerPaddle.height) { // Ball's top edge is above paddle's bottom edge
+
+                ball.x = playerPaddle.x + playerPaddle.width + ball.radius; // Nudge ball out to prevent sticking
+                ball.dx *= -1.1; // Reverse horizontal direction and increase speed slightly
+
+                // Adjust dy based on where it hit the paddle
+                let collidePoint = ball.y - (playerPaddle.y + playerPaddle.height / 2); // Where ball hit relative to paddle center
+                collidePoint /= (playerPaddle.height / 2); // Normalize to -1 to 1
+                ball.dy = collidePoint * INITIAL_BALL_SPEED_Y * 1.5; // More pronounced vertical bounce
+            }
+
+            // Computer paddle collision
+            if (ball.dx > 0 && // Moving right
+                ball.x + ball.radius > computerPaddle.x && // Ball is at or past paddle's left edge
+                ball.y + ball.radius > computerPaddle.y &&
+                ball.y - ball.radius < computerPaddle.y + computerPaddle.height) {
+
+                ball.x = computerPaddle.x - ball.radius; // Nudge ball out
+                ball.dx *= -1.1; // Reverse horizontal direction and increase speed slightly
+
+                // Adjust dy based on where it hit the paddle
+                let collidePoint = ball.y - (computerPaddle.y + computerPaddle.height / 2);
+                collidePoint /= (computerPaddle.height / 2);
+                ball.dy = collidePoint * INITIAL_BALL_SPEED_Y * 1.5;
+            }
+
+            // Score check (ball out of bounds left/right)
+            if (ball.x - ball.radius < 0) { // Ball went past player's side
+                computerScore++;
+                checkScores();
+                if (!gameOver) resetBall();
+            } else if (ball.x + ball.radius > CANVAS_WIDTH) { // Ball went past computer's side
+                playerScore++;
+                checkScores();
+                if (!gameOver) resetBall();
+            }
+        }
+
+        // Checks if a player has won the game
+        function checkScores() {
+            if (playerScore >= WINNING_SCORE) {
+                gameWinner = 'Player';
+                gameOver = true;
+                gameRunning = false;
+            } else if (computerScore >= WINNING_SCORE) {
+                gameWinner = 'Computer';
+                gameOver = true;
+                gameRunning = false;
+            }
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('keydown', (e) => {
+            // Start game on first key press if not running
+            if (!gameRunning && !gameOver && (e.key === 'w' || e.key === 's')) {
+                gameRunning = true;
+            }
+
+            if (e.key === 'w' || e.key === 'W') {
+                keysPressed.w = true;
+            } else if (e.key === 's' || e.key === 'S') {
+                keysPressed.s = true;
+            } else if (e.key === 'r' || e.key === 'R') {
+                initGame(); // Restart game on 'R' key press
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'w' || e.key === 'W') {
+                keysPressed.w = false;
+            } else if (e.key === 's' || e.key === 'S') {
+                keysPressed.s = false;
+            }
+        });
+
+        // --- Game Loop ---
+        function gameLoop() {
+            update(); // Update game state
+            drawAll(); // Draw everything on canvas
+            requestAnimationFrame(gameLoop); // Request next frame
+        }
+
+        // --- Start the Game ---
+        initGame(); // Initialize game state
+        gameRunning = false; // Initially set to false to show start message
+        gameLoop(); // Start the game loop
+    </script>
+</body>
+</html>
