@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Tracker Dashboard</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta8PUbWsyM4QkPIauXoPtg/JlSAiE3gYRWxQp/cUyVfJ+g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Global styles */
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #7ED321;
+            --background-color: #F8F9FA;
+            --card-background: #FFFFFF;
+            --text-color: #333333;
+            --light-text-color: #666666;
+            --border-color: #E0E0E0;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            background-color: var(--background-color);
+        }
+
+        /* Header styles */
+        .dashboard-header {
+            grid-column: 1 / -1;
+            background-color: var(--card-background);
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 2em;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1em;
+            color: var(--light-text-color);
+        }
+
+        .user-info i {
+            font-size: 1.8em;
+            color: var(--primary-color);
+        }
+
+        /* Card styles */
+        .card-grid {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+        }
+
+        .card-icon {
+            font-size: 2.5em;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.1em;
+            color: var(--light-text-color);
+            margin-bottom: 5px;
+        }
+
+        .card-value {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0;
+        }
+
+        .card-unit {
+            font-size: 0.9em;
+            color: var(--light-text-color);
+        }
+
+        /* Chart styles */
+        .chart-grid {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .chart-card {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        /* Recent Activities styles */
+        .recent-activities {
+            grid-column: 1 / -1;
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+
+        .recent-activities h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .activity-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-details {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .activity-details .type {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1.1em;
+        }
+
+        .activity-details .date {
+            font-size: 0.9em;
+            color: var(--light-text-color);
+        }
+
+        .activity-metrics {
+            text-align: right;
+            font-size: 1em;
+            color: var(--text-color);
+        }
+
+        .activity-metrics .duration {
+            font-weight: 500;
+        }
+
+        .activity-metrics .calories {
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: repeat(12, 1fr);
+            }
+
+            .dashboard-header {
+                grid-column: 1 / span 12;
+            }
+
+            .card-grid {
+                grid-column: 1 / span 12;
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .chart-grid {
+                grid-column: 1 / span 12;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .recent-activities {
+                grid-column: 1 / span 12;
+            }
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding: 15px;
+            }
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.8em;
+            }
+            .user-info {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-card canvas {
+                max-height: 300px; /* Limit height on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Dashboard Header -->
+        <header class="dashboard-header">
+            <h1>Fitness Tracker Dashboard</h1>
+            <div class="user-info">
+                <i class="fa-solid fa-user-circle"></i>
+                <span>John Doe</span>
+            </div>
+        </header>
+
+        <!-- Key Metrics Cards -->
+        <section class="card-grid">
+            <div class="card">
+                <i class="fa-solid fa-shoe-prints card-icon"></i>
+                <div class="card-title">Total Steps</div>
+                <div class="card-value" id="totalSteps">0</div>
+                <div class="card-unit">steps</div>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-fire card-icon"></i>
+                <div class="card-title">Calories Burned</div>
+                <div class="card-value" id="caloriesBurned">0</div>
+                <div class="card-unit">kcal</div>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-stopwatch card-icon"></i>
+                <div class="card-title">Active Minutes</div>
+                <div class="card-value" id="activeMinutes">0</div>
+                <div class="card-unit">minutes</div>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-moon card-icon"></i>
+                <div class="card-title">Avg. Sleep</div>
+                <div class="card-value" id="avgSleep">0</div>
+                <div class="card-unit">hours</div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="chart-grid">
+            <div class="chart-card">
+                <h2>Daily Steps Trend</h2>
+                <canvas id="stepsChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Activity Type Distribution</h2>
+                <canvas id="activityChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Recent Activities Section -->
+        <section class="recent-activities">
+            <h2>Recent Activities</h2>
+            <ul class="activity-list" id="recentActivitiesList">
+                <!-- Activities will be dynamically inserted here -->
+            </ul>
+        </section>
+    </div>
+
+    <script>
+        // Data generation and dashboard rendering logic
+        document.addEventListener('DOMContentLoaded', () => {
+            // Function to generate a random integer within a range
+            const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+            // --- Fake Data Generation ---
+
+            // Generate fake daily data for the last 7 days
+            const generateDailyData = () => {
+                const data = [];
+                const today = new Date();
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - i);
+                    data.push({
+                        date: date.toISOString().split('T')[0], // YYYY-MM-DD format
+                        steps: getRandomInt(6000, 12000),
+                        caloriesBurned: getRandomInt(300, 700),
+                        activeMinutes: getRandomInt(45, 120),
+                        sleepHours: getRandomInt(6, 9) + Math.random().toFixed(1) * 1 // e.g., 7.5
+                    });
+                }
+                return data;
+            };
+
+            const dailyFitnessData = generateDailyData();
+
+            // Generate fake activity type distribution
+            const generateActivityDistribution = () => {
+                return {
+                    'Running': getRandomInt(20, 40), // percentage
+                    'Walking': getRandomInt(30, 50),
+                    'Cycling': getRandomInt(10, 25),
+                    'Strength Training': getRandomInt(10, 20)
+                };
+            };
+
+            const activityDistribution = generateActivityDistribution();
+
+            // Generate fake recent activities
+            const generateRecentActivities = () => {
+                const activities = [];
+                const activityTypes = ['Running', 'Walking', 'Cycling', 'Strength Training', 'Yoga'];
+                const durations = [30, 45, 60, 90, 120];
+
+                for (let i = 0; i < 5; i++) { // Generate 5 recent activities
+                    const date = new Date();
+                    date.setDate(date.getDate() - getRandomInt(0, 7)); // Within last week
+                    const type = activityTypes[getRandomInt(0, activityTypes.length - 1)];
+                    const duration = durations[getRandomInt(0, durations.length - 1)];
+                    const calories = Math.round(duration * getRandomInt(5, 12)); // Calories based on duration and type intensity
+                    activities.push({
+                        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                        type: type,
+                        duration: duration,
+                        calories: calories
+                    });
+                }
+                return activities.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by most recent
+            };
+
+            const recentActivities = generateRecentActivities();
+
+            // --- Dashboard Rendering Functions ---
+
+            // Update Key Metrics Cards
+            const updateKeyMetrics = () => {
+                const totalSteps = dailyFitnessData.reduce((sum, d) => sum + d.steps, 0);
+                const caloriesBurned = dailyFitnessData.reduce((sum, d) => sum + d.caloriesBurned, 0);
+                const activeMinutes = dailyFitnessData.reduce((sum, d) => sum + d.activeMinutes, 0);
+                const avgSleep = (dailyFitnessData.reduce((sum, d) => sum + parseFloat(d.sleepHours), 0) / dailyFitnessData.length).toFixed(1);
+
+                document.getElementById('totalSteps').textContent = totalSteps.toLocaleString();
+                document.getElementById('caloriesBurned').textContent = caloriesBurned.toLocaleString();
+                document.getElementById('activeMinutes').textContent = activeMinutes.toLocaleString();
+                document.getElementById('avgSleep').textContent = avgSleep;
+            };
+
+            // Render Daily Steps Trend Chart
+            const renderStepsChart = () => {
+                const ctx = document.getElementById('stepsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dailyFitnessData.map(d => new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })),
+                        datasets: [{
+                            label: 'Steps',
+                            data: dailyFitnessData.map(d => d.steps),
+                            backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                            borderColor: var_primary_color, /* Use CSS variable via JS if possible, fallback to hardcoded */
+                            borderColor: '#4A90E2',
+                            borderWidth: 2,
+                            tension: 0.4, // Smooth curve
+                            pointBackgroundColor: '#4A90E2',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y.toLocaleString() + ' steps';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: var_border_color, /* Use CSS variable via JS if possible, fallback to hardcoded */
+                                    color: '#E0E0E0'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            // Render Activity Type Distribution Chart
+            const renderActivityChart = () => {
+                const ctx = document.getElementById('activityChart').getContext('2d');
+                const labels = Object.keys(activityDistribution);
+                const data = Object.values(activityDistribution);
+                const backgroundColors = [
+                    '#4A90E2', // Primary blue
+                    '#7ED321', // Secondary green
+                    '#F5A623', // Orange
+                    '#BD10E0', // Purple
+                    '#50E3C2'  // Teal
+                ];
+
+                new Chart(ctx, {
+                    type: 'doughnut', // Doughnut chart for distribution
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right', // Place legend on the right
+                                labels: {
+                                    boxWidth: 20,
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed;
+                                        const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1) + '%';
+                                        return `${label}: ${percentage}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            // Render Recent Activities List
+            const renderRecentActivities = () => {
+                const listContainer = document.getElementById('recentActivitiesList');
+                listContainer.innerHTML = ''; // Clear existing items
+
+                if (recentActivities.length === 0) {
+                    listContainer.innerHTML = '<li class="activity-item">No recent activities found.</li>';
+                    return;
+                }
+
+                recentActivities.forEach(activity => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('activity-item');
+                    listItem.innerHTML = `
+                        <div class="activity-details">
+                            <span class="type">${activity.type}</span>
+                            <span class="date">${activity.date}</span>
+                        </div>
+                        <div class="activity-metrics">
+                            <span class="duration">${activity.duration} min</span>
+                            <span class="calories">${activity.calories} kcal</span>
+                        </div>
+                    `;
+                    listContainer.appendChild(listItem);
+                });
+            };
+
+            // Initialize the dashboard
+            updateKeyMetrics();
+            renderStepsChart();
+            renderActivityChart();
+            renderRecentActivities();
+        });
+    </script>
+</body>
+</html>

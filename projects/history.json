@@ -90,6 +90,7 @@
     "web_page::Onlayn rezume/CV sahifa",
     "js_game::Memory card o'yini",
     "js_game::Pong o'yini",
-    "python_api::Fayl dublikatlarini topuvchi"
+    "python_api::Fayl dublikatlarini topuvchi",
+    "dashboard::Fitness tracker panel"
   ]
 }
