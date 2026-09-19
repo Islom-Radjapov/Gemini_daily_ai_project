@@ -91,6 +91,7 @@
     "js_game::Memory card o'yini",
     "js_game::Pong o'yini",
     "python_api::Fayl dublikatlarini topuvchi",
-    "dashboard::Fitness tracker panel"
+    "dashboard::Fitness tracker panel",
+    "js_game::Typing speed o'yini"
   ]
 }

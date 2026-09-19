@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Game</title>
+    <style>
+        /* Global styling for the body */
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #282c34; /* Dark background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
+            color: #ffffff; /* White text for general info */
+            overflow: hidden; /* Prevent scrollbars from appearing */
+        }
+        /* Styling for the canvas element */
+        canvas {
+            border: 2px solid #61dafb; /* Cyan border */
+            background-color: #1a1a1a; /* Even darker background for canvas */
+            display: block; /* Ensures no extra space below the canvas */
+            cursor: pointer; /* Indicates that the canvas is interactive */
+        }
+        /* Styling for the hidden input field */
+        /* This input field is used to capture user keystrokes but is not visually displayed. */
+        #hidden-input {
+            position: absolute; /* Position it absolutely to take it out of document flow */
+            left: -9999px; /* Move it far off-screen to hide it */
+            width: 1px; /* Minimal size */
+            height: 1px; /* Minimal size */
+            padding: 0;
+            margin: 0;
+            border: none; /* No border */
+            outline: none; /* No outline when focused */
+            background: transparent; /* Transparent background */
+            color: transparent; /* Transparent text color */
+            caret-color: transparent; /* Transparent cursor */
+            z-index: -1; /* Ensure it's behind all other content */
+            pointer-events: none; /* Allow clicks to pass through to the canvas */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <!-- Hidden input field for capturing user typing -->
+    <input type="text" id="hidden-input" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+    <script>
+        // --- DOM Elements ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const hiddenInput = document.getElementById('hidden-input');
+
+        // --- Canvas Dimensions ---
+        canvas.width = 800;
+        canvas.height = 400;
+
+        // --- Game States ---
+        const GAME_STATES = {
+            START: 'start',
+            PLAYING: 'playing',
+            GAME_OVER: 'gameOver'
+        };
+        let currentState = GAME_STATES.START; // Initial game state
+
+        // --- Game Configuration ---
+        const GAME_DURATION_SECONDS = 60; // Total game duration in seconds
+        const WORDS_TO_GENERATE = 100; // Number of words to pre-load for a game round
+
+        // --- Game Variables ---
+        let wordsQueue = []; // Array of words for the current game session
+        let currentWord = ''; // The word currently being typed by the user
+        let currentTypedText = ''; // What the user has typed so far for the currentWord
+        let wordQueueIndex = 0; // Index of the current word in the wordsQueue
+        let correctCharactersTyped = 0; // Total correct characters typed across all words
+        let incorrectCharactersTyped = 0; // Total incorrect characters typed across all words
+        let startTime = 0; // Timestamp when the game started
+        let timeLeft = GAME_DURATION_SECONDS; // Remaining time
+        let animationFrameId; // Stores the ID of the requestAnimationFrame, for cancellation
+
+        // --- Score Variables (calculated at game end) ---
+        let finalWPM = 0; // Words Per Minute
+        let finalAccuracy = 0; // Typing accuracy percentage
+
+        // --- Word List ---
+        // A comprehensive list of common English words to provide variety.
+        const WORDS = [
+            'the', 'quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog', 'keyboard', 'programming', 'javascript', 'canvas', 'speed', 'typing', 'challenge', 'computer', 'science', 'developer', 'internet', 'webpage', 'application', 'framework', 'library', 'algorithm', 'data', 'structure', 'function', 'variable', 'constant', 'object', 'array', 'string', 'number', 'boolean', 'statement', 'expression', 'loop', 'condition', 'event', 'handler', 'element', 'attribute', 'style', 'script', 'markup', 'language', 'editor', 'browser', 'server', 'client', 'network', 'protocol', 'database', 'query', 'response', 'request', 'security', 'authentication', 'authorization', 'encryption', 'decryption', 'frontend', 'backend', 'fullstack', 'version', 'control', 'repository', 'commit', 'branch', 'merge', 'deploy', 'testing', 'debugging', 'performance', 'optimization', 'responsive', 'design', 'user', 'interface', 'experience', 'accessibility', 'usability', 'feedback', 'iteration', 'agile', 'scrum', 'kanban', 'devops', 'cloud', 'computing', 'virtualization', 'container', 'orchestration', 'microservices', 'api', 'graphql', 'rest', 'socket', 'websocket', 'realtime', 'streaming', 'analytics', 'machine', 'learning', 'artificial', 'intelligence', 'robotics', 'automation', 'big', 'data', 'blockchain', 'cryptocurrency', 'smart', 'contract', 'decentralized', 'application', 'nft', 'metaverse', 'virtual', 'reality', 'augmented', 'reality', 'gaming', 'engine', 'graphics', 'rendering', 'physics', 'simulation', 'animation', 'sound', 'design', 'music', 'production', 'video', 'editing', 'photography', 'illustration', 'graphic', 'design', 'ux', 'ui', 'marketing', 'sales', 'business', 'finance', 'economy', 'politics', 'history', 'geography', 'culture', 'society', 'education', 'science', 'technology', 'engineering', 'mathematics', 'health', 'fitness', 'nutrition', 'medicine', 'biology', 'chemistry', 'physics', 'astronomy', 'space', 'exploration', 'environment', 'ecology', 'sustainability', 'climate', 'change', 'energy', 'resources', 'agriculture', 'food', 'security', 'water', 'conservation', 'wildlife', 'preservation', 'habitat', 'restoration', 'natural', 'disaster', 'preparedness', 'recovery', 'humanitarian', 'aid', 'peace', 'conflict', 'resolution', 'diplomacy', 'international', 'relations', 'governance', 'democracy', 'justice', 'equality', 'freedom', 'rights', 'responsibilities', 'ethics', 'morality', 'philosophy', 'religion', 'spirituality', 'mindfulness', 'meditation', 'yoga', 'exercise', 'diet', 'sleep', 'stress', 'management', 'mental', 'health', 'wellbeing', 'happiness', 'joy', 'love', 'compassion', 'empathy', 'gratitude', 'forgiveness', 'hope', 'courage', 'resilience', 'perseverance', 'discipline', 'selfcontrol', 'patience', 'humility', 'integrity', 'honesty', 'trust', 'respect', 'kindness', 'generosity', 'service', 'community', 'family', 'friends', 'relationships', 'communication', 'listening', 'cooperation', 'collaboration', 'teamwork', 'leadership', 'motivation', 'inspiration', 'creativity', 'innovation', 'problem', 'solving', 'critical', 'thinking', 'decision', 'making', 'planning', 'organization', 'time', 'management', 'goal', 'setting', 'productivity', 'efficiency', 'quality', 'excellence', 'mastery', 'growth', 'development', 'learning', 'education', 'knowledge', 'wisdom', 'understanding', 'insight', 'perspective', 'curiosity', 'exploration', 'discovery', 'adventure', 'travel', 'journey', 'experience', 'memory', 'reflection', 'contemplation', 'dream', 'imagination', 'fantasy', 'story', 'narrative', 'poem', 'song', 'music', 'art', 'painting', 'sculpture', 'architecture', 'design', 'fashion', 'style', 'beauty', 'grace', 'elegance', 'charm', 'attraction', 'romance', 'passion', 'intimacy', 'connection', 'bond', 'marriage', 'parenthood', 'childhood', 'youth', 'adulthood', 'elderly', 'life', 'death', 'meaning', 'purpose', 'existence', 'universe', 'cosmos', 'galaxy', 'planet', 'star', 'sun', 'moon', 'earth', 'nature', 'world', 'society', 'culture', 'history', 'future', 'time', 'space', 'dimension', 'reality', 'illusion', 'truth', 'falsehood', 'belief', 'faith', 'doubt', 'certainty', 'uncertainty', 'ignorance', 'folly', 'good', 'evil', 'right', 'wrong', 'peace', 'war', 'happiness', 'sadness', 'joy', 'sorrow', 'hate', 'despair', 'fear', 'strength', 'weakness', 'success', 'failure', 'victory', 'defeat', 'beginning', 'end', 'start', 'finish', 'destination', 'path', 'road', 'direction', 'choice', 'action', 'consequence', 'responsibility', 'blame', 'praise', 'reward', 'punishment', 'cause', 'effect', 'reason', 'emotion', 'logic', 'intuition', 'mind', 'body', 'spirit', 'soul', 'consciousness', 'subconscious', 'unconscious', 'lie', 'secret', 'openness', 'deceit', 'betrayal', 'loyalty', 'disloyalty', 'friendship', 'enmity', 'hatred', 'disrespect', 'admiration', 'contempt', 'cruelty', 'selfishness', 'indifference', 'apathy', 'resentment', 'ingratitude', 'arrogance', 'impatience', 'cowardice', 'confusion', 'clarity', 'obscurity', 'light', 'darkness', 'order', 'chaos', 'harmony', 'discord', 'unity', 'division', 'creation', 'destruction', 'birth', 'rebirth', 'past', 'present', 'future', 'eternity', 'infinity', 'finite', 'limitless', 'boundless', 'vast', 'tiny', 'big', 'small', 'high', 'low', 'up', 'down', 'inside', 'outside', 'front', 'back', 'left', 'right', 'center', 'edge', 'top', 'bottom', 'middle', 'stop', 'go', 'come', 'take', 'give', 'make', 'do', 'say', 'tell', 'ask', 'answer', 'show', 'hide', 'open', 'close', 'push', 'pull', 'lift', 'drop', 'sit', 'stand', 'walk', 'run', 'jump', 'swim', 'fly', 'eat', 'drink', 'sleep', 'wake', 'work', 'play', 'learn', 'teach', 'read', 'write', 'speak', 'listen', 'look', 'see', 'hear', 'feel', 'touch', 'smell', 'taste', 'think', 'believe', 'know', 'understand', 'remember', 'forget', 'hope', 'wish', 'want', 'need', 'like', 'dislike', 'enjoy', 'suffer', 'cry', 'laugh', 'smile', 'frown', 'agree', 'disagree', 'accept', 'refuse', 'allow', 'forbid', 'help', 'hinder', 'arrive', 'depart', 'enter', 'exit', 'find', 'lose', 'keep', 'receive', 'send', 'get', 'put', 'set', 'hold', 'release', 'bring', 'carry', 'wear', 'remove', 'wash', 'clean', 'dirty', 'fill', 'empty', 'shut', 'lock', 'unlock', 'turn', 'switch', 'hot', 'cold', 'warm', 'cool', 'wet', 'dry', 'heavy', 'light', 'strong', 'weak', 'fast', 'slow', 'quick', 'rapid', 'gentle', 'rough', 'smooth', 'bumpy', 'straight', 'curved', 'round', 'square', 'tall', 'short', 'long', 'brief', 'wide', 'narrow', 'thick', 'thin', 'deep', 'shallow', 'new', 'old', 'young', 'ancient', 'modern', 'true', 'false', 'real', 'fake', 'better', 'worse', 'best', 'worst', 'happy', 'sad', 'joyful', 'sorrowful', 'angry', 'calm', 'excited', 'bored', 'afraid', 'brave', 'confused', 'clear', 'easy', 'difficult', 'simple', 'complex', 'rich', 'poor', 'expensive', 'cheap', 'public', 'private', 'safe', 'dangerous', 'quiet', 'loud', 'soft', 'hard', 'early', 'late', 'busy', 'free', 'sick', 'healthy', 'married', 'single', 'awake', 'asleep', 'ready', 'unready', 'sure', 'unsure', 'possible', 'impossible', 'able', 'unable', 'known', 'unknown', 'visible', 'invisible', 'lucky', 'unlucky', 'fair', 'unfair', 'just', 'unjust', 'wise', 'foolish', 'kind', 'unkind', 'polite', 'rude', 'honest', 'dishonest', 'generous', 'selfish', 'optimistic', 'pessimistic', 'patient', 'impatient', 'creative', 'uncreative', 'organized', 'disorganized', 'responsible', 'irresponsible', 'dependable', 'unreliable', 'friendly', 'unfriendly', 'moral', 'immoral', 'legal', 'illegal', 'active', 'passive', 'positive', 'negative', 'correct', 'incorrect', 'valid', 'invalid', 'common', 'uncommon', 'normal', 'abnormal', 'regular', 'irregular', 'important', 'unimportant', 'necessary', 'unnecessary', 'essential', 'nonessential', 'sufficient', 'insufficient', 'complete', 'incomplete', 'perfect', 'imperfect', 'unreal', 'natural', 'unnatural', 'human', 'inhuman', 'alive', 'dead', 'living', 'nonliving', 'male', 'female', 'child', 'adult', 'town', 'village', 'house', 'home', 'room', 'door', 'window', 'wall', 'floor', 'ceiling', 'roof', 'garden', 'park', 'street', 'bridge', 'river', 'lake', 'sea', 'ocean', 'mountain', 'hill', 'valley', 'forest', 'desert', 'island', 'beach', 'coast', 'sky', 'cloud', 'air', 'fire', 'land', 'rock', 'stone', 'metal', 'wood', 'plant', 'flower', 'tree', 'animal', 'bird', 'fish', 'insect', 'mammal', 'reptile', 'amphibian', 'food', 'drink', 'bread', 'meat', 'vegetable', 'fruit', 'milk', 'cheese', 'egg', 'sugar', 'salt', 'pepper', 'spice', 'rice', 'pasta', 'soup', 'salad', 'pizza', 'burger', 'sandwich', 'cake', 'cookie', 'candy', 'chocolate', 'coffee', 'tea', 'juice', 'wine', 'beer', 'clothes', 'shirt', 'pants', 'dress', 'skirt', 'coat', 'jacket', 'shoe', 'boot', 'sock', 'hat', 'glove', 'scarf', 'bag', 'wallet', 'key', 'phone', 'book', 'pen', 'paper', 'money', 'watch', 'clock', 'car', 'bike', 'bus', 'train', 'plane', 'boat', 'ship', 'taxi', 'bicycle', 'motorcycle', 'truck', 'van', 'airplane', 'helicopter', 'submarine', 'rocket', 'satellite', 'radio', 'television', 'camera', 'microphone', 'speaker', 'headphone', 'printer', 'scanner', 'mouse', 'monitor', 'screen', 'software', 'hardware', 'website', 'email', 'chat', 'message', 'call', 'video', 'audio', 'image', 'text', 'document', 'file', 'folder', 'program', 'system', 'information', 'fact', 'opinion', 'idea', 'thought', 'dream', 'memory', 'feeling', 'sense', 'pain', 'pleasure', 'joy', 'sorrow', 'anger', 'calm', 'surprise', 'disgust', 'shame', 'pride', 'concept', 'quality', 'quantity', 'relation', 'process', 'event', 'phenomenon', 'method', 'manner', 'form', 'shape', 'size', 'color', 'sound', 'taste', 'smell', 'texture', 'temperature', 'weight', 'density', 'speed', 'direction', 'position', 'location', 'distance', 'duration', 'frequency', 'amount', 'number', 'count', 'total', 'part', 'whole', 'group', 'individual', 'pair', 'set', 'collection', 'series', 'sequence', 'order', 'rank', 'level', 'degree', 'extent', 'scope', 'range', 'limit', 'boundary', 'across', 'through', 'around', 'between', 'among', 'near', 'far', 'here', 'there', 'everywhere', 'nowhere', 'somewhere', 'anywhere', 'always', 'never', 'sometimes', 'often', 'rarely', 'usually', 'seldom', 'ever', 'today', 'tomorrow', 'yesterday', 'day', 'night', 'morning', 'afternoon', 'evening', 'week', 'month', 'year', 'century', 'decade', 'moment', 'second', 'minute', 'hour', 'age', 'era', 'period', 'epoch', 'season', 'spring', 'summer', 'autumn', 'winter', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+        ];
+
+        // --- Utility Functions ---
+
+        /**
+         * Shuffles an array in place using the Fisher-Yates algorithm.
+         * @param {Array} array - The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // ES6 array destructuring for swapping
+            }
+            return array;
+        }
+
+        /**
+         * Generates a new queue of words for the game session.
+         * Selects a subset of shuffled words from the main WORDS list.
+         */
+        function generateWordsQueue() {
+            const shuffledWords = shuffleArray([...WORDS]); // Create a shallow copy to avoid modifying original WORDS
+            wordsQueue = shuffledWords.slice(0, WORDS_TO_GENERATE); // Take a predefined number of words
+            wordQueueIndex = 0; // Reset word index
+            currentWord = wordsQueue[wordQueueIndex]; // Set the first word
+        }
+
+        /**
+         * Resets all game variables and prepares for a new game.
+         */
+        function resetGame() {
+            cancelAnimationFrame(animationFrameId); // Stop any ongoing animation frame loop
+            generateWordsQueue(); // Generate new words
+            currentTypedText = '';
+            correctCharactersTyped = 0;
+            incorrectCharactersTyped = 0;
+            startTime = 0;
+            timeLeft = GAME_DURATION_SECONDS;
+            finalWPM = 0;
+            finalAccuracy = 0;
+            hiddenInput.value = ''; // Clear the text in the hidden input field
+            hiddenInput.blur(); // Remove focus from the input field
+            currentState = GAME_STATES.START; // Set state to start screen
+            draw(); // Redraw the canvas to show the start screen
+        }
+
+        /**
+         * Initiates the game, setting the state to PLAYING and starting the timer.
+         */
+        function startGame() {
+            currentState = GAME_STATES.PLAYING;
+            startTime = Date.now(); // Record start time
+            hiddenInput.focus(); // Give focus to the hidden input to capture keystrokes
+            hiddenInput.value = ''; // Ensure the input is empty at start
+            gameLoop(); // Begin the main game loop
+        }
+
+        /**
+         * Ends the game, calculates final scores, and sets the state to GAME_OVER.
+         */
+        function endGame() {
+            currentState = GAME_STATES.GAME_OVER;
+            cancelAnimationFrame(animationFrameId); // Stop the game loop
+            hiddenInput.blur(); // Remove focus from the input field
+            calculateFinalScores(); // Calculate WPM and accuracy
+            draw(); // Draw the game over screen
+        }
+
+        /**
+         * Calculates the final Words Per Minute (WPM) and accuracy.
+         */
+        function calculateFinalScores() {
+            const elapsedTimeSeconds = GAME_DURATION_SECONDS; // Game ran for full duration
+            
+            // WPM: (Correctly typed characters / 5) / time in minutes
+            // The / 5 is a common convention for "word equivalent" characters.
+            finalWPM = Math.round((correctCharactersTyped / 5) / (elapsedTimeSeconds / 60));
+
+            // Accuracy: (Correct characters / Total characters attempted) * 100
+            const totalCharactersAttempted = correctCharactersTyped + incorrectCharactersTyped;
+            finalAccuracy = totalCharactersAttempted > 0 ? Math.round((correctCharactersTyped / totalCharactersAttempted) * 100) : 0;
+        }
+
+        /**
+         * Advances to the next word in the queue.
+         * If no more words, ends the game.
+         */
+        function advanceWord() {
+            wordQueueIndex++;
+            currentTypedText = ''; // Reset typed text for the new word
+            if (wordQueueIndex < wordsQueue.length) {
+                currentWord = wordsQueue[wordQueueIndex]; // Get next word
+            } else {
+                // If all words are typed, or we run out, end the game
+                endGame();
+            }
+            hiddenInput.value = ''; // Clear hidden input value for the new word
+        }
+
+        // --- Event Handlers ---
+
+        // Handle clicks on the canvas to start/restart the game
+        canvas.addEventListener('click', () => {
+            if (currentState === GAME_STATES.START || currentState === GAME_STATES.GAME_OVER) {
+                resetGame(); // Ensure a fresh state for a new game
+                startGame();
+            }
+        });
+
+        // Handle user input from the hidden input field
+        hiddenInput.addEventListener('input', (event) => {
+            if (currentState !== GAME_STATES.PLAYING) return; // Only process input if game is playing
+
+            const typedValue = hiddenInput.value;
+
+            // Check if a space was typed, indicating word completion
+            if (typedValue.endsWith(' ')) {
+                const finalTypedWord = typedValue.trim(); // Get the word without the trailing space
+                let wordFullyCorrect = true;
+
+                // Compare each character of the typed word with the current word
+                for (let i = 0; i < currentWord.length; i++) {
+                    if (finalTypedWord[i] === currentWord[i]) {
+                        correctCharactersTyped++;
+                    } else {
+                        incorrectCharactersTyped++;
+                        wordFullyCorrect = false; // Mark word as incorrect if any character mismatches
+                    }
+                }
+
+                // Count extra characters typed by the user as incorrect
+                if (finalTypedWord.length > currentWord.length) {
+                    incorrectCharactersTyped += (finalTypedWord.length - currentWord.length);
+                    wordFullyCorrect = false;
+                }
+                // Count missing characters (if typed word is shorter) as incorrect
+                else if (finalTypedWord.length < currentWord.length) {
+                    incorrectCharactersTyped += (currentWord.length - finalTypedWord.length);
+                    wordFullyCorrect = false;
+                }
+
+                // Add 1 for the space character itself.
+                // If the word was perfectly typed, the space is also considered correct.
+                // Otherwise, it contributes to attempted characters but is not correct.
+                if (wordFullyCorrect && finalTypedWord.length === currentWord.length) {
+                    correctCharactersTyped++; // Count the space as correct
+                } else {
+                    incorrectCharactersTyped++; // Count the space as incorrect if word was flawed
+                }
+                
+                advanceWord(); // Move to the next word
+            } else {
+                // If no space, just update the current typed text for visual feedback
+                currentTypedText = typedValue;
+            }
+        });
+
+        // --- Drawing Functions ---
+
+        /**
+         * Clears the entire canvas.
+         */
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        /**
+         * Draws text on the canvas with specified style.
+         * @param {string} text - The text to draw.
+         * @param {number} x - The x-coordinate.
+         * @param {number} y - The y-coordinate.
+         * @param {string} color - Text color (e.g., '#ffffff').
+         * @param {string} font - Font style (e.g., '36px Arial').
+         * @param {string} textAlign - Text alignment (e.g., 'center').
+         */
+        function drawText(text, x, y, color = '#ffffff', font = '24px Arial', textAlign = 'center') {
+            ctx.fillStyle = color;
+            ctx.font = font;
+            ctx.textAlign = textAlign;
+            ctx.fillText(text, x, y);
+        }
+
+        /**
+         * Draws the game's start screen.
+         */
+        function drawStartScreen() {
+            drawText('Typing Speed Game', canvas.width / 2, canvas.height / 2 - 50, '#61dafb', 'bold 48px Arial');
+            drawText('Click anywhere to start!', canvas.width / 2, canvas.height / 2 + 20);
+            drawText('Type the words as fast and accurately as you can.', canvas.width / 2, canvas.height / 2 + 60, '#cccccc', '20px Arial');
+            drawText(`Duration: ${GAME_DURATION_SECONDS} seconds`, canvas.width / 2, canvas.height / 2 + 90, '#cccccc', '20px Arial');
+        }
+
+        /**
+         * Draws the main game screen with current word, typed text, timer, and real-time scores.
+         */
+        function drawGameScreen() {
+            // Draw current word and typed text
+            const wordX = canvas.width / 2;
+            const wordY = canvas.height / 2 - 20; // Position for the word
+            const fontSize = 36;
+            ctx.font = `${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+
+            // Calculate the starting X position to center the word display
+            let currentDisplayX = wordX - ctx.measureText(currentWord).width / 2;
+
+            for (let i = 0; i < currentWord.length; i++) {
+                const char = currentWord[i];
+                const typedChar = currentTypedText[i];
+                const charWidth = ctx.measureText(char).width; // Get width of current character
+
+                ctx.fillStyle = '#ffffff'; // Default color for untyped characters
+                if (typedChar) {
+                    if (char === typedChar) {
+                        ctx.fillStyle = '#00ff00'; // Green for correctly typed characters
+                    } else {
+                        ctx.fillStyle = '#ff0000'; // Red for incorrectly typed characters
+                    }
+                }
+                ctx.fillText(char, currentDisplayX, wordY);
+                currentDisplayX += charWidth; // Move X position for the next character
+            }
+
+            // Draw any extra characters typed by the user (beyond the current word's length) in red
+            if (currentTypedText.length > currentWord.length) {
+                for (let i = currentWord.length; i < currentTypedText.length; i++) {
+                    const extraChar = currentTypedText[i];
+                    const charWidth = ctx.measureText(extraChar).width;
+                    ctx.fillStyle = '#ff0000'; // Red for extra characters
+                    ctx.fillText(extraChar, currentDisplayX, wordY);
+                    currentDisplayX += charWidth;
+                }
+            }
+
+            // Draw timer
+            drawText(`Time: ${timeLeft}s`, 20, 40, '#61dafb', '24px Arial', 'left');
+
+            // Calculate and draw real-time WPM and Accuracy
+            const currentTimeSeconds = (Date.now() - startTime) / 1000;
+            if (currentTimeSeconds > 0) {
+                 // WPM is calculated based on current progress
+                 const currentWPM = Math.round((correctCharactersTyped / 5) / (currentTimeSeconds / 60));
+                 const totalAttempted = correctCharactersTyped + incorrectCharactersTyped;
+                 const currentAccuracy = totalAttempted > 0 ? Math.round((correctCharactersTyped / totalAttempted) * 100) : 0;
+                 
+                 drawText(`WPM: ${currentWPM}`, canvas.width - 20, 40, '#ffffff', '24px Arial', 'right');
+                 drawText(`Accuracy: ${currentAccuracy}%`, canvas.width - 20, 70, '#ffffff', '24px Arial', 'right');
+            }
+        }
+
+        /**
+         * Draws the game over screen, displaying final scores.
+         */
+        function drawGameOverScreen() {
+            drawText('Game Over!', canvas.width / 2, canvas.height / 2 - 80, '#61dafb', 'bold 48px Arial');
+            drawText(`WPM: ${finalWPM}`, canvas.width / 2, canvas.height / 2 - 20, '#ffffff', '30px Arial');
+            drawText(`Accuracy: ${finalAccuracy}%`, canvas.width / 2, canvas.height / 2 + 30, '#ffffff', '30px Arial');
+            drawText('Click anywhere to play again!', canvas.width / 2, canvas.height / 2 + 90, '#ffffff', '24px Arial');
+        }
+
+        /**
+         * Main drawing loop. Clears the canvas and calls the appropriate drawing function
+         * based on the current game state.
+         */
+        function draw() {
+            clearCanvas(); // Always clear before redrawing
+            if (currentState === GAME_STATES.START) {
+                drawStartScreen();
+            } else if (currentState === GAME_STATES.PLAYING) {
+                drawGameScreen();
+            } else if (currentState === GAME_STATES.GAME_OVER) {
+                drawGameOverScreen();
+            }
+        }
+
+        // --- Main Game Loop ---
+        /**
+         * The core game loop that updates game logic and triggers drawing.
+         * Uses requestAnimationFrame for smooth animations.
+         */
+        function gameLoop() {
+            const now = Date.now();
+            const elapsed = (now - startTime) / 1000; // Time elapsed in seconds since game start
+            timeLeft = Math.max(0, GAME_DURATION_SECONDS - Math.floor(elapsed)); // Calculate remaining time
+
+            // End game if time runs out
+            if (timeLeft <= 0) {
+                endGame();
+                return; // Stop the loop
+            }
+
+            draw(); // Redraw canvas with the updated game state
+
+            animationFrameId = requestAnimationFrame(gameLoop); // Request next animation frame
+        }
+
+        // --- Initial Setup ---
+        // Call resetGame once on page load to set up the initial START state and draw it.
+        resetGame();
+
+        // Attempt to focus the hidden input on page load.
+        // Note: Browsers might block programmatic focus without user interaction.
+        // The canvas click event handler also ensures focus when a game starts.
+        window.addEventListener('load', () => {
+            hiddenInput.focus();
+        });
+
+    </script>
+</body>
+</html>
