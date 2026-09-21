@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Generative Art</title>
+    <style>
+        /* Basic reset for body to remove default margins and scrollbars */
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            background-color: #000; /* Black background for contrast */
+            cursor: none; /* Hide default cursor for immersive experience */
+        }
+        /* Style for canvas to ensure it fills the available space and behaves correctly */
+        canvas {
+            display: block; /* Remove any extra space below the canvas */
+            touch-action: none; /* Prevent browser gestures like pinch-to-zoom on touch devices */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="artCanvas"></canvas>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('artCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let animationFrameId; // Stores the requestAnimationFrame ID for pausing/resuming
+        let isPaused = false; // Flag to control animation state
+
+        /**
+         * Resizes the canvas to fill the entire window.
+         * This function is called on initial load and whenever the window is resized.
+         */
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Note: Resizing the canvas clears its content.
+            // For this generative art, new art will simply continue from the current state.
+        }
+
+        // Add event listener for window resize to keep the canvas full screen
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Initial call to set canvas size on load
+
+        // --- Generative Art Variables ---
+        let particles = []; // Array to store all active particles
+        // Mouse object to track current position and whether the button is down
+        let mouse = { x: canvas.width / 2, y: canvas.height / 2, down: false };
+        let hue = 0; // Starting hue value for HSL color space, used for dynamic color changes
+        let particleGenerationRate = 5; // Number of particles generated per frame when mouse is down
+        const MAX_PARTICLES = 1500; // Limits the total number of particles to maintain performance
+
+        // Define different color palettes/modes for variety
+        const colorPalettes = [
+            // Palette 1: Dynamic rainbow trail with high saturation and medium lightness
+            { saturation: 70, lightness: 50, alpha: 0.1, dynamicHue: true },
+            // Palette 2: Fixed blueish hue, high saturation, medium lightness
+            { saturation: 90, lightness: 60, alpha: 0.08, dynamicHue: false, fixedHue: 200 },
+            // Palette 3: Fixed purplish hue, medium saturation, high lightness
+            { saturation: 80, lightness: 70, alpha: 0.05, dynamicHue: false, fixedHue: 300 }
+        ];
+        let currentPaletteIndex = 0; // Index of the currently active color palette
+
+        /**
+         * Represents a single particle in the generative art system.
+         * Each particle forms a segment of the trail.
+         */
+        class Particle {
+            /**
+             * @param {number} x - Initial x-coordinate of the particle.
+             * @param {number} y - Initial y-coordinate of the particle.
+             * @param {number} hue - Initial hue value for the particle's color.
+             * @param {object} palette - The current color palette object containing saturation, lightness, alpha, and dynamicHue properties.
+             */
+            constructor(x, y, hue, palette) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 2 + 1; // Random size for variation in line thickness
+                this.life = 1; // Particle's lifespan, from 1 (fully alive) to 0 (dead)
+                this.fadeRate = Math.random() * 0.01 + 0.005; // Rate at which the particle fades out
+                this.dx = (Math.random() - 0.5) * 0.5; // Small random horizontal movement
+                this.dy = (Math.random() - 0.5) * 0.5; // Small random vertical movement
+                this.hue = hue; // Particle's hue
+                this.saturation = palette.saturation; // Particle's saturation from the palette
+                this.lightness = palette.lightness; // Particle's lightness from the palette
+                this.alpha = palette.alpha; // Particle's base alpha transparency from the palette
+                this.dynamicHue = palette.dynamicHue; // Whether this particle's hue should continuously change
+            }
+
+            /**
+             * Updates the particle's position and fades it over time.
+             * If dynamicHue is enabled, the particle's hue also shifts.
+             */
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.life -= this.fadeRate; // Decrease life, making the particle fade
+                if (this.dynamicHue) {
+                    this.hue = (this.hue + 0.5) % 360; // Increment hue for a continuous color shift
+                }
+            }
+
+            /**
+             * Draws the particle, connecting it to a previous particle to form a trail.
+             * @param {Particle | null} prevParticle - The particle generated immediately before this one.
+             *                                         If null, this particle is drawn as a dot.
+             */
+            draw(prevParticle) {
+                if (this.life > 0) { // Only draw if the particle is still alive
+                    // Set stroke style using HSL color space, with life affecting transparency
+                    ctx.strokeStyle = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${this.life * this.alpha})`;
+                    ctx.lineWidth = this.size; // Line width based on particle size
+                    ctx.lineCap = 'round'; // Round caps for smoother lines
+
+                    if (prevParticle) {
+                        // Draw a line connecting this particle to the previous one
+                        ctx.beginPath();
+                        ctx.moveTo(prevParticle.x, prevParticle.y);
+                        ctx.lineTo(this.x, this.y);
+                        ctx.stroke();
+                    } else {
+                        // If there's no previous particle, draw a small dot
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${this.life * this.alpha})`;
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+
+        // --- Event Listeners for Interactivity ---
+
+        // Mouse move event to update mouse coordinates
+        canvas.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        // Mouse down event to set the 'down' flag, triggering particle generation
+        canvas.addEventListener('mousedown', () => {
+            mouse.down = true;
+        });
+
+        // Mouse up event to clear the 'down' flag, stopping particle generation
+        canvas.addEventListener('mouseup', () => {
+            mouse.down = false;
+        });
+
+        // Touch events for mobile devices
+        // touchstart: Set mouse down and update coordinates from first touch
+        canvas.addEventListener('touchstart', (e) => {
+            mouse.down = true;
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+            e.preventDefault(); // Prevent default touch behavior (e.g., scrolling, zooming)
+        }, { passive: false }); // Use { passive: false } to allow preventDefault
+
+        // touchmove: Update mouse coordinates from first touch
+        canvas.addEventListener('touchmove', (e) => {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+            e.preventDefault(); // Prevent default touch behavior
+        }, { passive: false });
+
+        // touchend: Clear mouse down flag
+        canvas.addEventListener('touchend', () => {
+            mouse.down = false;
+        });
+
+        // Keyboard events for controlling the art
+        window.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'c': // 'c' key to clear canvas
+                case 'C':
+                    particles = []; // Clear all particles
+                    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the actual canvas pixels
+                    break;
+                case ' ': // Spacebar to pause/unpause animation
+                    isPaused = !isPaused;
+                    if (!isPaused) {
+                        animate(); // Resume animation if not paused
+                    } else {
+                        cancelAnimationFrame(animationFrameId); // Stop animation loop if paused
+                    }
+                    break;
+                case '+': // '+' key to increase particle generation rate
+                case '=': // '=' key is often used for '+' without shift
+                    particleGenerationRate = Math.min(particleGenerationRate + 1, 20); // Cap at 20 particles/frame
+                    break;
+                case '-': // '-' key to decrease particle generation rate
+                case '_': // '_' key is often used for '-' with shift
+                    particleGenerationRate = Math.max(particleGenerationRate - 1, 1); // Minimum 1 particle/frame
+                    break;
+                case '1': // '1' key to switch to palette 1
+                case '2': // '2' key to switch to palette 2
+                case '3': // '3' key to switch to palette 3
+                    const newIndex = parseInt(e.key) - 1; // Convert key to 0-indexed palette array
+                    if (newIndex >= 0 && newIndex < colorPalettes.length) {
+                        currentPaletteIndex = newIndex;
+                        // If the new palette has a fixed hue, set the global hue to it
+                        if (!colorPalettes[currentPaletteIndex].dynamicHue && colorPalettes[currentPaletteIndex].fixedHue !== undefined) {
+                            hue = colorPalettes[currentPaletteIndex].fixedHue;
+                        }
+                    }
+                    break;
+            }
+        });
+
+
+        // --- Main Animation Loop ---
+        function animate() {
+            if (isPaused) return; // Exit if animation is paused
+
+            // Apply a slight translucent black overlay to create a fading trail effect.
+            // This slowly clears previous drawings, giving a "smoke" or "ghosting" effect.
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update global hue for dynamic color changes (used by dynamicHue palettes)
+            hue = (hue + 0.5) % 360;
+
+            const currentPalette = colorPalettes[currentPaletteIndex]; // Get the currently active palette
+
+            // Generate new particles if the mouse button is held down
+            if (mouse.down) {
+                for (let i = 0; i < particleGenerationRate; i++) {
+                    // Determine particle's hue based on the current palette's settings
+                    const particleHue = currentPalette.dynamicHue ? hue : currentPalette.fixedHue !== undefined ? currentPalette.fixedHue : 0;
+                    particles.push(new Particle(mouse.x, mouse.y, particleHue, currentPalette));
+                }
+            }
+
+            // Remove oldest particles if the total count exceeds MAX_PARTICLES
+            // This prevents performance degradation and excessive memory usage.
+            while (particles.length > MAX_PARTICLES) {
+                particles.shift(); // Remove the particle at the beginning of the array
+            }
+
+            // Update and draw all active particles
+            let prevParticle = null; // Keep track of the previous particle to draw connecting lines
+            for (let i = 0; i < particles.length; i++) {
+                const particle = particles[i];
+                particle.update(); // Update particle's state (position, life)
+                particle.draw(prevParticle); // Draw the particle, connecting it to the previous one
+                prevParticle = particle; // Set current particle as previous for the next iteration
+            }
+
+            // Filter out particles that have completely faded (life <= 0)
+            // This keeps the array clean, though MAX_PARTICLES limit often handles it for continuous generation.
+            particles = particles.filter(p => p.life > 0);
+
+            // Request the next animation frame, creating a continuous loop
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Start the animation loop when the script loads
+        animate();
+
+    </script>
+</body>
+</html>

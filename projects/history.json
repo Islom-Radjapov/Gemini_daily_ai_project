@@ -92,6 +92,7 @@
     "js_game::Pong o'yini",
     "python_api::Fayl dublikatlarini topuvchi",
     "dashboard::Fitness tracker panel",
-    "js_game::Typing speed o'yini"
+    "js_game::Typing speed o'yini",
+    "interactive_art::Generative art"
   ]
 }
