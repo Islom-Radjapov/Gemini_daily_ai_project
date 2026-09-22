@@ -93,6 +93,7 @@
     "python_api::Fayl dublikatlarini topuvchi",
     "dashboard::Fitness tracker panel",
     "js_game::Typing speed o'yini",
-    "interactive_art::Generative art"
+    "interactive_art::Generative art",
+    "data_viz::Bubble chart"
   ]
 }

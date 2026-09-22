@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Bubble Chart</title>
+    <style>
+        /* General body styling for a clean, modern look */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6; /* Light background */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh; /* Full viewport height */
+        }
+
+        /* Chart title styling */
+        h1 {
+            color: #2c3e50; /* Dark blue-gray for prominence */
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            text-align: center;
+            letter-spacing: 0.5px; /* Slightly spaced letters for readability */
+        }
+
+        /* Container for the canvas and tooltip, with a nice shadow */
+        .chart-container {
+            position: relative;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 20px; /* Padding around the canvas */
+            display: inline-block; /* To contain the shadow properly */
+        }
+
+        /* Canvas styling */
+        canvas {
+            display: block; /* Remove extra space below canvas */
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0; /* Subtle border */
+            border-radius: 5px;
+        }
+
+        /* Tooltip styling for hover information */
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.85); /* Dark, semi-transparent background */
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            pointer-events: none; /* Allows mouse events to pass through to the canvas */
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.2s ease-in-out; /* Smooth fade effect */
+            font-size: 0.9em;
+            line-height: 1.4;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* Ensure tooltip is on top */
+        }
+
+        .tooltip.active {
+            opacity: 1; /* Show when active */
+        }
+
+        .tooltip strong {
+            color: #8ed0f4; /* Highlighted text for name */
+            font-size: 1.1em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .tooltip span {
+            display: block; /* Each info on a new line */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Global Economic & Health Insights: Interactive Bubble Chart</h1>
+
+    <div class="chart-container">
+        <canvas id="bubbleChartCanvas"></canvas>
+        <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <script>
+        // Data for the bubble chart. Each object represents a country with its name,
+        // GDP per capita, life expectancy, and population. This is sample data.
+        const data = [
+            { name: 'China', gdp: 12556, lifeExpectancy: 78, population: 1412000000 },
+            { name: 'India', gdp: 2256, lifeExpectancy: 70, population: 1408000000 },
+            { name: 'USA', gdp: 76000, lifeExpectancy: 79, population: 334800000 },
+            { name: 'Indonesia', gdp: 4980, lifeExpectancy: 73, population: 275000000 },
+            { name: 'Pakistan', gdp: 1658, lifeExpectancy: 67, population: 235800000 },
+            { name: 'Brazil', gdp: 9000, lifeExpectancy: 76, population: 215300000 },
+            { name: 'Nigeria', gdp: 2000, lifeExpectancy: 62, population: 218500000 },
+            { name: 'Bangladesh', gdp: 2621, lifeExpectancy: 73, population: 170000000 },
+            { name: 'Russia', gdp: 13000, lifeExpectancy: 73, population: 143400000 },
+            { name: 'Mexico', gdp: 11500, lifeExpectancy: 75, population: 127500000 },
+            { name: 'Japan', gdp: 42000, lifeExpectancy: 84, population: 125000000 },
+            { name: 'Germany', gdp: 51000, lifeExpectancy: 81, population: 83200000 },
+            { name: 'UK', gdp: 48000, lifeExpectancy: 81, population: 67300000 },
+            { name: 'France', gdp: 45000, lifeExpectancy: 82, population: 65000000 },
+            { name: 'Canada', gdp: 55000, lifeExpectancy: 83, population: 38700000 },
+            { name: 'Australia', gdp: 65000, lifeExpectancy: 83, population: 26000000 },
+            { name: 'South Korea', gdp: 35000, lifeExpectancy: 83, population: 51700000 },
+            { name: 'Spain', gdp: 30000, lifeExpectancy: 83, population: 47000000 },
+            { name: 'Italy', gdp: 34000, lifeExpectancy: 83, population: 59000000 },
+            { name: 'Argentina', gdp: 13000, lifeExpectancy: 76, population: 46000000 },
+            { name: 'South Africa', gdp: 6700, lifeExpectancy: 64, population: 60000000 },
+            { name: 'Egypt', gdp: 4000, lifeExpectancy: 72, population: 109000000 },
+            { name: 'Vietnam', gdp: 4100, lifeExpectancy: 75, population: 98000000 },
+            { name: 'Turkey', gdp: 13000, lifeExpectancy: 77, population: 85000000 },
+        ];
+
+        // Get canvas element and its 2D rendering context
+        const canvas = document.getElementById('bubbleChartCanvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+
+        // Chart dimensions and padding configuration
+        const chartWidth = 900;
+        const chartHeight = 600;
+        const padding = 70; // Padding around the chart area for axes and labels
+        const axisLabelPadding = 20; // Padding between axis line and labels
+
+        // Set the actual canvas dimensions, including padding
+        canvas.width = chartWidth + 2 * padding;
+        canvas.height = chartHeight + 2 * padding;
+
+        // Define the effective drawing area within the canvas, considering padding
+        const drawingArea = {
+            x: padding,
+            y: padding,
+            width: chartWidth,
+            height: chartHeight
+        };
+
+        // --- Data scaling and mapping ---
+        // Determine the min/max values for GDP, Life Expectancy, and Population from the data
+        const minGdp = Math.min(...data.map(d => d.gdp));
+        const maxGdp = Math.max(...data.map(d => d.gdp));
+        const minLifeExpectancy = Math.min(...data.map(d => d.lifeExpectancy));
+        const maxLifeExpectancy = Math.max(...data.map(d => d.lifeExpectancy));
+        const minPopulation = Math.min(...data.map(d => d.population));
+        const maxPopulation = Math.max(...data.map(d => d.population));
+
+        // Define the desired min/max radius for bubbles on the canvas.
+        // The square root of population is used to scale radius for better visual perception of area.
+        const minRadius = 5;
+        const maxRadius = 40;
+
+        // Array to store bubble information (position, radius, data) for hit detection (tooltip)
+        const bubblesInfo = [];
+
+        /**
+         * Maps a value from one numerical range to another.
+         * Useful for scaling data values to pixel coordinates or sizes.
+         * @param {number} value The value to map.
+         * @param {number} inMin The minimum value of the input range.
+         * @param {number} inMax The maximum value of the input range.
+         * @param {number} outMin The minimum value of the output range.
+         * @param {number} outMax The maximum value of the output range.
+         * @returns {number} The mapped value.
+         */
+        function mapRange(value, inMin, inMax, outMin, outMax) {
+            return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+        }
+
+        /**
+         * Generates a random pastel color in HSL format.
+         * Ensures bubbles have distinct yet pleasing colors.
+         * @returns {string} A CSS HSL color string (e.g., "hsl(240, 80%, 75%)").
+         */
+        function getRandomPastelColor() {
+            const hue = Math.floor(Math.random() * 360); // Full spectrum of colors
+            const saturation = Math.floor(Math.random() * 25) + 70; // 70-95% saturation for pastel feel
+            const lightness = Math.floor(Math.random() * 10) + 70; // 70-80% lightness for pastel feel
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        /**
+         * Draws the entire bubble chart on the canvas, including axes, labels, and bubbles.
+         */
+        function drawChart() {
+            // Clear the entire canvas before redrawing
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // --- Draw Axes ---
+            ctx.beginPath();
+            ctx.strokeStyle = '#555'; // Darker gray for axes
+            ctx.lineWidth = 1.5;
+
+            // X-axis: horizontal line at the bottom of the drawing area
+            ctx.moveTo(drawingArea.x, drawingArea.y + drawingArea.height);
+            ctx.lineTo(drawingArea.x + drawingArea.width, drawingArea.y + drawingArea.height);
+
+            // Y-axis: vertical line at the left of the drawing area
+            ctx.moveTo(drawingArea.x, drawingArea.y + drawingArea.height);
+            ctx.lineTo(drawingArea.x, drawingArea.y);
+            ctx.stroke(); // Render the drawn axis lines
+
+            // --- Draw Axis Labels and Ticks ---
+            ctx.fillStyle = '#555'; // Text color for labels
+            ctx.font = '12px Arial'; // Font style for tick labels
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // X-axis ticks and labels (GDP per Capita)
+            const numXTicks = 10;
+            for (let i = 0; i <= numXTicks; i++) {
+                const tickValue = minGdp + (i / numXTicks) * (maxGdp - minGdp);
+                // Map the GDP value to the corresponding X-coordinate on the canvas
+                const xPos = mapRange(tickValue, minGdp, maxGdp, drawingArea.x, drawingArea.x + drawingArea.width);
+                
+                // Draw tick mark
+                ctx.beginPath();
+                ctx.moveTo(xPos, drawingArea.y + drawingArea.height);
+                ctx.lineTo(xPos, drawingArea.y + drawingArea.height + 5); // Extend tick below axis
+                ctx.stroke();
+                
+                // Draw label for the tick (e.g., "10K" for 10000)
+                ctx.fillText(`${(tickValue / 1000).toFixed(0)}K`, xPos, drawingArea.y + drawingArea.height + axisLabelPadding);
+            }
+
+            // Y-axis ticks and labels (Life Expectancy)
+            const numYTicks = 5;
+            for (let i = 0; i <= numYTicks; i++) {
+                const tickValue = minLifeExpectancy + (i / numYTicks) * (maxLifeExpectancy - minLifeExpectancy);
+                // Map the Life Expectancy value to the corresponding Y-coordinate on the canvas.
+                // Y-axis is inverted: higher data values are at lower pixel Y-coordinates.
+                const yPos = mapRange(tickValue, minLifeExpectancy, maxLifeExpectancy, drawingArea.y + drawingArea.height, drawingArea.y);
+                
+                // Draw tick mark
+                ctx.beginPath();
+                ctx.moveTo(drawingArea.x, yPos);
+                ctx.lineTo(drawingArea.x - 5, yPos); // Extend tick to the left of axis
+                ctx.stroke();
+                
+                // Draw label for the tick
+                ctx.textAlign = 'right'; // Align text to the right of the tick
+                ctx.fillText(`${tickValue.toFixed(0)}`, drawingArea.x - axisLabelPadding, yPos);
+            }
+
+            // --- Draw Axis Titles ---
+            ctx.font = '14px Arial'; // Font style for axis titles
+            ctx.fillStyle = '#333'; // Text color for axis titles
+            
+            // X-axis title
+            ctx.textAlign = 'center';
+            ctx.fillText('GDP per Capita (USD)', drawingArea.x + drawingArea.width / 2, drawingArea.y + drawingArea.height + padding - 15);
+
+            // Y-axis title (rotated)
+            ctx.save(); // Save the current canvas state (important before transformations)
+            // Translate origin to the desired position for the text
+            ctx.translate(drawingArea.x - padding + 15, drawingArea.y + drawingArea.height / 2);
+            ctx.rotate(-Math.PI / 2); // Rotate 90 degrees counter-clockwise
+            ctx.fillText('Life Expectancy (Years)', 0, 0); // Draw text at the new origin
+            ctx.restore(); // Restore the canvas to its state before translation and rotation
+
+            // Clear previous bubble info before redrawing bubbles
+            bubblesInfo.length = 0;
+
+            // --- Draw Bubbles ---
+            data.forEach(d => {
+                // Scale GDP to X coordinate within the drawing area
+                const x = mapRange(d.gdp, minGdp, maxGdp, drawingArea.x, drawingArea.x + drawingArea.width);
+                // Scale Life Expectancy to Y coordinate within the drawing area (inverted)
+                const y = mapRange(d.lifeExpectancy, minLifeExpectancy, maxLifeExpectancy, drawingArea.y + drawingArea.height, drawingArea.y);
+                // Scale Population to bubble radius. Using square root helps to visually represent area more accurately.
+                const radius = mapRange(Math.sqrt(d.population), Math.sqrt(minPopulation), Math.sqrt(maxPopulation), minRadius, maxRadius);
+
+                // Assign a unique, random pastel color to each bubble
+                const color = getRandomPastelColor();
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2, false); // Draw a full circle
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.7; // Make bubbles semi-transparent
+                ctx.fill();
+                
+                // Draw a slightly darker border for better definition
+                // Extracts HSL components and reduces lightness for the border color
+                const borderLightness = parseInt(color.match(/hsl\(\d+, \d+%, (\d+)%\)/)[1]);
+                ctx.strokeStyle = `hsl(${hue}, ${saturation}%, ${Math.max(0, borderLightness - 20)}%)`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.globalAlpha = 1; // Reset alpha for subsequent drawings
+
+                // Store bubble information for later tooltip interaction
+                bubblesInfo.push({
+                    x, y, radius, data: d
+                });
+            });
+        }
+
+        // --- Tooltip Interaction ---
+        canvas.addEventListener('mousemove', (event) => {
+            const rect = canvas.getBoundingClientRect(); // Get canvas position and size relative to viewport
+            const mouseX = event.clientX - rect.left; // Mouse X coordinate relative to canvas
+            const mouseY = event.clientY - rect.top; // Mouse Y coordinate relative to canvas
+
+            let hoveredBubble = null;
+
+            // Check if mouse is over any bubble
+            for (const bubble of bubblesInfo) {
+                // Calculate distance from mouse to the center of the bubble
+                const distance = Math.sqrt((mouseX - bubble.x)**2 + (mouseY - bubble.y)**2);
+                if (distance < bubble.radius) {
+                    hoveredBubble = bubble;
+                    break; // Found the bubble, no need to check others
+                }
+            }
+
+            if (hoveredBubble) {
+                tooltip.classList.add('active'); // Show tooltip
+                // Position tooltip relative to the mouse cursor
+                tooltip.style.left = `${event.clientX + 15}px`;
+                tooltip.style.top = `${event.clientY + 15}px`;
+                // Populate tooltip with bubble's data
+                tooltip.innerHTML = `
+                    <strong>${hoveredBubble.data.name}</strong>
+                    <span>GDP per Capita: $${hoveredBubble.data.gdp.toLocaleString()}</span>
+                    <span>Life Expectancy: ${hoveredBubble.data.lifeExpectancy} years</span>
+                    <span>Population: ${hoveredBubble.data.population.toLocaleString()}</span>
+                `;
+            } else {
+                tooltip.classList.remove('active'); // Hide tooltip if no bubble is hovered
+            }
+        });
+
+        // Call drawChart initially to render the chart when the page loads
+        drawChart();
+    </script>
+</body>
+</html>
