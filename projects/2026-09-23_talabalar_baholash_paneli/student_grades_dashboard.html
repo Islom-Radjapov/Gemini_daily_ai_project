@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Grades Dashboard</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Dashboard container */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            display: grid;
+            gap: 25px;
+            grid-template-columns: 1fr; /* Single column by default */
+        }
+
+        /* Dashboard header */
+        .dashboard-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        /* Summary cards section */
+        .summary-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .summary-card {
+            flex: 1;
+            min-width: 200px; /* Minimum width for cards */
+            background-color: #f9fbfd;
+            border: 1px solid #e0e6ed;
+            border-radius: 10px;
+            padding: 20px 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .summary-card p {
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #007bff; /* Primary accent color */
+        }
+
+        .summary-card p.average { color: #28a745; } /* Green for average */
+        .summary-card p.highest { color: #17a2b8; } /* Teal for highest */
+        .summary-card p.lowest { color: #dc3545; } /* Red for lowest */
+
+        /* Grades table section */
+        .grades-table-container, .grade-distribution-container {
+            background-color: #f9fbfd;
+            border: 1px solid #e0e6ed;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .grades-table-container h2, .grade-distribution-container h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 1.8em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .grades-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .grades-table th, .grades-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eef1f5;
+        }
+
+        .grades-table th {
+            background-color: #e9f2fa;
+            color: #333;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        .grades-table tbody tr:hover {
+            background-color: #f6f8fa;
+        }
+
+        /* Grade specific styling for table cells */
+        .grade-status {
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            min-width: 80px; /* Ensure consistent width */
+            text-align: center;
+        }
+
+        .grade-A { background-color: #d4edda; color: #155724; } /* Light green */
+        .grade-B { background-color: #cce5ff; color: #004085; } /* Light blue */
+        .grade-C { background-color: #fff3cd; color: #856404; } /* Light yellow */
+        .grade-D { background-color: #f8d7da; color: #721c24; } /* Light red */
+        .grade-F { background-color: #f8d7da; color: #721c24; } /* Light red (same as D for severity) */
+        
+        .status-Excellent { background-color: #d4edda; color: #155724; }
+        .status-Good { background-color: #cce5ff; color: #004085; }
+        .status-Average { background-color: #fff3cd; color: #856404; }
+        .status-Improvement { background-color: #f8d7da; color: #721c24; }
+
+
+        /* Grade distribution section */
+        .grade-distribution-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .grade-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .grade-label {
+            font-weight: 600;
+            width: 40px; /* Fixed width for labels */
+            text-align: right;
+            margin-right: 15px;
+            color: #555;
+        }
+
+        .progress-bar-container {
+            flex-grow: 1;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            height: 25px;
+            overflow: hidden; /* Ensures bar stays within bounds */
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Align percentage text to end */
+            padding-right: 10px;
+            box-sizing: border-box; /* Include padding in width */
+            font-weight: 600;
+            color: white; /* Text color for percentage */
+            font-size: 0.9em;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            transition: width 0.8s ease-out; /* Smooth animation for bar growth */
+        }
+
+        /* Specific bar colors */
+        .progress-bar.A { background-color: #28a745; } /* Green */
+        .progress-bar.B { background-color: #007bff; } /* Blue */
+        .progress-bar.C { background-color: #ffc107; } /* Yellow */
+        .progress-bar.D { background-color: #fd7e14; } /* Orange */
+        .progress-bar.F { background-color: #dc3545; } /* Red */
+        
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 2fr 1fr; /* Two columns: 2/3 for table, 1/3 for distribution */
+                grid-template-areas: 
+                    "header header"
+                    "summary summary"
+                    "table  distribution";
+            }
+            .dashboard-header { grid-area: header; }
+            .summary-cards { grid-area: summary; }
+            .grades-table-container { grid-area: table; }
+            .grade-distribution-container { grid-area: distribution; }
+
+            .summary-card {
+                flex-basis: calc(25% - 15px); /* Approximately 4 cards per row */
+            }
+        }
+
+        @media (max-width: 767px) {
+            .dashboard-container {
+                margin: 15px;
+                padding: 20px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.8em;
+            }
+            .summary-card {
+                flex-basis: 100%; /* Stack cards on small screens */
+            }
+            .grades-table th, .grades-table td {
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+            .grades-table-container {
+                overflow-x: auto; /* Allow horizontal scroll for table on small screens */
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Student Performance Dashboard</h1>
+        </header>
+
+        <section class="summary-cards">
+            <div class="summary-card">
+                <h3>Total Students</h3>
+                <p id="totalStudents">0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Average Score</h3>
+                <p id="averageScore" class="average">0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Highest Score</h3>
+                <p id="highestScore" class="highest">0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Lowest Score</h3>
+                <p id="lowestScore" class="lowest">0</p>
+            </div>
+        </section>
+
+        <section class="grades-table-container">
+            <h2>Individual Student Grades</h2>
+            <div style="overflow-x: auto;"> <!-- Ensures table is scrollable on small screens if it overflows -->
+                <table class="grades-table">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Score (%)</th>
+                            <th>Letter Grade</th>
+                            <th>Attendance (%)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gradesTableBody">
+                        <!-- Student data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="grade-distribution-container">
+            <h2>Grade Distribution</h2>
+            <ul class="grade-distribution-list" id="gradeDistributionList">
+                <!-- Grade distribution bars will be dynamically inserted here -->
+                <li class="grade-item">
+                    <span class="grade-label">A</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar A" style="width: 0%;">0%</div>
+                    </div>
+                </li>
+                <li class="grade-item">
+                    <span class="grade-label">B</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar B" style="width: 0%;">0%</div>
+                    </div>
+                </li>
+                <li class="grade-item">
+                    <span class="grade-label">C</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar C" style="width: 0%;">0%</div>
+                    </div>
+                </li>
+                <li class="grade-item">
+                    <span class="grade-label">D</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar D" style="width: 0%;">0%</div>
+                    </div>
+                </li>
+                <li class="grade-item">
+                    <span class="grade-label">F</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar F" style="width: 0%;">0%</div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Function to generate a random integer between min and max (inclusive)
+            const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+            // Function to generate a random name
+            const generateRandomName = () => {
+                const firstNames = ["Ali", "Vali", "G'ani", "Salima", "Madina", "Jasur", "Nigina", "Farhod", "Aziza", "Dilshod", "Zarina", "Sherzod", "Gulnoza", "Bahrom", "Sardor", "Komila"];
+                const lastNames = ["Ahmedov", "Karimov", "Alimov", "Nabieva", "Ikramova", "Rustamov", "Azimova", "Saidov", "Ismailova", "Toshmatov", "Rahmatova", "Musaev", "Mirzaeva", "Sobirov", "Hakimov", "Yusupova"];
+                return `${firstNames[getRandomInt(0, firstNames.length - 1)]} ${lastNames[getRandomInt(0, lastNames.length - 1)]}`;
+            };
+
+            // Function to get letter grade based on score
+            const getLetterGrade = (score) => {
+                if (score >= 90) return 'A';
+                if (score >= 80) return 'B';
+                if (score >= 70) return 'C';
+                if (score >= 60) return 'D';
+                return 'F';
+            };
+
+            // Function to get performance status based on score
+            const getStatus = (score) => {
+                if (score >= 90) return 'Excellent';
+                if (score >= 80) return 'Good';
+                if (score >= 70) return 'Average';
+                return 'Needs Improvement';
+            };
+
+            // Function to generate fake student data
+            const generateStudents = (count) => {
+                const students = [];
+                for (let i = 0; i < count; i++) {
+                    const score = getRandomInt(40, 100); // Score between 40 and 100
+                    const attendance = getRandomInt(70, 100); // Attendance between 70% and 100%
+                    students.push({
+                        id: i + 1,
+                        name: generateRandomName(),
+                        score: score,
+                        letterGrade: getLetterGrade(score),
+                        attendance: attendance,
+                        status: getStatus(score)
+                    });
+                }
+                return students;
+            };
+
+            // Render summary statistics
+            const renderSummary = (students) => {
+                const totalStudents = students.length;
+                const totalScore = students.reduce((sum, student) => sum + student.score, 0);
+                const averageScore = totalStudents > 0 ? (totalScore / totalStudents).toFixed(2) : 0;
+                const highestScore = totalStudents > 0 ? Math.max(...students.map(s => s.score)) : 0;
+                const lowestScore = totalStudents > 0 ? Math.min(...students.map(s => s.score)) : 0;
+
+                document.getElementById('totalStudents').textContent = totalStudents;
+                document.getElementById('averageScore').textContent = averageScore;
+                document.getElementById('highestScore').textContent = highestScore;
+                document.getElementById('lowestScore').textContent = lowestScore;
+            };
+
+            // Render student grades table
+            const renderGradesTable = (students) => {
+                const tbody = document.getElementById('gradesTableBody');
+                tbody.innerHTML = ''; // Clear existing rows
+
+                students.forEach(student => {
+                    const row = tbody.insertRow();
+                    row.insertCell().textContent = student.name;
+                    row.insertCell().textContent = student.score;
+                    
+                    const letterGradeCell = row.insertCell();
+                    const letterGradeSpan = document.createElement('span');
+                    letterGradeSpan.textContent = student.letterGrade;
+                    letterGradeSpan.className = `grade-status grade-${student.letterGrade}`;
+                    letterGradeCell.appendChild(letterGradeSpan);
+
+                    row.insertCell().textContent = `${student.attendance}%`;
+                    
+                    const statusCell = row.insertCell();
+                    const statusSpan = document.createElement('span');
+                    statusSpan.textContent = student.status;
+                    statusSpan.className = `grade-status status-${student.status.replace(/\s/g, '')}`; // Remove spaces for class name
+                    statusCell.appendChild(statusSpan);
+                });
+            };
+
+            // Render grade distribution bars
+            const renderGradeDistribution = (students) => {
+                const gradeCounts = { 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0 };
+                students.forEach(student => {
+                    gradeCounts[student.letterGrade]++;
+                });
+
+                const totalStudents = students.length;
+
+                for (const grade in gradeCounts) {
+                    const count = gradeCounts[grade];
+                    const percentage = totalStudents > 0 ? ((count / totalStudents) * 100).toFixed(1) : 0;
+                    
+                    const progressBar = document.querySelector(`.progress-bar.${grade}`);
+                    if (progressBar) {
+                        progressBar.style.width = `${percentage}%`;
+                        progressBar.textContent = `${percentage}%`;
+                        // Adjust text color for readability on lighter bars if necessary
+                        if (grade === 'C') { // Yellow bar
+                            progressBar.style.color = '#333'; 
+                            progressBar.style.textShadow = 'none';
+                        } else {
+                             progressBar.style.color = 'white';
+                             progressBar.style.textShadow = '0 1px 2px rgba(0,0,0,0.2)';
+                        }
+                    }
+                }
+            };
+
+            // Initialize the dashboard
+            const initDashboard = () => {
+                const studentData = generateStudents(20); // Generate 20 fake students
+                renderSummary(studentData);
+                renderGradesTable(studentData);
+                renderGradeDistribution(studentData);
+            };
+
+            initDashboard();
+        });
+    </script>
+</body>
+</html>

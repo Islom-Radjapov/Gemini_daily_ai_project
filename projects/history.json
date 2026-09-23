@@ -94,6 +94,7 @@
     "dashboard::Fitness tracker panel",
     "js_game::Typing speed o'yini",
     "interactive_art::Generative art",
-    "data_viz::Bubble chart"
+    "data_viz::Bubble chart",
+    "dashboard::Talabalar baholash paneli"
   ]
 }
