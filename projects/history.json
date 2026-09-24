@@ -95,6 +95,7 @@
     "js_game::Typing speed o'yini",
     "interactive_art::Generative art",
     "data_viz::Bubble chart",
-    "dashboard::Talabalar baholash paneli"
+    "dashboard::Talabalar baholash paneli",
+    "python_cli::Oddiy shifrlash dasturi"
   ]
 }
