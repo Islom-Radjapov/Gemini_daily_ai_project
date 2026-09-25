@@ -96,6 +96,7 @@
     "interactive_art::Generative art",
     "data_viz::Bubble chart",
     "dashboard::Talabalar baholash paneli",
-    "python_cli::Oddiy shifrlash dasturi"
+    "python_cli::Oddiy shifrlash dasturi",
+    "dashboard::Loyiha boshqaruv paneli"
   ]
 }

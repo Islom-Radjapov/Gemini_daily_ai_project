@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management Dashboard</title>
+    <style>
+        /*
+         * Global Styles & Reset
+         * Resets default browser styles and sets up basic typography and box-sizing.
+         */
+        :root {
+            --primary-color: #5a67d8; /* A nice shade of blue for accents */
+            --secondary-color: #4a5568; /* Dark grey for text */
+            --background-color: #f7fafc; /* Light grey for overall background */
+            --sidebar-bg: #2d3748; /* Darker grey for sidebar background */
+            --card-bg: #ffffff; /* White for card backgrounds */
+            --text-color: #2d3748; /* Dark text */
+            --light-text-color: #a0aec0; /* Lighter text for labels */
+            --border-color: #e2e8f0; /* Light border color */
+            --success-color: #48bb78; /* Green for success */
+            --warning-color: #f6ad55; /* Orange for warning */
+            --danger-color: #f56565; /* Red for danger */
+            --info-color: #63b3ed; /* Blue for info */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /*
+         * Dashboard Container Layout
+         * Uses flexbox to arrange sidebar and main content.
+         */
+        #dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /*
+         * Sidebar Styling
+         * Contains navigation links and a project logo/title.
+         */
+        #sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            color: #ffffff;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+
+        #sidebar .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2.5rem;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        #sidebar nav ul {
+            list-style: none;
+        }
+
+        #sidebar nav ul li {
+            margin-bottom: 1rem;
+        }
+
+        #sidebar nav ul li a {
+            color: var(--light-text-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        #sidebar nav ul li a:hover,
+        #sidebar nav ul li a.active {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        #sidebar nav ul li a span {
+            margin-right: 0.75rem;
+            font-size: 1.2rem; /* Icon size */
+        }
+
+        /*
+         * Main Content Area Styling
+         * Contains header, summary cards, project list, activity feed, and task status.
+         */
+        #main-content {
+            flex-grow: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #main-content header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        #main-content header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-profile .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            margin-left: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        /*
+         * Summary Cards Section
+         * Displays key performance indicators using a grid layout.
+         */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        .card .icon {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .card .label {
+            font-size: 0.9rem;
+            color: var(--light-text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        /*
+         * Section Headers
+         */
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+
+        /*
+         * Projects Table Section
+         * Displays a list of projects in a responsive table.
+         */
+        .projects-section, .activity-section, .tasks-status-section {
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2.5rem;
+        }
+
+        .projects-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .projects-table th, .projects-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .projects-table th {
+            font-size: 0.9rem;
+            color: var(--light-text-color);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .projects-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .projects-table .status-badge {
+            display: inline-block;
+            padding: 0.3em 0.8em;
+            border-radius: 9999px; /* Pill shape */
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-badge.completed { background-color: #c6f6d5; color: var(--success-color); }
+        .status-badge.in_progress { background-color: #bee3f8; color: var(--info-color); }
+        .status-badge.on_hold { background-color: #feebc8; color: var(--warning-color); }
+        .status-badge.cancelled { background-color: #fed7d7; color: var(--danger-color); }
+
+        .progress-bar-container {
+            width: 100px;
+            height: 8px;
+            background-color: var(--border-color);
+            border-radius: 9999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 9999px;
+            transition: width 0.3s ease;
+        }
+
+        /*
+         * Recent Activity Section
+         */
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item .activity-icon {
+            font-size: 1.2rem;
+            margin-right: 1rem;
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .activity-item .activity-details {
+            flex-grow: 1;
+        }
+
+        .activity-item .activity-details .message {
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        .activity-item .activity-details .timestamp {
+            font-size: 0.8rem;
+            color: var(--light-text-color);
+        }
+
+        /*
+         * Task Status Distribution Section
+         */
+        .task-status-list {
+            list-style: none;
+        }
+
+        .task-status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .task-status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .task-status-item .label {
+            width: 100px;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            flex-shrink: 0;
+        }
+
+        .task-status-item .progress-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .task-status-item .progress-wrapper .progress-bar-container {
+            flex-grow: 1;
+            margin-right: 0.75rem;
+        }
+
+        .task-status-item .progress-wrapper .percentage {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+            width: 40px; /* Fixed width for percentage */
+            text-align: right;
+        }
+
+        /* Status specific progress bar colors */
+        .progress-bar.pending { background-color: var(--warning-color); }
+        .progress-bar.in_progress { background-color: var(--info-color); }
+        .progress-bar.completed { background-color: var(--success-color); }
+        .progress-bar.on_hold { background-color: var(--light-text-color); }
+
+        /*
+         * Responsive Adjustments
+         * Adapts the layout for smaller screens.
+         */
+        @media (max-width: 992px) {
+            #sidebar {
+                width: 200px;
+                padding: 1.5rem 1rem;
+            }
+            #sidebar .logo {
+                font-size: 1.3rem;
+                margin-bottom: 2rem;
+            }
+            #sidebar nav ul li a {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.9rem;
+            }
+            #sidebar nav ul li a span {
+                font-size: 1rem;
+                margin-right: 0.5rem;
+            }
+            #main-content {
+                padding: 1.5rem;
+            }
+            #main-content header h1 {
+                font-size: 1.5rem;
+            }
+            .card .value {
+                font-size: 1.6rem;
+            }
+            h2 {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #dashboard-container {
+                flex-direction: column;
+            }
+            #sidebar {
+                width: 100%;
+                height: auto;
+                padding: 1rem;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            #sidebar .logo {
+                margin-bottom: 0;
+            }
+            #sidebar nav {
+                display: none; /* Hide main nav on small screens */
+            }
+            /* Could add a mobile nav toggle here if desired, but for simplicity, just hide */
+
+            #main-content {
+                padding: 1.5rem 1rem;
+            }
+            #main-content header {
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 1.5rem;
+            }
+            #main-content header h1 {
+                margin-bottom: 1rem;
+            }
+            .user-profile {
+                width: 100%;
+                justify-content: flex-end; /* Align avatar to right */
+            }
+            .summary-cards {
+                grid-template-columns: 1fr; /* Stack cards vertically */
+            }
+            .projects-table {
+                font-size: 0.9rem;
+            }
+            .projects-table th, .projects-table td {
+                padding: 0.75rem 0.5rem;
+            }
+            /* Hide some columns for smaller screens for better readability */
+            .projects-table thead th:nth-child(3), /* Hide Progress */
+            .projects-table tbody td:nth-child(3),
+            .projects-table thead th:nth-child(4), /* Hide Due Date */
+            .projects-table tbody td:nth-child(4) {
+                display: none;
+            }
+            .task-status-item .label {
+                width: 80px;
+                font-size: 0.85rem;
+            }
+            .task-status-item .progress-wrapper .percentage {
+                width: 35px;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #main-content {
+                padding: 1rem;
+            }
+            #main-content header h1 {
+                font-size: 1.3rem;
+            }
+            .card .value {
+                font-size: 1.4rem;
+            }
+            h2 {
+                font-size: 1.2rem;
+            }
+            .projects-table thead th:nth-child(5), /* Hide Assigned To */
+            .projects-table tbody td:nth-child(5) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <div id="sidebar">
+            <div class="logo">ProjectFlow</div>
+            <nav>
+                <ul>
+                    <li><a href="#" class="active"><span role="img" aria-label="Overview">📊</span> Overview</a></li>
+                    <li><a href="#"><span role="img" aria-label="Projects">📁</span> Projects</a></li>
+                    <li><a href="#"><span role="img" aria-label="Tasks">✅</span> Tasks</a></li>
+                    <li><a href="#"><span role="img" aria-label="Team">👥</span> Team</a></li>
+                    <li><a href="#"><span role="img" aria-label="Reports">📈</span> Reports</a></li>
+                    <li><a href="#"><span role="img" aria-label="Settings">⚙️</span> Settings</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <header>
+                <h1>Dashboard Overview</h1>
+                <div class="user-profile">
+                    <span>Hello, John Doe!</span>
+                    <div class="avatar">JD</div>
+                </div>
+            </header>
+
+            <!-- Summary Cards Section -->
+            <section class="summary-cards" id="summary-cards">
+                <!-- Cards will be populated by JavaScript -->
+            </section>
+
+            <!-- Projects Section -->
+            <section class="projects-section">
+                <h2>Active Projects</h2>
+                <div style="overflow-x: auto;">
+                    <table class="projects-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Due Date</th>
+                                <th>Assigned To</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-table-body">
+                            <!-- Project rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                <!-- Recent Activity Section -->
+                <section class="activity-section">
+                    <h2>Recent Activity</h2>
+                    <ul class="activity-list" id="activity-list">
+                        <!-- Activity items will be populated by JavaScript -->
+                    </ul>
+                </section>
+
+                <!-- Task Status Section -->
+                <section class="tasks-status-section">
+                    <h2>Task Status Distribution</h2>
+                    <ul class="task-status-list" id="task-status-list">
+                        <!-- Task status bars will be populated by JavaScript -->
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+         * JavaScript for Dashboard Functionality
+         * Generates fake data and dynamically renders content to the dashboard.
+         */
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mock Data Definition
+            const mockData = {
+                summary: {
+                    totalProjects: 15,
+                    activeProjects: 8,
+                    completedTasks: 120,
+                    overdueTasks: 5
+                },
+                projects: [
+                    { id: 1, name: 'Website Redesign', status: 'in_progress', progress: 65, dueDate: '2023-12-31', assignedTo: 'Team Alpha' },
+                    { id: 2, name: 'Mobile App Development', status: 'on_hold', progress: 30, dueDate: '2024-03-15', assignedTo: 'Team Beta' },
+                    { id: 3, name: 'API Integration Project', status: 'completed', progress: 100, dueDate: '2023-10-01', assignedTo: 'Team Gamma' },
+                    { id: 4, name: 'Marketing Campaign Launch', status: 'in_progress', progress: 80, dueDate: '2023-11-20', assignedTo: 'Team Delta' },
+                    { id: 5, name: 'Database Migration', status: 'pending', progress: 10, dueDate: '2024-01-30', assignedTo: 'Team Alpha' }
+                ],
+                activities: [
+                    { id: 1, user: 'Jane Doe', action: 'updated progress on', project: 'Website Redesign', timestamp: '2 minutes ago', icon: '📝' },
+                    { id: 2, user: 'John Smith', action: 'completed task in', project: 'API Integration Project', timestamp: '1 hour ago', icon: '✅' },
+                    { id: 3, user: 'Alice Brown', action: 'commented on task in', project: 'Mobile App Development', timestamp: '3 hours ago', icon: '💬' },
+                    { id: 4, user: 'Bob Johnson', action: 'started new project', project: 'Marketing Campaign Launch', timestamp: '1 day ago', icon: '🚀' },
+                    { id: 5, user: 'Jane Doe', action: 'changed status of', project: 'Database Migration', timestamp: '2 days ago', icon: '🔄' }
+                ],
+                taskStatus: [
+                    { label: 'Pending', count: 20, color: 'var(--warning-color)', statusClass: 'pending' },
+                    { label: 'In Progress', count: 45, color: 'var(--info-color)', statusClass: 'in_progress' },
+                    { label: 'Completed', count: 70, color: 'var(--success-color)', statusClass: 'completed' },
+                    { label: 'On Hold', count: 15, color: 'var(--light-text-color)', statusClass: 'on_hold' }
+                ]
+            };
+
+            /**
+             * Renders the summary cards with dynamic data.
+             */
+            function renderSummaryCards() {
+                const summaryCardsContainer = document.getElementById('summary-cards');
+                summaryCardsContainer.innerHTML = ''; // Clear existing content
+
+                const cardsData = [
+                    { label: 'Total Projects', value: mockData.summary.totalProjects, icon: '📦' },
+                    { label: 'Active Projects', value: mockData.summary.activeProjects, icon: '🔥' },
+                    { label: 'Completed Tasks', value: mockData.summary.completedTasks, icon: '🎉' },
+                    { label: 'Overdue Tasks', value: mockData.summary.overdueTasks, icon: '⏰' }
+                ];
+
+                cardsData.forEach(card => {
+                    const cardElement = document.createElement('div');
+                    cardElement.className = 'card';
+                    cardElement.innerHTML = `
+                        <div class="icon">${card.icon}</div>
+                        <div class="label">${card.label}</div>
+                        <div class="value">${card.value}</div>
+                    `;
+                    summaryCardsContainer.appendChild(cardElement);
+                });
+            }
+
+            /**
+             * Renders the projects table with dynamic data.
+             */
+            function renderProjectsTable() {
+                const projectsTableBody = document.getElementById('projects-table-body');
+                projectsTableBody.innerHTML = ''; // Clear existing content
+
+                mockData.projects.forEach(project => {
+                    const row = projectsTableBody.insertRow();
+
+                    const nameCell = row.insertCell();
+                    nameCell.textContent = project.name;
+
+                    const statusCell = row.insertCell();
+                    statusCell.innerHTML = `<span class="status-badge ${project.status}">${project.status.replace(/_/g, ' ')}</span>`;
+
+                    const progressCell = row.insertCell();
+                    progressCell.innerHTML = `
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${project.progress}%;"></div>
+                        </div>
+                        <small>${project.progress}%</small>
+                    `;
+
+                    const dueDateCell = row.insertCell();
+                    dueDateCell.textContent = project.dueDate;
+
+                    const assignedToCell = row.insertCell();
+                    assignedToCell.textContent = project.assignedTo;
+                });
+            }
+
+            /**
+             * Renders the recent activity feed with dynamic data.
+             */
+            function renderActivityFeed() {
+                const activityList = document.getElementById('activity-list');
+                activityList.innerHTML = ''; // Clear existing content
+
+                mockData.activities.forEach(activity => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'activity-item';
+                    listItem.innerHTML = `
+                        <span class="activity-icon">${activity.icon}</span>
+                        <div class="activity-details">
+                            <div class="message"><strong>${activity.user}</strong> ${activity.action} <strong>${activity.project}</strong></div>
+                            <div class="timestamp">${activity.timestamp}</div>
+                        </div>
+                    `;
+                    activityList.appendChild(listItem);
+                });
+            }
+
+            /**
+             * Renders the task status distribution progress bars.
+             */
+            function renderTaskStatusDistribution() {
+                const taskStatusList = document.getElementById('task-status-list');
+                taskStatusList.innerHTML = ''; // Clear existing content
+
+                const totalTasks = mockData.taskStatus.reduce((sum, status) => sum + status.count, 0);
+
+                mockData.taskStatus.forEach(status => {
+                    const percentage = totalTasks > 0 ? ((status.count / totalTasks) * 100).toFixed(0) : 0;
+                    const listItem = document.createElement('li');
+                    listItem.className = 'task-status-item';
+                    listItem.innerHTML = `
+                        <div class="label">${status.label}</div>
+                        <div class="progress-wrapper">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar ${status.statusClass}" style="width: ${percentage}%;"></div>
+                            </div>
+                            <span class="percentage">${percentage}%</span>
+                        </div>
+                    `;
+                    taskStatusList.appendChild(listItem);
+                });
+            }
+
+            // Initialize all dashboard components
+            renderSummaryCards();
+            renderProjectsTable();
+            renderActivityFeed();
+            renderTaskStatusDistribution();
+        });
+    </script>
+</body>
+</html>
