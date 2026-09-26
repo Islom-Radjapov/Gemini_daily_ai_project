@@ -97,6 +97,7 @@
     "data_viz::Bubble chart",
     "dashboard::Talabalar baholash paneli",
     "python_cli::Oddiy shifrlash dasturi",
-    "dashboard::Loyiha boshqaruv paneli"
+    "dashboard::Loyiha boshqaruv paneli",
+    "css_animation::Neon matn effekti"
   ]
 }

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Text Effect</title>
+    <!-- Google Fonts - Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Global Reset and Body Styling */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex; /* Use flexbox for centering content */
+            justify-content: center; /* Horizontally center content */
+            align-items: center; /* Vertically center content */
+            min-height: 100vh; /* Full viewport height */
+            background: #0d0d0d; /* Dark background for neon effect contrast */
+            overflow: hidden; /* Prevent scrollbars from appearing */
+            font-family: 'Montserrat', sans-serif; /* Modern font for the text */
+            color: #fff; /* Base text color, will be overshadowed by neon glow */
+            -webkit-font-smoothing: antialiased; /* Smoother font rendering */
+            -moz-osx-font-smoothing: grayscale; /* Smoother font rendering */
+        }
+
+        /* Neon Text Styling */
+        .neon-text {
+            font-size: 8vw; /* Responsive font size */
+            font-weight: 700; /* Bold font weight */
+            text-align: center; /* Center the text */
+            position: relative; /* Needed for z-index or potential future pseudo-elements */
+            line-height: 1.2; /* Adjust line height */
+            text-transform: uppercase; /* Uppercase for a classic neon sign look */
+            
+            /* Initial text color (will be mostly hidden by shadow) */
+            color: #f7f7f7; 
+
+            /* The core of the neon effect: multiple text-shadow layers */
+            text-shadow: 
+                0 0 7px #fff,             /* Inner white glow */
+                0 0 10px #fff,            /* Slightly larger white glow */
+                0 0 21px #a2d2ff,         /* First layer of blue neon glow */
+                0 0 42px #a2d2ff,         /* Second layer of blue neon glow */
+                0 0 82px #a2d2ff,         /* Third layer of blue neon glow */
+                0 0 92px #a2d2ff,         /* Fourth layer of blue neon glow */
+                0 0 102px #a2d2ff,        /* Fifth layer of blue neon glow */
+                0 0 151px #a2d2ff;        /* Widest, most diffused blue neon glow */
+            
+            /* Apply the flicker animation */
+            animation: 
+                neon-flicker 1.5s ease-in-out infinite alternate, /* Main flickering animation */
+                neon-pulse 2.5s ease-out infinite alternate;    /* Subtle pulsing for depth */
+        }
+
+        /* Keyframes for the Neon Flicker Animation */
+        @keyframes neon-flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                /* These frames represent the 'on' state or minor flickers */
+                text-shadow: 
+                    0 0 7px #fff,
+                    0 0 10px #fff,
+                    0 0 21px #a2d2ff,
+                    0 0 42px #a2d2ff,
+                    0 0 82px #a2d2ff,
+                    0 0 92px #a2d2ff,
+                    0 0 102px #a2d2ff,
+                    0 0 151px #a2d2ff;
+                opacity: 1; /* Fully visible */
+            }
+            20%, 24%, 55% {
+                /* These frames represent short 'off' states or significant flickers */
+                text-shadow: 
+                    none; /* No glow */
+                opacity: 0.8; /* Slightly less opaque */
+            }
+        }
+
+        /* Keyframes for a subtle Neon Pulse Animation */
+        @keyframes neon-pulse {
+            0%, 100% {
+                /* At the start and end, normal glow */
+                text-shadow: 
+                    0 0 7px #fff,
+                    0 0 10px #fff,
+                    0 0 21px #a2d2ff,
+                    0 0 42px #a2d2ff,
+                    0 0 82px #a2d2ff,
+                    0 0 92px #a2d2ff,
+                    0 0 102px #a2d2ff,
+                    0 0 151px #a2d2ff;
+            }
+            50% {
+                /* At the midpoint, slightly stronger glow */
+                text-shadow: 
+                    0 0 10px #fff,
+                    0 0 15px #fff,
+                    0 0 30px #a2d2ff,
+                    0 0 60px #a2d2ff,
+                    0 0 100px #a2d2ff,
+                    0 0 110px #a2d2ff,
+                    0 0 130px #a2d2ff,
+                    0 0 180px #a2d2ff;
+            }
+        }
+
+        /* Responsive adjustments for smaller screens if needed (optional for this simple layout) */
+        @media (max-width: 768px) {
+            .neon-text {
+                font-size: 12vw; /* Adjust font size for smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="neon-text">Neon Effect</h1>
+
+    <script>
+        // Minimal JavaScript to confirm page load in console
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Neon Text Effect page loaded successfully!");
+            console.log("Enjoy the CSS animation!");
+        });
+    </script>
+</body>
+</html>
