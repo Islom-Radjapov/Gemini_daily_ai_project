@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Dashboard</title>
+    <!-- Inline CSS for styling the dashboard -->
+    <style>
+        /* General Body Styles */
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6; /* Light gray background */
+            color: #333; /* Darker text color */
+            display: flex;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Dashboard Container Layout */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 250px 1fr; /* Sidebar on left, main content on right */
+            grid-template-rows: auto 1fr auto; /* Header, Main, Footer */
+            grid-template-areas:
+                "nav header"
+                "nav main"
+                "nav footer";
+            width: 100%;
+            max-width: 1400px; /* Max width for the dashboard */
+            margin: 0 auto;
+            background-color: #ffffff; /* White background for the dashboard itself */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden; /* Ensures elements don't spill out */
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            grid-area: header;
+            background-color: #2c3e50; /* Dark blue header */
+            color: #ecf0f1; /* Light text */
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #34495e;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-profile span {
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3498db; /* Blue avatar background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #fff;
+            font-size: 18px;
+        }
+
+        /* Navigation Sidebar Styles */
+        .dashboard-nav {
+            grid-area: nav;
+            background-color: #34495e; /* Slightly lighter dark blue for nav */
+            color: #ecf0f1;
+            padding: 20px 0;
+            border-right: 1px solid #2c3e50;
+        }
+
+        .dashboard-nav .logo {
+            text-align: center;
+            padding: 15px 0 30px 0;
+            font-size: 28px;
+            font-weight: bold;
+            color: #e67e22; /* Orange accent for logo */
+            letter-spacing: 1px;
+        }
+
+        .dashboard-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .dashboard-nav ul li a {
+            display: block;
+            padding: 15px 30px;
+            text-decoration: none;
+            color: #ecf0f1;
+            font-size: 16px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dashboard-nav ul li a.active,
+        .dashboard-nav ul li a:hover {
+            background-color: #2c3e50;
+            color: #3498db; /* Blue accent on hover/active */
+        }
+
+        /* Main Content Area */
+        .dashboard-main-content {
+            grid-area: main;
+            padding: 30px;
+            background-color: #f9fbfb;
+            overflow-y: auto; /* Enable scrolling for main content if needed */
+        }
+
+        .dashboard-main-content h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 28px;
+            font-weight: 600;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        /* Dashboard Cards/Widgets */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid for cards */
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 120px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-title {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .card.income .card-value { color: #27ae60; } /* Green for income */
+        .card.expenses .card-value { color: #e74c3c; } /* Red for expenses */
+        .card.balance .card-value { color: #3498db; } /* Blue for balance */
+        .card.savings .card-value { color: #f39c12; } /* Orange for savings */
+
+        /* Progress Bar for Savings */
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 15px;
+            height: 12px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #f39c12; /* Orange for progress */
+            width: 0%; /* Will be set by JS */
+            border-radius: 5px;
+            text-align: center;
+            color: white;
+            font-size: 10px;
+            line-height: 12px;
+            transition: width 0.8s ease-out;
+        }
+
+        .progress-label {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        /* Transactions and Investments Sections */
+        .section-panel {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 40px;
+        }
+
+        .section-panel h3 {
+            color: #2c3e50;
+            font-size: 22px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th, .data-table td {
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table th {
+            background-color: #f8f8f8;
+            color: #555;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .transaction-type.income { color: #27ae60; font-weight: 500; }
+        .transaction-type.expense { color: #e74c3c; font-weight: 500; }
+
+        .investment-gain { color: #27ae60; font-weight: 500; }
+        .investment-loss { color: #e74c3c; font-weight: 500; }
+        .investment-neutral { color: #333; font-weight: 500; }
+
+        /* Footer Styles */
+        .dashboard-footer {
+            grid-area: footer;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 14px;
+            border-top: 1px solid #34495e;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .dashboard-container {
+                grid-template-columns: 1fr; /* Stack nav and main content */
+                grid-template-rows: auto auto 1fr auto;
+                grid-template-areas:
+                    "header"
+                    "nav"
+                    "main"
+                    "footer";
+                margin: 0; /* Remove margin on smaller screens */
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .dashboard-nav {
+                border-right: none;
+                border-bottom: 1px solid #2c3e50;
+                padding-bottom: 0;
+            }
+
+            .dashboard-nav ul {
+                display: flex; /* Make nav items horizontal */
+                justify-content: center;
+                flex-wrap: wrap; /* Allow wrapping if many items */
+            }
+
+            .dashboard-nav ul li a {
+                padding: 10px 20px;
+                white-space: nowrap; /* Prevent breaking lines in nav items */
+            }
+
+            .dashboard-nav .logo {
+                padding-bottom: 15px;
+            }
+
+            .dashboard-main-content {
+                padding: 20px;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr; /* Stack cards vertically */
+            }
+        }
+
+        @media (max-width: 576px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 15px 20px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 20px;
+            }
+
+            .user-profile {
+                width: 100%;
+                justify-content: flex-end; /* Push profile to right */
+            }
+
+            .dashboard-nav ul {
+                flex-direction: column; /* Stack nav items vertically again */
+                align-items: center;
+            }
+
+            .dashboard-nav ul li a {
+                width: 100%;
+                text-align: center;
+            }
+
+            .dashboard-main-content h2 {
+                font-size: 24px;
+            }
+
+            .card-value {
+                font-size: 28px;
+            }
+
+            .data-table th, .data-table td {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Dashboard Navigation (Sidebar) -->
+        <nav class="dashboard-nav">
+            <div class="logo">FinDash</div>
+            <ul>
+                <li><a href="#" class="active">Overview</a></li>
+                <li><a href="#">Transactions</a></li>
+                <li><a href="#">Investments</a></li>
+                <li><a href="#">Reports</a></li>
+                <li><a href="#">Settings</a></li>
+            </ul>
+        </nav>
+
+        <!-- Dashboard Header -->
+        <header class="dashboard-header">
+            <h1>Financial Overview</h1>
+            <div class="user-profile">
+                <span id="userNameDisplay">Loading...</span>
+                <div class="user-avatar" id="userAvatar">U</div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-main-content">
+            <!-- Summary Cards Section -->
+            <section class="summary-cards">
+                <div class="card balance">
+                    <div class="card-title">Total Balance</div>
+                    <div class="card-value" id="totalBalance"></div>
+                </div>
+                <div class="card income">
+                    <div class="card-title">Monthly Income</div>
+                    <div class="card-value" id="monthlyIncome"></div>
+                </div>
+                <div class="card expenses">
+                    <div class="card-title">Monthly Expenses</div>
+                    <div class="card-value" id="monthlyExpenses"></div>
+                </div>
+                <div class="card savings">
+                    <div class="card-title">Savings Goal</div>
+                    <div class="card-value" id="currentSavings"></div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="savingsProgressBar"></div>
+                    </div>
+                    <div class="progress-label" id="savingsProgressLabel"></div>
+                </div>
+            </section>
+
+            <!-- Recent Transactions Section -->
+            <section class="section-panel">
+                <h3>Recent Transactions</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        <!-- Transactions will be loaded here by JavaScript -->
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Investment Portfolio Section -->
+            <section class="section-panel">
+                <h3>Investment Portfolio</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Investment</th>
+                            <th>Shares</th>
+                            <th>Purchase Price</th>
+                            <th>Current Price</th>
+                            <th>Value</th>
+                            <th>Gain/Loss</th>
+                        </tr>
+                    </thead>
+                    <tbody id="investmentsTableBody">
+                        <!-- Investments will be loaded here by JavaScript -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+
+        <!-- Dashboard Footer -->
+        <footer class="dashboard-footer">
+            <p>&copy; 2023 Finance Dashboard. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Inline JavaScript for data and dynamic content -->
+    <script>
+        // Fake data structure for the dashboard
+        const fakeData = {
+            userName: "Alice Johnson",
+            currency: "$",
+            currentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            totalBalance: 12543.87,
+            monthlyIncome: 3500.00,
+            monthlyExpenses: 2150.50,
+            savingsGoal: 5000.00,
+            currentSavings: 3200.00,
+            transactions: [
+                { id: 1, date: "2023-10-26", description: "Salary", type: "income", amount: 3500.00 },
+                { id: 2, date: "2023-10-25", description: "Rent Payment", type: "expense", amount: 1200.00 },
+                { id: 3, date: "2023-10-24", description: "Groceries", type: "expense", amount: 150.25 },
+                { id: 4, date: "2023-10-23", description: "Freelance Project", type: "income", amount: 500.00 },
+                { id: 5, date: "2023-10-22", description: "Utilities Bill", type: "expense", amount: 85.00 },
+                { id: 6, date: "2023-10-21", description: "Coffee Shop", type: "expense", amount: 12.50 },
+                { id: 7, date: "2023-10-20", description: "Internet Service", type: "expense", amount: 60.00 },
+                { id: 8, date: "2023-10-19", description: "Book Purchase", type: "expense", amount: 25.00 },
+                { id: 9, date: "2023-10-18", description: "Investment Dividend", type: "income", amount: 75.00 },
+                { id: 10, date: "2023-10-17", description: "Dining Out", type: "expense", amount: 45.75 },
+            ],
+            investments: [
+                { name: "Tech Stock A", shares: 10, purchasePrice: 120, currentPrice: 135 },
+                { name: "Index Fund B", shares: 50, purchasePrice: 20, currentPrice: 22.50 },
+                { name: "Bond C", shares: 5, purchasePrice: 1000, currentPrice: 980 },
+                { name: "Crypto Coin D", shares: 0.5, purchasePrice: 2000, currentPrice: 2100 },
+            ]
+        };
+
+        // Function to format currency
+        function formatCurrency(amount) {
+            return `${fakeData.currency}${amount.toFixed(2)}`;
+        }
+
+        // Function to render user information
+        function renderUserProfile() {
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            const userAvatar = document.getElementById('userAvatar');
+
+            userNameDisplay.textContent = fakeData.userName;
+            userAvatar.textContent = fakeData.userName.charAt(0).toUpperCase(); // First letter of name
+        }
+
+        // Function to render summary cards
+        function renderSummaryCards() {
+            document.getElementById('totalBalance').textContent = formatCurrency(fakeData.totalBalance);
+            document.getElementById('monthlyIncome').textContent = formatCurrency(fakeData.monthlyIncome);
+            document.getElementById('monthlyExpenses').textContent = formatCurrency(fakeData.monthlyExpenses);
+
+            const currentSavingsElement = document.getElementById('currentSavings');
+            const savingsProgressBar = document.getElementById('savingsProgressBar');
+            const savingsProgressLabel = document.getElementById('savingsProgressLabel');
+
+            currentSavingsElement.textContent = formatCurrency(fakeData.currentSavings);
+
+            const progress = (fakeData.currentSavings / fakeData.savingsGoal) * 100;
+            savingsProgressBar.style.width = `${Math.min(progress, 100)}%`; // Cap at 100%
+            savingsProgressBar.title = `${progress.toFixed(1)}% towards goal`; // Tooltip
+            
+            savingsProgressLabel.textContent = `${formatCurrency(fakeData.currentSavings)} of ${formatCurrency(fakeData.savingsGoal)} (${progress.toFixed(1)}%)`;
+        }
+
+        // Function to render recent transactions table
+        function renderTransactions() {
+            const transactionsTableBody = document.getElementById('transactionsTableBody');
+            transactionsTableBody.innerHTML = ''; // Clear existing content
+
+            // Sort transactions by date in descending order (most recent first)
+            const sortedTransactions = [...fakeData.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedTransactions.slice(0, 5).forEach(transaction => { // Display top 5 recent transactions
+                const row = transactionsTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${transaction.date}</td>
+                    <td>${transaction.description}</td>
+                    <td class="transaction-type ${transaction.type}">${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}</td>
+                    <td>${formatCurrency(transaction.amount)}</td>
+                `;
+            });
+
+            if (sortedTransactions.length === 0) {
+                const row = transactionsTableBody.insertRow();
+                row.innerHTML = `<td colspan="4" style="text-align: center; color: #777;">No recent transactions found.</td>`;
+            }
+        }
+
+        // Function to render investment portfolio table
+        function renderInvestments() {
+            const investmentsTableBody = document.getElementById('investmentsTableBody');
+            investmentsTableBody.innerHTML = ''; // Clear existing content
+
+            fakeData.investments.forEach(investment => {
+                const currentValue = investment.shares * investment.currentPrice;
+                const purchaseValue = investment.shares * investment.purchasePrice;
+                const gainLoss = currentValue - purchaseValue;
+                const gainLossClass = gainLoss > 0 ? 'investment-gain' : (gainLoss < 0 ? 'investment-loss' : 'investment-neutral');
+
+                const row = investmentsTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${investment.name}</td>
+                    <td>${investment.shares}</td>
+                    <td>${formatCurrency(investment.purchasePrice)}</td>
+                    <td>${formatCurrency(investment.currentPrice)}</td>
+                    <td>${formatCurrency(currentValue)}</td>
+                    <td class="${gainLossClass}">${formatCurrency(gainLoss)}</td>
+                `;
+            });
+
+            if (fakeData.investments.length === 0) {
+                const row = investmentsTableBody.insertRow();
+                row.innerHTML = `<td colspan="6" style="text-align: center; color: #777;">No investments found.</td>`;
+            }
+        }
+
+        // Initialize dashboard when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            renderUserProfile();
+            renderSummaryCards();
+            renderTransactions();
+            renderInvestments();
+        });
+    </script>
+</body>
+</html>
