@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Hover Effects Collection</title>
+    <!-- Google Fonts for better typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General styles and CSS variables for easier customization */
+        :root {
+            --primary-color: #6a0572;      /* Dark purple */
+            --secondary-color: #892cdc;    /* Medium purple */
+            --accent-color: #bc6ff1;       /* Light purple/pink */
+            --bg-light: #f7f7f7;           /* Light background */
+            --bg-dark: #333;               /* Dark background for footer */
+            --text-color: #333;            /* Dark text */
+            --text-light: #fff;            /* Light text */
+            --card-bg: #fff;               /* Card background */
+            --shadow-light: rgba(0, 0, 0, 0.1);    /* Light shadow */
+            --shadow-medium: rgba(0, 0, 0, 0.2);   /* Medium shadow */
+            --transition-speed: 0.3s;      /* Standard transition speed */
+        }
+
+        /* Basic body styling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-light);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* Header styling */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-light);
+            width: 100%;
+            box-shadow: 0 4px 8px var(--shadow-medium);
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Container for the cards using CSS Grid */
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+            gap: 30px; /* Space between cards */
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+            margin-bottom: 50px;
+        }
+
+        /* Base styles for all effect cards */
+        .effect-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow-light);
+            overflow: hidden;
+            position: relative;
+            text-align: center;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 180px;
+            transition: transform var(--transition-speed) ease-out, box-shadow var(--transition-speed) ease-out;
+            cursor: pointer;
+            border: 1px solid #eee;
+        }
+
+        /* Heading and paragraph styles within cards */
+        .effect-card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .effect-card p {
+            font-size: 0.95em;
+            color: #666;
+            margin-bottom: 0;
+        }
+
+        /* --- Individual Hover Effects --- */
+
+        /* Effect 1: Grow & Shadow */
+        .effect-grow-shadow:hover {
+            transform: translateY(-8px) scale(1.03); /* Lifts and slightly grows */
+            box-shadow: 0 12px 25px var(--shadow-medium); /* Deeper shadow */
+        }
+
+        /* Effect 2: Border Slide In (from bottom) */
+        .effect-border-slide {
+            position: relative;
+            overflow: hidden;
+            z-index: 1; /* Ensures pseudo-element stays behind text */
+        }
+        .effect-border-slide::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px; /* Border thickness */
+            background-color: var(--accent-color);
+            transform: scaleX(0); /* Initially hidden */
+            transform-origin: bottom center; /* Animation origin */
+            transition: transform var(--transition-speed) ease-out;
+            z-index: -1; /* Place behind card content */
+        }
+        .effect-border-slide:hover::before {
+            transform: scaleX(1); /* Expands to full width */
+        }
+        .effect-border-slide:hover {
+            transform: translateY(-4px); /* Slight lift */
+            box-shadow: 0 8px 16px var(--shadow-light);
+        }
+
+        /* Effect 3: Color Overlay Fade */
+        .effect-color-overlay {
+            position: relative;
+            overflow: hidden;
+        }
+        .effect-color-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(137, 44, 220, 0.2); /* secondary-color with opacity */
+            opacity: 0; /* Initially hidden */
+            transition: opacity var(--transition-speed) ease-out;
+            z-index: 0; /* Place below text, above card background */
+        }
+        .effect-color-overlay:hover::before {
+            opacity: 1; /* Fades in */
+        }
+        /* Ensure text stays above the overlay */
+        .effect-color-overlay h3,
+        .effect-color-overlay p {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Effect 4: Text Shift & Color Change */
+        .effect-text-shift h3 {
+            transition: color var(--transition-speed) ease-out, transform var(--transition-speed) ease-out;
+        }
+        .effect-text-shift p {
+            transition: color var(--transition-speed) ease-out, transform var(--transition-speed) ease-out;
+        }
+        .effect-text-shift:hover h3 {
+            color: var(--secondary-color);
+            transform: translateY(-5px); /* Shift up */
+        }
+        .effect-text-shift:hover p {
+            color: #888;
+            transform: translateY(5px); /* Shift down */
+        }
+        .effect-text-shift:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Subtle shadow change */
+        }
+
+        /* Effect 5: 3D Tilt (requires inner div for transform) */
+        /* Reset padding, background, etc. on the outer card for 3D effects */
+        .effect-3d-tilt, .effect-rotate-x {
+            padding: 0;
+            background: none;
+            box-shadow: none;
+            border: none;
+            transform-style: preserve-3d; /* Enable 3D space */
+            perspective: 1000px; /* Set perspective for 3D depth */
+            transition: none; /* No direct transform/shadow on the parent */
+        }
+        /* Apply original card styling to the inner div for 3D effects */
+        .effect-3d-tilt > div, .effect-rotate-x > div {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow-light);
+            border: 1px solid #eee;
+            padding: 30px;
+            min-height: 180px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform var(--transition-speed) ease-out, box-shadow var(--transition-speed) ease-out;
+            backface-visibility: hidden; /* Prevents flickering during 3D transforms */
+        }
+        .effect-3d-tilt:hover > div {
+            transform: rotateX(5deg) rotateY(5deg) scale(1.02); /* Tilts and slightly scales */
+            box-shadow: 0 15px 30px var(--shadow-medium);
+        }
+
+        /* Effect 6: Pulse Scale (uses keyframes animation) */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); } /* Grows slightly */
+            100% { transform: scale(1); }
+        }
+        .effect-pulse-scale:hover {
+            animation: pulse 0.7s ease-in-out infinite alternate; /* Applies pulse animation */
+            box-shadow: 0 8px 16px var(--shadow-medium);
+        }
+
+        /* Effect 7: Background Grow Circle (uses pseudo-element) */
+        .effect-bg-circle {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .effect-bg-circle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background-color: var(--accent-color);
+            border-radius: 50%; /* Circle shape */
+            transform: translate(-50%, -50%); /* Center the circle */
+            transition: width var(--transition-speed) ease-out, height var(--transition-speed) ease-out;
+            z-index: -1;
+        }
+        .effect-bg-circle:hover::before {
+            width: 300%; /* Expands to cover the entire card */
+            height: 300%;
+        }
+        /* Change text color when background expands */
+        .effect-bg-circle:hover h3,
+        .effect-bg-circle:hover p {
+            color: var(--text-light); /* Text becomes white */
+            transition: color var(--transition-speed) ease-out;
+        }
+        .effect-bg-circle:hover {
+             transform: translateY(-4px);
+             box-shadow: 0 8px 16px var(--shadow-light);
+        }
+
+        /* Effect 8: Underline Fade In (uses pseudo-element for heading) */
+        .effect-underline-fade {
+            position: relative;
+            overflow: hidden;
+        }
+        .effect-underline-fade h3 {
+            position: relative;
+            display: inline-block; /* Required for pseudo-element to align under text */
+            padding-bottom: 5px; /* Space for the underline */
+        }
+        .effect-underline-fade h3::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--secondary-color);
+            transform: scaleX(0); /* Initially hidden */
+            transform-origin: bottom right; /* Animates from right to left */
+            transition: transform var(--transition-speed) ease-out;
+        }
+        .effect-underline-fade:hover h3::after {
+            transform: scaleX(1); /* Expands to full width */
+            transform-origin: bottom left; /* Animates from left to right on hover */
+        }
+        .effect-underline-fade:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px var(--shadow-light);
+        }
+
+        /* Effect 9: Rotate X (similar to 3D Tilt, using inner div) */
+        .effect-rotate-x:hover > div {
+            transform: rotateX(10deg); /* Rotates around X-axis */
+            box-shadow: 0 15px 30px var(--shadow-medium);
+        }
+
+        /* Effect 10: Skew & Lift */
+        .effect-skew-lift {
+            transform-origin: center bottom; /* Anchor point for skew */
+        }
+        .effect-skew-lift:hover {
+            transform: translateY(-10px) skewX(-2deg); /* Lifts and skews */
+            box-shadow: 0 12px 25px var(--shadow-medium);
+        }
+        /* Counter-skew the text to keep it visually straight */
+        .effect-skew-lift h3, .effect-skew-lift p {
+             transform: skewX(0deg); /* Initial state, no skew */
+             transition: transform var(--transition-speed) ease-out;
+        }
+        .effect-skew-lift:hover h3, .effect-skew-lift:hover p {
+             transform: skewX(2deg); /* Inverse skew to counteract parent's skew */
+        }
+
+        /* Footer styling */
+        .footer {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-top: auto; /* Pushes the footer to the bottom of the page */
+            box-shadow: 0 -2px 8px var(--shadow-medium);
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5em;
+            }
+            .header p {
+                font-size: 1em;
+            }
+            .container {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust grid for smaller screens */
+                padding: 15px;
+            }
+            .effect-card {
+                padding: 20px;
+            }
+            .effect-card h3 {
+                font-size: 1.3em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            .header p {
+                font-size: 0.9em;
+            }
+            .container {
+                grid-template-columns: 1fr; /* Single column layout on very small screens */
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Dynamic CSS Hover Effects</h1>
+        <p>A collection of modern and engaging hover animations created purely with CSS. Explore beautiful interactions for your web elements!</p>
+    </header>
+
+    <div class="container">
+        <!-- Effect 1: Grow & Shadow -->
+        <div class="effect-card effect-grow-shadow">
+            <h3>Grow & Shadow</h3>
+            <p>A classic effect: the card slightly grows and casts a deeper shadow.</p>
+        </div>
+
+        <!-- Effect 2: Border Slide In (from bottom) -->
+        <div class="effect-card effect-border-slide">
+            <h3>Border Slide In</h3>
+            <p>A sleek colored border slides in from the bottom on hover.</p>
+        </div>
+
+        <!-- Effect 3: Color Overlay Fade -->
+        <div class="effect-card effect-color-overlay">
+            <h3>Color Overlay</h3>
+            <p>A subtle colored overlay fades in over the card content.</p>
+        </div>
+
+        <!-- Effect 4: Text Shift & Color Change -->
+        <div class="effect-card effect-text-shift">
+            <h3>Text Shift</h3>
+            <p>Text elements shift position and change color for an interactive feel.</p>
+        </div>
+
+        <!-- Effect 5: 3D Tilt -->
+        <div class="effect-card effect-3d-tilt">
+            <div> <!-- Inner div for 3D transform -->
+                <h3>3D Tilt</h3>
+                <p>The card subtly tilts in 3D space, adding depth.</p>
+            </div>
+        </div>
+
+        <!-- Effect 6: Pulse Scale -->
+        <div class="effect-card effect-pulse-scale">
+            <h3>Pulse Scale</h3>
+            <p>The element gently pulses, drawing attention without being too aggressive.</p>
+        </div>
+
+        <!-- Effect 7: Background Grow Circle -->
+        <div class="effect-card effect-bg-circle">
+            <h3>BG Grow Circle</h3>
+            <p>A circular background expands from the center, changing text color.</p>
+        </div>
+
+        <!-- Effect 8: Underline Fade In -->
+        <div class="effect-card effect-underline-fade">
+            <h3>Underline Fade</h3>
+            <p>A stylish underline fades in under the title text on hover.</p>
+        </div>
+
+        <!-- Effect 9: Rotate X -->
+        <div class="effect-card effect-rotate-x">
+            <div> <!-- Inner div for 3D transform -->
+                <h3>Rotate X</h3>
+                <p>The card rotates slightly around its X-axis, revealing its depth.</p>
+            </div>
+        </div>
+
+        <!-- Effect 10: Skew & Lift -->
+        <div class="effect-card effect-skew-lift">
+            <h3>Skew & Lift</h3>
+            <p>The card lifts and skews slightly, giving a dynamic, edgy look.</p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2023 CSS Hover Effects Collection. All rights reserved.</p>
+    </footer>
+</body>
+</html>
