@@ -1,0 +1,439 @@
+`filename:README.md`
+# Poytaxtlarni Top Quiz
+
+## Loyiha nomi: Poytaxtlarni Top Quiz
+
+## Tavsif
+"Poytaxtlarni Top Quiz" - bu dunyo mamlakatlari va ularning poytaxtlari haqidagi bilimlaringizni sinovdan o'tkazuvchi interaktiv veb viktorina dasturi. Loyiha HTML, CSS va JavaScript texnologiyalari yordamida bitta faylda yaratilgan bo'lib, zamonaviy va qulay interfeysga ega. Har bir savolga javob berganingizdan so'ng, to'g'ri yoki noto'g'ri ekanligi haqida darhol xabar olasiz va yakuniy hisobingiz ko'rsatiladi.
+
+## Qanday ishga tushirish mumkin?
+Loyiha faqat bitta `index.html` faylidan iborat. Uni ishga tushirish uchun quyidagi oddiy qadamlarni bajaring:
+1.  Ushbu fayl tarkibini `index.html` nomi bilan saqlang.
+2.  `index.html` faylini istalgan zamonaviy veb brauzerda (Chrome, Firefox, Safari, Edge va h.k.) oching.
+3.  "Viktorinani Boshlash" tugmasini bosing va o'ynashni boshlang!
+
+## Xususiyatlar:
+*   **Interaktiv viktorina:** Foydalanuvchilar savollarga javob berishlari mumkin.
+*   **Kamida 15 ta savol:** Dunyoning turli mamlakatlari poytaxtlari bo'yicha savollar.
+*   **Ko'p tanlovli javoblar:** Har bir savol uchun 4 ta variant beriladi.
+*   **Real vaqtda hisob:** Dastur sizning joriy ballingizni kuzatib boradi.
+*   **Tezkor fikr-mulohaza:** Javob berganingizdan so'ng darhol to'g'ri yoki noto'g'ri ekanligi ko'rsatiladi.
+*   **Toza va zamonaviy dizayn:** Qulay va estetik interfeys.
+*   **Qayta boshlash imkoniyati:** Viktorina tugaganidan so'ng, uni qayta boshlash mumkin.
+*   **Yagona fayl:** Barcha kod (HTML, CSS, JavaScript) bitta `index.html` faylida jamlangan.
+
+---
+
+`filename:index.html`
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poytaxtlarni Top Quiz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Global styles and font import */
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* A nice gradient background */
+            color: #333;
+        }
+
+        /* Quiz application container styling */
+        #quiz-app-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 550px;
+            text-align: center;
+            box-sizing: border-box;
+            opacity: 0; /* Hidden by default */
+            transform: translateY(20px);
+            animation: fadeIn 0.8s forwards ease-out;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Screen management */
+        .quiz-screen {
+            display: none; /* Hidden by default */
+        }
+
+        .quiz-screen.active {
+            display: block; /* Shown when active */
+        }
+
+        /* Typography */
+        h1 {
+            color: #4a69bd;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #5f7aae;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* Question and options styling */
+        #question-display {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        #options-container {
+            display: grid;
+            grid-template-columns: 1fr; /* Single column on small screens */
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        @media (min-width: 480px) {
+            #options-container {
+                grid-template-columns: 1fr 1fr; /* Two columns on larger screens */
+            }
+        }
+
+        /* Button styling */
+        .option-btn,
+        #start-quiz-btn,
+        #restart-quiz-btn {
+            background-color: #6a89cc;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            outline: none;
+        }
+
+        .option-btn:hover,
+        #start-quiz-btn:hover,
+        #restart-quiz-btn:hover {
+            background-color: #4a69bd;
+            transform: translateY(-2px);
+        }
+
+        .option-btn:active,
+        #start-quiz-btn:active,
+        #restart-quiz-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Feedback styling */
+        #feedback {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-top: 15px;
+            height: 30px; /* Reserve space to prevent layout shifts */
+            line-height: 30px;
+        }
+
+        .option-btn.correct {
+            background-color: #28a745; /* Green for correct */
+            pointer-events: none; /* Disable click after answer */
+        }
+
+        .option-btn.wrong {
+            background-color: #dc3545; /* Red for wrong */
+            pointer-events: none; /* Disable click after answer */
+        }
+
+        .option-btn.disabled {
+            background-color: #aeb8c9; /* Greyed out for disabled */
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Score display */
+        #score-display {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #4a69bd;
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        #final-score {
+            color: #28a745; /* Green for final score */
+            font-weight: 700;
+        }
+
+        #total-questions {
+            color: #4a69bd; /* Blue for total questions */
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app-container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="quiz-screen active">
+            <h1>Poytaxtlarni Top Quiz</h1>
+            <p>Dunyo poytaxtlari haqidagi bilimlaringizni sinab ko'ring!</p>
+            <button id="start-quiz-btn">Viktorinani Boshlash</button>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quiz-container" class="quiz-screen">
+            <h2 id="quiz-title">Savol</h2>
+            <div id="question-display"></div>
+            <div id="options-container">
+                <!-- Options buttons will be dynamically inserted here by JavaScript -->
+            </div>
+            <div id="feedback"></div>
+            <div id="score-display">Hisob: 0</div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="quiz-screen">
+            <h2>Viktorina Tugadi!</h2>
+            <p>Sizning yakuniy hisobingiz: <span id="final-score">0</span> / <span id="total-questions"></span></p>
+            <button id="restart-quiz-btn">Qayta Boshlash</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions
+        // Each object contains a question, an array of options, and the correct answer.
+        const questions = [
+            {
+                question: "Qaysi davlatning poytaxti Vashington (Washington D.C.)?",
+                options: ["Kanada", "Meksika", "AQSh", "Braziliya"],
+                correctAnswer: "AQSh"
+            },
+            {
+                question: "Parij qaysi davlatning poytaxti?",
+                options: ["Germaniya", "Ispaniya", "Fransiya", "Italiya"],
+                correctAnswer: "Fransiya"
+            },
+            {
+                question: "Tokio qaysi davlatning poytaxti?",
+                options: ["Xitoy", "Janubiy Koreya", "Yaponiya", "Tailand"],
+                correctAnswer: "Yaponiya"
+            },
+            {
+                question: "London qaysi davlatning poytaxti?",
+                options: ["Irlandiya", "Shotlandiya", "Buyuk Britaniya", "Kanada"],
+                correctAnswer: "Buyuk Britaniya"
+            },
+            {
+                question: "Rim qaysi davlatning poytaxti?",
+                options: ["Gretsiya", "Turkiya", "Misr", "Italiya"],
+                correctAnswer: "Italiya"
+            },
+            {
+                question: "Berlin qaysi davlatning poytaxti?",
+                options: ["Avstriya", "Germaniya", "Polsha", "Shveysariya"],
+                correctAnswer: "Germaniya"
+            },
+            {
+                question: "Ottava qaysi davlatning poytaxti?",
+                options: ["AQSh", "Kanada", "Avstraliya", "Yangi Zelandiya"],
+                correctAnswer: "Kanada"
+            },
+            {
+                question: "Pekin qaysi davlatning poytaxti?",
+                options: ["Hindiston", "Yaponiya", "Xitoy", "Vetnam"],
+                correctAnswer: "Xitoy"
+            },
+            {
+                question: "Yangi Dehli qaysi davlatning poytaxti?",
+                options: ["Pokiston", "Bangladesh", "Hindiston", "Nepal"],
+                correctAnswer: "Hindiston"
+            },
+            {
+                question: "Kanberra qaysi davlatning poytaxti?",
+                options: ["Yangi Zelandiya", "Avstraliya", "Indoneziya", "Filippin"],
+                correctAnswer: "Avstraliya"
+            },
+            {
+                question: "Qohira qaysi davlatning poytaxti?",
+                options: ["Iordaniya", "Saudiya Arabistoni", "Misr", "Marokash"],
+                correctAnswer: "Misr"
+            },
+            {
+                question: "Pretoriya qaysi davlatning poytaxti?",
+                options: ["Nigeriya", "Keniya", "Janubiy Afrika", "Efiopiya"],
+                correctAnswer: "Janubiy Afrika"
+            },
+            {
+                question: "Buenos-Ayres qaysi davlatning poytaxti?",
+                options: ["Chili", "Peru", "Kolumbiya", "Argentina"],
+                correctAnswer: "Argentina"
+            },
+            {
+                question: "Mexiko shahri qaysi davlatning poytaxti?",
+                options: ["Braziliya", "Meksika", "Argentina", "Ispaniya"],
+                correctAnswer: "Meksika"
+            },
+            {
+                question: "Braziliya qaysi davlatning poytaxti?",
+                options: ["Peru", "Kolumbiya", "Braziliya", "Chili"],
+                correctAnswer: "Braziliya"
+            }
+        ];
+
+        // DOM element references
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsScreen = document.getElementById('results-screen');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+        const questionDisplay = document.getElementById('question-display');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackDisplay = document.getElementById('feedback');
+        const scoreDisplay = document.getElementById('score-display');
+        const finalScoreSpan = document.getElementById('final-score');
+        const totalQuestionsSpan = document.getElementById('total-questions');
+        const quizAppContainer = document.getElementById('quiz-app-container');
+
+        // Quiz state variables
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let shuffledQuestions = []; // To store a randomized order of questions
+
+        // Function to shuffle an array (Fisher-Yates algorithm)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        // Function to start the quiz
+        function startQuiz() {
+            // Hide welcome screen and show quiz container
+            welcomeScreen.classList.remove('active');
+            resultsScreen.classList.remove('active');
+            quizContainer.classList.add('active');
+
+            // Reset quiz state
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreDisplay.textContent = `Hisob: ${score}`; // Update score display
+            feedbackDisplay.textContent = ''; // Clear any previous feedback
+
+            // Shuffle questions to make each quiz unique
+            shuffledQuestions = shuffleArray([...questions]);
+            
+            displayQuestion();
+        }
+
+        // Function to display the current question and its options
+        function displayQuestion() {
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+            feedbackDisplay.textContent = ''; // Clear feedback for new question
+
+            // Get the current question object
+            const currentQuestion = shuffledQuestions[currentQuestionIndex];
+            questionDisplay.textContent = currentQuestion.question; // Display question text
+
+            // Shuffle options for the current question
+            const shuffledOptions = shuffleArray([...currentQuestion.options]);
+
+            // Create and append option buttons
+            shuffledOptions.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-btn');
+                button.addEventListener('click', () => checkAnswer(button, option, currentQuestion.correctAnswer));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // Function to check the selected answer
+        function checkAnswer(selectedButton, selectedOption, correctAnswer) {
+            // Disable all option buttons after a choice is made
+            Array.from(optionsContainer.children).forEach(button => {
+                button.classList.add('disabled');
+                button.removeEventListener('click', () => {}); // Remove event listeners
+            });
+
+            if (selectedOption === correctAnswer) {
+                selectedButton.classList.add('correct');
+                feedbackDisplay.textContent = "To'g'ri javob!";
+                feedbackDisplay.style.color = '#28a745'; // Green color for correct
+                score++; // Increment score
+            } else {
+                selectedButton.classList.add('wrong');
+                feedbackDisplay.textContent = "Noto'g'ri javob. To'g'risi: " + correctAnswer;
+                feedbackDisplay.style.color = '#dc3545'; // Red color for wrong
+                // Highlight the correct answer if the user chose wrong
+                Array.from(optionsContainer.children).forEach(button => {
+                    if (button.textContent === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+            scoreDisplay.textContent = `Hisob: ${score}`; // Update score display
+
+            // Wait a short delay before moving to the next question
+            setTimeout(nextQuestion, 1500); // 1.5 second delay
+        }
+
+        // Function to move to the next question or end the quiz
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < shuffledQuestions.length) {
+                displayQuestion(); // Display next question
+            } else {
+                endQuiz(); // End the quiz if no more questions
+            }
+        }
+
+        // Function to end the quiz and display results
+        function endQuiz() {
+            quizContainer.classList.remove('active');
+            resultsScreen.classList.add('active');
+
+            finalScoreSpan.textContent = score;
+            totalQuestionsSpan.textContent = shuffledQuestions.length;
+        }
+
+        // Function to restart the quiz
+        function restartQuiz() {
+            startQuiz(); // Simply call startQuiz to reset and begin again
+        }
+
+        // Event Listeners for buttons
+        startQuizBtn.addEventListener('click', startQuiz);
+        restartQuizBtn.addEventListener('click', restartQuiz);
+
+        // Initial setup for quiz app container animation
+        document.addEventListener('DOMContentLoaded', () => {
+            quizAppContainer.style.opacity = '1';
+            quizAppContainer.style.transform = 'translateY(0)';
+        });
+    </script>
+</body>
+</html>
+```
