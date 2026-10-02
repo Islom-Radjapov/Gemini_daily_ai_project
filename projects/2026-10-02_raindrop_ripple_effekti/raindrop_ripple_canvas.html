@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raindrop Ripple Canvas</title>
+    <style>
+        /* General body styling to remove default margins and hide overflow */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0d1117; /* Dark background for a modern aesthetic */
+            display: flex; /* Use flexbox to center content */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+        }
+
+        /* Canvas styling to make it a block element and fill available space */
+        canvas {
+            display: block;
+            background-color: transparent; /* Canvas background matches body background */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="rippleCanvas"></canvas>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('rippleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Array to store all active ripple objects that are currently visible on the canvas
+        const activeRipples = [];
+
+        // --- Configuration Constants for Ripple Behavior and Appearance ---
+        const RIPPLE_MAX_RADIUS_FACTOR = 0.4; // Max ripple radius as a factor of min(canvas.width, canvas.height)
+        const RIPPLE_SPEED = 1.8;             // How many pixels per frame a ripple expands
+        const RIPPLE_DECAY_RATE = 0.007;      // How fast ripple's overall opacity decreases per frame
+        const RIPPLE_COLOR_RGB = '173, 216, 230'; // RGB values for a light blue color, without alpha channel
+        const RIPPLE_WAVE_COUNT = 3;          // Number of distinct concentric rings drawn for each ripple
+        const RIPPLE_WAVE_SPACING = 20;       // Distance in pixels between concentric rings of a ripple
+
+        /**
+         * Resizes the canvas to fill the entire browser window dimensions.
+         * This function is crucial for responsiveness and is called on initial load and window resize events.
+         */
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Existing ripples continue their animation based on their initial maxRadius
+            // and will naturally fade out. New ripples will adapt to the updated canvas size.
+        }
+
+        /**
+         * Represents a single interactive ripple on the canvas.
+         * Manages its expansion, fading, and drawing of multiple concentric rings to simulate a wave.
+         */
+        class Ripple {
+            /**
+             * Creates an instance of Ripple.
+             * @param {number} x - The x-coordinate of the ripple's initial center point.
+             * @param {number} y - The y-coordinate of the ripple's initial center point.
+             */
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.currentRadius = 0; // The current radius of the outermost ring
+                // Maximum radius is dynamically calculated based on the current canvas size
+                this.maxRadius = Math.min(canvas.width, canvas.height) * RIPPLE_MAX_RADIUS_FACTOR;
+                this.opacity = 1; // Initial full opacity of the ripple
+                this.alive = true; // Flag to indicate if the ripple is still active and should be rendered
+            }
+
+            /**
+             * Updates the state of the ripple for the next animation frame.
+             * This involves increasing its radius, decreasing its overall opacity,
+             * and checking if it has completely faded or expanded beyond its visible range.
+             */
+            update() {
+                this.currentRadius += RIPPLE_SPEED;
+                this.opacity -= RIPPLE_DECAY_RATE;
+
+                // A ripple is considered 'dead' if its opacity drops to zero or below,
+                // or if its outermost ring has expanded beyond the maximum visible range
+                // plus the space needed for all its concentric rings to pass.
+                if (this.opacity <= 0 || this.currentRadius > this.maxRadius + (RIPPLE_WAVE_COUNT * RIPPLE_WAVE_SPACING)) {
+                    this.alive = false;
+                }
+            }
+
+            /**
+             * Draws the ripple on the canvas context.
+             * It renders multiple concentric rings to give the visual effect of an expanding wave.
+             * Each ring has its own calculated radius and opacity based on the ripple's current state.
+             * @param {CanvasRenderingContext2D} ctx - The 2D rendering context of the HTML canvas.
+             */
+            draw(ctx) {
+                if (!this.alive) return; // Skip drawing if the ripple is no longer active
+
+                // Iterate to draw multiple concentric rings for a single ripple effect
+                for (let i = 0; i < RIPPLE_WAVE_COUNT; i++) {
+                    // Calculate the radius for the current concentric ring.
+                    // Rings are spaced apart by RIPPLE_WAVE_SPACING.
+                    const ringRadius = this.currentRadius - (i * RIPPLE_WAVE_SPACING);
+                    
+                    // Calculate the opacity for the current ring.
+                    // Outer rings fade out faster to create a natural wave progression.
+                    const ringOpacity = this.opacity * (1 - (i / (RIPPLE_WAVE_COUNT * 1.5)));
+
+                    // Only draw the ring if it has a positive radius and is still visible
+                    if (ringRadius > 0 && ringOpacity > 0) {
+                        ctx.beginPath(); // Start a new path for drawing the circle
+                        ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2, false); // Draw a full circle
+                        ctx.strokeStyle = `rgba(${RIPPLE_COLOR_RGB}, ${ringOpacity})`; // Set stroke color with calculated opacity
+                        ctx.lineWidth = 2; // Set the thickness of the ripple line
+                        ctx.stroke(); // Draw the defined circle path
+                    }
+                }
+            }
+        }
+
+        /**
+         * Creates a new Ripple object at the specified coordinates and adds it to the
+         * `activeRipples` array, making it part of the animation loop.
+         * @param {number} x - The x-coordinate for the new ripple's center.
+         * @param {number} y - The y-coordinate for the new ripple's center.
+         */
+        function createRipple(x, y) {
+            activeRipples.push(new Ripple(x, y));
+        }
+
+        /**
+         * The main animation loop of the interactive art piece.
+         * This function is called repeatedly by `requestAnimationFrame`.
+         * It clears the canvas, updates the state of all active ripples,
+         * draws them, and then schedules itself to run again for the next frame.
+         */
+        function animate() {
+            // Clear the entire canvas to prepare for drawing the next frame
+            // This ensures previous drawings are erased, giving the illusion of movement.
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Iterate through the active ripples in reverse to safely remove 'dead' ones
+            for (let i = activeRipples.length - 1; i >= 0; i--) {
+                const ripple = activeRipples[i];
+                ripple.update(); // Update the ripple's position, size, and opacity
+                ripple.draw(ctx); // Draw the ripple on the canvas
+
+                if (!ripple.alive) {
+                    // If the ripple is no longer alive (faded out or fully expanded), remove it from the array
+                    activeRipples.splice(i, 1);
+                }
+            }
+
+            // Request the browser to call `animate` again before the next repaint.
+            // This creates a smooth animation loop.
+            requestAnimationFrame(animate);
+        }
+
+        // --- Event Listeners for User Interaction and Responsiveness ---
+
+        // Attach an event listener to the window to handle canvas resizing.
+        // This makes the art piece responsive to browser window changes.
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Initial call to set the canvas size when the page first loads
+
+        // Add a mouse click event listener to the canvas itself.
+        // When the user clicks, a new ripple is created at the mouse's coordinates.
+        canvas.addEventListener('click', (event) => {
+            createRipple(event.clientX, event.clientY);
+        });
+
+        // Add a keyboard keydown event listener to the document.
+        // Pressing any key will generate a ripple at a random position on the canvas.
+        document.addEventListener('keydown', () => {
+            const randomX = Math.random() * canvas.width;  // Random X coordinate within canvas width
+            const randomY = Math.random() * canvas.height; // Random Y coordinate within canvas height
+            createRipple(randomX, randomY);
+        });
+
+        // Start the main animation loop. This kicks off the continuous rendering of ripples.
+        animate();
+    </script>
+</body>
+</html>
